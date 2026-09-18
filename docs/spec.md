@@ -110,7 +110,8 @@ so `{name: 1}` and `{"name": 1}` are the same map.
 ### Strings
 
 A string is double-quoted and cannot span lines. `{` opens an
-**interpolation**: the expression inside is evaluated and its value spliced in.
+**interpolation** — a *hole* — and the expression inside it is evaluated and
+its value spliced into the string.
 
 ```
 let region = "north"
@@ -163,6 +164,14 @@ A hole may contain a string, which may contain a hole. It may not contain a
 newline: a string does not span lines, so a line ending inside a hole is an
 unterminated string rather than an unfinished expression — including at a
 prompt, where the entry is not continued.
+
+Two mistakes this design makes easy, both of which report something true and
+unhelpful. `"{"`, meant as a brace, opens a hole and then reads the closing
+quote as the start of another string: `unterminated string`, blaming the
+quote. `"{{1}}"`, borrowing another language's doubling rule, is a hole
+containing the map literal `{1`: `expected ':'`. Both are pinned by cases in
+`tests/cases/errors/`. Neither message is wrong and neither helps, which makes
+them the clearest examples of a problem Vine has everywhere — see `log/0004`.
 
 ### Operators, loosest binding first
 

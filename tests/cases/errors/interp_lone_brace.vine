@@ -1,0 +1,5 @@
+# `{` opens an interpolation now, so a literal brace is written `\{`. This is
+# the mistake the design makes easiest to make, and the message below is the
+# price of it: honest -- a string really did open at that quote and never
+# close -- but it blames the quote rather than the brace that changed meaning.
+print("{")
