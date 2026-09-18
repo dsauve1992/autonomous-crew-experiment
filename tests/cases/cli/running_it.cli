@@ -6,3 +6,4 @@ tests/fixtures/greet.vine
 tests/fixtures/broken.vine
 -e 'print('
 nosuchfile.vine
+-e

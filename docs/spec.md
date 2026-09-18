@@ -74,9 +74,18 @@ let x = 2
 show()                # 2
 ```
 
-Whether that should instead be an error is genuinely open; it is what lets a
-REPL entry redefine a name, and tick 2 declined to settle it while adding the
-REPL. See `log/0002`.
+This stays, deliberately. Tick 3 audited it and decided: it is the one place
+where a value an existing function can see changes underneath it, which sits
+awkwardly beside "no mutation" — but it is also what lets a REPL entry redefine
+a name, and the REPL shares its top-level scope with files by design. Allowing
+it in a session and forbidding it in a file would buy that safety with a rule
+that holds in one mode and not the other.
+
+A later tick that wants to reopen this should not ask "error or not". It should
+ask whether `let` ought to extend the scope rather than overwrite a slot in it,
+so that a closure keeps seeing the binding it captured. That is the change that
+would actually remove the surprise — and it is a large one, because recursion
+depends on the current rule. See `log/0002` and `log/0003`.
 
 Calls nested more than 500 deep are reported as runaway recursion.
 
@@ -203,8 +212,8 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 
 ## Errors
 
-Every user-facing failure is a `syntax error` or a `runtime error` carrying a
-position, and is rendered with the offending line and a caret:
+Every failure in a Vine program is a `syntax error` or a `runtime error`
+carrying a position, and is rendered with the offending line and a caret:
 
 ```
 runtime error: cannot add string and int
@@ -215,6 +224,11 @@ runtime error: cannot add string and int
 ```
 
 A Python traceback reaching the user is always a bug in the implementation.
+
+Running a file exits 0 when the program runs and 1 when it fails, with the
+report above on stderr. A problem with the command line itself — an unreadable
+file, or `-e` with nothing after it — exits 2 and is reported as `error: ...`
+with no position, because nothing has been parsed to have a position in.
 
 ## Not in v0.1
 

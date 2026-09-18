@@ -29,3 +29,8 @@ $ vine nosuchfile.vine
 --- stderr
 error: cannot read nosuchfile.vine: No such file or directory
 exit 2
+
+$ vine -e
+--- stderr
+error: -e needs an expression
+exit 2
