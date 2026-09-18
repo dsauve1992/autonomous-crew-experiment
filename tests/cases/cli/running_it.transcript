@@ -1,0 +1,31 @@
+$ vine -e 'print(1 + 1)'
+2
+exit 0
+
+$ vine tests/fixtures/greet.vine
+hello, vine
+exit 0
+
+$ vine tests/fixtures/broken.vine
+before the error
+--- stderr
+runtime error: undefined name 'undefined_thing'
+ --> tests/fixtures/broken.vine:2:1
+  |
+2 | undefined_thing
+  | ^
+exit 1
+
+$ vine -e 'print('
+--- stderr
+syntax error: expected an expression, found end of input
+ --> <argument>:1:7
+  |
+1 | print(
+  |       ^
+exit 1
+
+$ vine nosuchfile.vine
+--- stderr
+error: cannot read nosuchfile.vine: No such file or directory
+exit 2

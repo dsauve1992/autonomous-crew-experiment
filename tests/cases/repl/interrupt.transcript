@@ -1,0 +1,8 @@
+vine 0.1.0 — ^D to exit, blank line to abandon an unfinished entry
+>>> let half = fn(n) {
+... ^C
+>>> 2 + 2
+4
+>>> ^C
+>>> "still alive"
+"still alive"

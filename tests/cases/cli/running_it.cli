@@ -1,0 +1,8 @@
+# Every way of running Vine that docs/spec.md advertises, except the bare
+# REPL, which has its own cases. Until this file existed the CLI was the one
+# part of the project ./check never executed: the runner calls the library.
+-e 'print(1 + 1)'
+tests/fixtures/greet.vine
+tests/fixtures/broken.vine
+-e 'print('
+nosuchfile.vine

@@ -1,0 +1,2 @@
+print("before the error")
+undefined_thing

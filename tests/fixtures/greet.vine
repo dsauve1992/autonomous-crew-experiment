@@ -1,0 +1,4 @@
+# A program for the CLI cases to run. It lives outside tests/cases because a
+# .vine file there is a case in its own right and needs its own expectation.
+let greet = fn(name) { "hello, " + name }
+print(greet("vine"))

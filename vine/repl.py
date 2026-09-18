@@ -56,7 +56,16 @@ class Repl:
         """
         if self.interactive:
             self.write(prompt)
-        line = self.inp.readline()
+        try:
+            line = self.inp.readline()
+        except KeyboardInterrupt:
+            # A terminal echoes the user's "^C" itself; a pipe echoes nothing,
+            # so write it here for the same reason the prompt and the line are
+            # written below. The newline after it belongs to the handler in
+            # run(), exactly as it does at a terminal.
+            if not self.interactive:
+                self.write(prompt + "^C")
+            raise
         if line == "":
             return None
         line = line.rstrip("\n")
