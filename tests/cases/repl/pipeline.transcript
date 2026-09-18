@@ -1,0 +1,14 @@
+vine 0.1.0 — ^D to exit, blank line to abandon an unfinished entry
+>>> let xs = [1, 2, 3]
+>>> (xs
+...   |> map(fn(n) { n * 2 })
+...   |> len)
+3
+>>> xs
+[1, 2, 3]
+>>>   |> len
+syntax error: expected an expression, found '|>'
+ --> <repl:4>:1:3
+  |
+1 |   |> len
+  |   ^

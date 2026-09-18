@@ -185,7 +185,10 @@ if cond { ... } else if cond { ... } else { ... }
   middle of an expression — an unclosed `{`, `(` or `[`, or a dangling
   operator — the prompt becomes `... ` and the entry goes on until it parses.
   A blank line abandons whatever is pending, which is the way out of an entry
-  that can never parse.
+  that can never parse. Continuation only reaches forwards here: in a file a
+  line may begin with `|>`, but at a prompt the line before it was already a
+  complete entry and has already run. Open the pipeline with `(` to enter one
+  in a session.
 - **An error does not end the session.** It is rendered as usual and the
   prompt comes back. File mode writes errors to stderr; the REPL writes them
   to its own output stream, because in a session the interleaving of results
