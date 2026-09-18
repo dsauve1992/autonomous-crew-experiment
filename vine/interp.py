@@ -16,7 +16,7 @@ from .nodes import (
     MapLit,
     Unary,
 )
-from .values import Builtin, Function, equal, is_truthy, to_repr, type_name
+from .values import Builtin, Function, equal, is_truthy, to_key, to_repr, type_name
 
 # How deep Vine calls may nest before we call it runaway recursion.
 MAX_DEPTH = 500
@@ -119,7 +119,7 @@ class Interpreter:
                     f"map key must be a string, number or bool, got {type_name(key)}",
                     key_node.pos,
                 )
-            out[key] = self.eval(value_node, env)
+            out[to_key(key)] = self.eval(value_node, env)
         return out
 
     def eval_block(self, node, env):
@@ -230,9 +230,10 @@ class Interpreter:
                 )
             return target[index]
         if kind == "map":
-            if key not in target:
+            slot = to_key(key)
+            if slot not in target:
                 self.fail(f"map has no key {to_repr(key)}", node.pos)
-            return target[key]
+            return target[slot]
         self.fail(f"cannot index {kind}", node.pos)
 
     def eval_call(self, node, env):

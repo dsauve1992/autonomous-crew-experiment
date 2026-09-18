@@ -1,6 +1,6 @@
 """The standard library. Every builtin receives (interp, pos, args)."""
 
-from .values import Builtin, Function, to_display, to_repr, type_name
+from .values import Builtin, Function, from_key, to_display, to_key, to_repr, type_name
 
 REGISTRY = []
 
@@ -198,7 +198,7 @@ def _contains(interp, pos, args):
     if kind == "list":
         return any(equal(x, needle) for x in target)
     if kind == "map":
-        return needle in target
+        return to_key(needle) in target
     if kind == "string":
         return want(interp, pos, needle, "string", "contains needle") in target
     interp.fail(f"contains expects a list, map or string, got {kind}", pos)
@@ -209,7 +209,8 @@ def _contains(interp, pos, args):
 
 @builtin("keys", 1, 1)
 def _keys(interp, pos, args):
-    return list(want(interp, pos, args[0], "map", "keys argument").keys())
+    target = want(interp, pos, args[0], "map", "keys argument")
+    return [from_key(k) for k in target]
 
 
 @builtin("values", 1, 1)
@@ -221,14 +222,14 @@ def _values(interp, pos, args):
 def _get(interp, pos, args):
     target = want(interp, pos, args[0], "map", "get target")
     default = args[2] if len(args) == 3 else None
-    return target.get(args[1], default)
+    return target.get(to_key(args[1]), default)
 
 
 @builtin("set", 3, 3)
 def _set(interp, pos, args):
     target = want(interp, pos, args[0], "map", "set target")
     out = dict(target)
-    out[args[1]] = args[2]
+    out[to_key(args[1])] = args[2]
     return out
 
 

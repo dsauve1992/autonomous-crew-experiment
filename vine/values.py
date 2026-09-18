@@ -64,6 +64,22 @@ def equal(a, b):
     return a == b
 
 
+def to_key(v):
+    """The internal identity of a map key.
+
+    Vine's equality is type-strict: `1`, `1.0` and `true` are three different
+    values. Python's is not -- all three are equal to each other and hash
+    alike -- so a dict keyed on them directly collapses the three into one
+    entry, and `{1: "a", true: "b"}` would answer `{1: "b"}`. Keys are stored
+    tagged with their type name, and untagged on the way back out.
+    """
+    return (type_name(v), v)
+
+
+def from_key(k):
+    return k[1]
+
+
 def to_repr(v):
     """How a value looks nested inside another value."""
     if isinstance(v, str):
@@ -99,7 +115,11 @@ def to_display(v):
     if isinstance(v, list):
         return "[" + ", ".join(to_repr(x) for x in v) + "]"
     if isinstance(v, dict):
-        return "{" + ", ".join(f"{to_repr(k)}: {to_repr(x)}" for k, x in v.items()) + "}"
+        return (
+            "{"
+            + ", ".join(f"{to_repr(from_key(k))}: {to_repr(x)}" for k, x in v.items())
+            + "}"
+        )
     if isinstance(v, Function):
         return f"<fn {v.label}/{len(v.params)}>"
     if isinstance(v, Builtin):

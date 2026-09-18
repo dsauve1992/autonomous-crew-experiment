@@ -1,0 +1,20 @@
+# Map keys are compared the way `==` compares everything else: type first. 1,
+# 1.0 and true are three distinct keys, not one. A Python dict merges all
+# three -- equal to each other and hashing alike -- so Vine stores each key
+# tagged with its type name.
+let m = {1: "int", 1.0: "float", true: "bool", "1": "string"}
+print(m)
+print(len(m))
+print(keys(m))
+print(m[1], m[1.0], m[true], m["1"])
+print(get(m, false, "absent"))
+print(contains(m, true), contains(m, false))
+print({1: "a"} == {true: "a"})
+print({1: "a"} == {1: "a"})
+
+# Insertion order is preserved, and set() adds at the end without touching the
+# map it was given.
+let ordered = {b: 1, a: 2}
+print(keys(ordered))
+print(keys(set(ordered, "c", 3)))
+print(keys(ordered))

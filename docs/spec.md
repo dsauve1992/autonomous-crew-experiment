@@ -35,7 +35,9 @@ python3 -m vine -e 'print(1+1)' # run one line
 `int` and `float` are distinct types and are never equal to each other: `1 == 1.0`
 is `false`. `type(x)` returns the type name as a string.
 
-Map keys may be strings, numbers or booleans. Maps preserve insertion order.
+Map keys may be strings, numbers or booleans, and two keys are the same key on
+the same type-strict terms: `{1: "a", 1.0: "b", true: "c"}` has three entries.
+Maps preserve insertion order.
 
 ## Truthiness
 

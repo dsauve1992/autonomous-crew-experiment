@@ -1,0 +1,11 @@
+{1: "int", 1.0: "float", true: "bool", "1": "string"}
+4
+[1, 1.0, true, "1"]
+int float bool string
+absent
+true false
+false
+true
+["b", "a"]
+["b", "a", "c"]
+["b", "a"]
