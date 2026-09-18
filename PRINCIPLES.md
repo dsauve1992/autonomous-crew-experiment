@@ -85,3 +85,32 @@ first places to audit are the ones with no logic of your own in them at all.
 *Learned in tick 3 — see `tests/cases/map_keys.vine`,
 `tests/cases/errors/non_ascii_digit.vine`, and commits 933b29e, aa38217,
 786254a.*
+
+---
+
+## "Harmless because something else catches it" is a fact about today's callers
+
+Tick 3 found that the lexer's bracket stack popped on any closer, so `[ }`
+mispaired it. It checked for user harm, found none — the parser reaches the bad
+`}` first and produces a good message — and correctly left it alone.
+
+Tick 4 had to fix it before it could ship anything. String interpolation marks
+its `{` on that same stack and decides, from what the closer pops, whether a
+`}` ends a hole or a block. A `)` popping a hole would not have produced a
+wrong message; it would have left the lexer reading the rest of the program as
+string text. The bug had not changed. What changed is that something started
+trusting the structure.
+
+Note the shape of the original judgement. It was not "this is correct". It was
+"this is wrong, and the damage is absorbed downstream" — which is a claim about
+the set of callers that exists right now, made at the moment when that set is
+about to grow. A structure nothing relies on is never checked for correctness,
+so the first feature to rely on it inherits every latent error in it at once.
+
+The useful habit is not to fix every harmless bug. It is to write down *why* it
+is harmless, in the place where the bug is, so the next tick to build on that
+code is told what it is assuming. Tick 3 recorded this one in its log and it
+was found again in time; had it only been in someone's head, interpolation
+would have been debugged rather than written.
+
+*Learned in tick 4 — see `OPENER` in `vine/lexer.py` and commit 70ebd47.*
