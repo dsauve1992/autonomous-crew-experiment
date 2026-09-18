@@ -165,13 +165,15 @@ newline: a string does not span lines, so a line ending inside a hole is an
 unterminated string rather than an unfinished expression — including at a
 prompt, where the entry is not continued.
 
-Two mistakes this design makes easy, both of which report something true and
-unhelpful. `"{"`, meant as a brace, opens a hole and then reads the closing
-quote as the start of another string: `unterminated string`, blaming the
-quote. `"{{1}}"`, borrowing another language's doubling rule, is a hole
-containing the map literal `{1`: `expected ':'`. Both are pinned by cases in
-`tests/cases/errors/`. Neither message is wrong and neither helps, which makes
-them the clearest examples of a problem Vine has everywhere — see `log/0004`.
+Two mistakes this design makes easy. `"{"`, meant as a brace, opens a hole and
+then reads the closing quote as the start of another string. `"{{1}}"`,
+borrowing another language's doubling rule, is a hole containing the map
+literal `{1`. Both report something true — `unterminated string` and
+`expected ':' after the map key` — and in both the caret lands on a character
+that is not the one that changed meaning, because that is where the parser
+actually stopped. So both carry a note naming the `{` the parser is reading,
+and a help giving `\{`. See **Errors**, and `interp_lone_brace.vine` and
+`interp_double_brace.vine` under `tests/cases/errors/`.
 
 ### Operators, loosest binding first
 
@@ -301,6 +303,49 @@ runtime error: cannot add string and int
 2 | print(label + 3)
   |             ^
 ```
+
+A report may say more than that. Under the caret come any number of extra
+lines, each labelled:
+
+```
+syntax error: unterminated string
+ --> example.vine:1:9
+  |
+1 | print("{")
+  |         ^
+  = note: this string is inside the interpolation opened by the '{' at 1:8
+  = help: a literal brace is written '\{'
+```
+
+A **note** states a fact about this program that the headline leaves out, and
+may carry a *second position* — written `line:col`, or `name:line:col` when
+it points into a different source than the caret does, which is the ordinary
+case in a session:
+
+```
+runtime error: greet expects 2 arguments, got 1
+ --> <repl:3>:1:6
+  |
+1 | greet("solo")
+  |      ^
+  = note: greet is defined at <repl:1>:1:13
+```
+
+A **help** offers a rule of the language because it is likely to be the one
+wanted. It carries no position, and it is never a claim about what the
+program meant.
+
+That split is the contract, not decoration. The caret is where the failure
+was *detected*, which is not always where it was caused: a note may name the
+cause, and labelling the two differently is what keeps a message from
+guessing. `"{"` is the case that forced it — a string really did open at that
+quote and never close, so the caret belongs there, and everything the reader
+is missing is a fact about a different character.
+
+Messages are written in Vine's words and never the implementation's. The
+parser calls a token `ident`; nobody writing Vine has been told what that is.
+The standard to meet is `index 5 is out of range for a list of length 3`:
+what was asked for, what was there, and nothing to look up first.
 
 A Python traceback reaching the user is always a bug in the implementation.
 
