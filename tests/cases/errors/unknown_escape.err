@@ -1,0 +1,5 @@
+syntax error: unknown escape '\q'
+ --> unknown_escape.vine:2:9
+  |
+2 | print("a\qb")
+  |         ^

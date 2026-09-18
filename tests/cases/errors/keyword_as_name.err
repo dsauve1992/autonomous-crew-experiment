@@ -1,0 +1,5 @@
+syntax error: expected ident, found 'if'
+ --> keyword_as_name.vine:2:5
+  |
+2 | let if = 1
+  |     ^

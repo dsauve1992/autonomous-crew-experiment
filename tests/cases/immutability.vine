@@ -1,0 +1,11 @@
+# push and set return new values; nothing in Vine mutates.
+let xs = [3, 1, 2]
+print(sort(xs), reverse(xs), rest(xs), push(xs, 4), concat(xs, [9]))
+print(xs)
+let m = {a: 1}
+print(set(m, "b", 2), set(m, "a", 9))
+print(m)
+
+# The same list handed to two pipelines is untouched by either.
+print(xs |> map(fn(n) { n * 10 }), xs |> filter(fn(n) { n > 1 }))
+print(xs)

@@ -1,0 +1,2 @@
+# The escape list is closed: \n \t \r \" \\ and nothing else.
+print("a\qb")

@@ -1,0 +1,22 @@
+# The escapes the spec lists, and nothing else: repr turns each one back into
+# the source that made it.
+print(repr("a\nb"), repr("a\tb"), repr("a\rb"), repr("a\"b"), repr("a\\b"))
+print(len("\\"), len("\n"))
+
+# Newlines are ignored inside ( ) and [ ], so an expression may wrap.
+print(
+  1 +
+    2
+)
+print([
+  1,
+  2,
+])
+# Inside { } they matter again, even where the { } is nested inside a ( ).
+print(do {
+  let a = 1
+  a
+})
+
+# A comment runs to the end of its line and no further.
+print("visible")  # print("invisible")

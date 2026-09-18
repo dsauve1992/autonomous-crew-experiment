@@ -1,0 +1,3 @@
+# Newlines are suppressed inside ( ), but a { } nested inside one turns them
+# back on, so these two statements still need separating.
+print(fn() { 1 2 })

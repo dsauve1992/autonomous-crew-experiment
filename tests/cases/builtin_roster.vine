@@ -1,0 +1,12 @@
+# Every name the Builtins section of docs/spec.md lists, named once. If one is
+# renamed or dropped without the document changing, this case fails first --
+# and fails with the missing name in the message.
+let listed = [
+  print, repr,
+  type, len, str, int, float,
+  range, map, filter, reduce, push, concat, first, rest, reverse, sort, contains,
+  keys, values, get, set,
+  split, join, upper, lower, trim,
+]
+print(len(listed))
+print(listed |> filter(fn(f) { type(f) == "function" }) |> len)

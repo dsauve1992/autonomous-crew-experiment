@@ -157,6 +157,7 @@ class Lexer:
         while True:
             if self.i >= len(self.text):
                 raise SyntaxError_("unterminated string", pos, self.src)
+            at = self.here()
             ch = self.advance()
             if ch == '"':
                 return Token("str", out, pos)
@@ -167,7 +168,9 @@ class Lexer:
                     raise SyntaxError_("unterminated string", pos, self.src)
                 esc = self.advance()
                 if esc not in ESCAPES:
-                    raise self.error(f"unknown escape '\\{esc}'")
+                    # `at` is the backslash. self.here() would be the character
+                    # after the escape, which is not the thing to look at.
+                    raise SyntaxError_(f"unknown escape '\\{esc}'", at, self.src)
                 out += ESCAPES[esc]
             else:
                 out += ch

@@ -1,0 +1,2 @@
+# Keywords are not identifiers, so this cannot be a binding.
+let if = 1
