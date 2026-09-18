@@ -1,0 +1,7 @@
+42 2.5 true nil
+[1, "a"] {"a": nil}
+plain "plain"
+"a\"b" 42 nil ["x"]
+17 17 2 -2 1 0
+1.5 3.0 2.5
+int float

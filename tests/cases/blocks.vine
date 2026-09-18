@@ -1,0 +1,37 @@
+# A block's value is its last statement's value, or nil if it is empty or ends
+# in a `let`. There is no `return`.
+print(do {
+  let a = 1
+  a + 1
+})
+print(do { })
+print(do {
+  let a = 1
+})
+let empty = fn() { }
+print(empty())
+let ends_in_let = fn() {
+  let unused = 1
+}
+print(ends_in_let())
+
+# A block, a function body and each branch of an `if` are each their own
+# scope, so none of these three leaks its name outwards.
+let outer = "kept"
+if true {
+  let outer = "then branch"
+}
+print(outer)
+if false { } else {
+  let outer = "else branch"
+}
+print(outer)
+print(do {
+  let outer = "block"
+  outer
+})
+print(outer)
+
+# `if` is an expression, and with no `else` and a false condition it is nil.
+print(if false { "no" })
+print(type(if false { "no" }))

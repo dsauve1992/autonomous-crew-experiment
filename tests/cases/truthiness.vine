@@ -1,0 +1,21 @@
+# Only nil and false are falsy: an empty result and a missing result must not
+# blur together, so 0, 0.0, "", [] and {} are all truthy.
+let says = fn(v) { if v { "truthy" } else { "falsy" } }
+print(says(nil), says(false))
+print(says(0), says(0.0), says(""), says([]), says({}))
+print(says(true), says(1), says("x"))
+
+# `and` and `or` short-circuit and return one of their operands, not a bool.
+print(0 or "unused")
+print(nil or "fallback")
+print(false and "unused")
+print(1 and "second")
+print(type(0 or true), type(nil and false))
+
+# The side that is skipped is really skipped: `boom` is an undefined name, and
+# evaluating one is a runtime error.
+print(false and boom)
+print(true or boom)
+
+# `not` always answers a bool.
+print(not nil, not false, not 0, not "", not [])

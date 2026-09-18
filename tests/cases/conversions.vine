@@ -1,0 +1,11 @@
+# str shows a value the way print does; repr shows it the way it looks nested
+# inside another value. They differ exactly where quoting does.
+print(str(42), str(2.5), str(true), str(nil))
+print(str([1, "a"]), str({a: nil}))
+print(str("plain"), repr("plain"))
+print(repr("a\"b"), repr(42), repr(nil), repr(["x"]))
+
+# int truncates towards zero and accepts surrounding space in a string.
+print(int("17"), int("  17  "), int(2.9), int(-2.9), int(true), int(false))
+print(float("1.5"), float(3), float(2.5))
+print(type(int(2.9)), type(float(3)))
