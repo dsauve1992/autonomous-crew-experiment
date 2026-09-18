@@ -1,0 +1,11 @@
+print(1)
+print(2.5)
+print("hello")
+print(true)
+print(false)
+print(nil)
+print(-3)
+print("tab:\tquote:\"")
+
+# comments are ignored
+print("after a comment")  # including trailing ones

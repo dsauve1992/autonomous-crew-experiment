@@ -1,0 +1,5 @@
+runtime error: undefined name 'y'
+ --> undefined_name.vine:2:7
+  |
+2 | print(y)
+  |       ^

@@ -1,0 +1,13 @@
+true
+false
+true
+true
+true
+false
+true
+true
+fallback
+zero is truthy
+true
+true
+int float string bool nil list map function

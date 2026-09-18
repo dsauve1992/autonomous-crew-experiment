@@ -1,0 +1,5 @@
+syntax error: unterminated string
+ --> unterminated_string.vine:1:7
+  |
+1 | print("open
+  |       ^

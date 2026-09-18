@@ -1,0 +1,22 @@
+let x = "outer"
+let show = fn() {
+  let x = "inner"
+  x
+}
+print(show())
+print(x)
+
+let counter = fn(start) {
+  fn(step) { start + step }
+}
+print(counter(10)(5))
+
+print(do {
+  let a = 2
+  a * 3
+})
+
+if true {
+  let shadowed = "block local"
+  print(shadowed)
+}

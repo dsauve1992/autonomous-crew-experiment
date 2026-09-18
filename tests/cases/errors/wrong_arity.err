@@ -1,0 +1,5 @@
+runtime error: greet expects 2 arguments, got 1
+ --> wrong_arity.vine:2:12
+  |
+2 | print(greet("solo"))
+  |            ^

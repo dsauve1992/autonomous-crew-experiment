@@ -1,0 +1,5 @@
+runtime error: map has no key "b"
+ --> missing_key.vine:2:8
+  |
+2 | print(m.b)
+  |        ^

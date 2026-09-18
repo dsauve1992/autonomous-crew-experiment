@@ -1,0 +1,5 @@
+syntax error: expected end of line between statements, found 'print'
+ --> two_statements_one_line.vine:1:10
+  |
+1 | print(1) print(2)
+  |          ^

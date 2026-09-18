@@ -1,0 +1,8 @@
+let square = fn(n) { n * n }
+print([1, 2, 3, 4, 5]
+  |> filter(fn(n) { n % 2 == 1 })
+  |> map(square)
+  |> reduce(fn(a, b) { a + b }, 0))
+print("a,b,c" |> split(",") |> reverse |> join("-"))
+print(range(5) |> map(fn(n) { n * 10 }))
+print(5 |> range |> len)

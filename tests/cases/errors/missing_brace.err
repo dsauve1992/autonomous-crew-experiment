@@ -1,0 +1,5 @@
+syntax error: expected an expression, found end of input
+ --> missing_brace.vine:3:1
+  |
+3 | 
+  | ^

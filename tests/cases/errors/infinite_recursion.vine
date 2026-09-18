@@ -1,0 +1,2 @@
+let loop = fn(n) { loop(n + 1) }
+loop(0)

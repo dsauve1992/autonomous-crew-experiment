@@ -1,0 +1,5 @@
+runtime error: division by zero
+ --> divide_by_zero.vine:2:9
+  |
+2 | print(n / 0)
+  |         ^

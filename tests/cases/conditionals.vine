@@ -1,0 +1,14 @@
+let classify = fn(n) {
+  if n < 0 {
+    "negative"
+  } else if n == 0 {
+    "zero"
+  } else {
+    "positive"
+  }
+}
+print(classify(-5), classify(0), classify(7))
+print(if true { "yes" })
+print(if false { "yes" })
+let x = if 1 < 2 { "a" } else { "b" }
+print(x)

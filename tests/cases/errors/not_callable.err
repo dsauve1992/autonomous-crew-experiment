@@ -1,0 +1,5 @@
+runtime error: cannot call int
+ --> not_callable.vine:2:2
+  |
+2 | n(1)
+  |  ^

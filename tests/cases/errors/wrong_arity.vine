@@ -1,0 +1,2 @@
+let greet = fn(first, last) { first + " " + last }
+print(greet("solo"))

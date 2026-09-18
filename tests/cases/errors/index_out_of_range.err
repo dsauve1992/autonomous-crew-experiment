@@ -1,0 +1,5 @@
+runtime error: index 7 is out of range for a list of length 3
+ --> index_out_of_range.vine:2:9
+  |
+2 | print(xs[7])
+  |         ^

@@ -1,0 +1,16 @@
+let m = {name: "vine", version: 1}
+print(m)
+print(m.name)
+print(m["version"])
+print(keys(m))
+print(values(m))
+print(get(m, "missing", "default"))
+print(get(m, "missing"))
+print(set(m, "version", 2))
+print(m)
+print(len(m))
+print(contains(m, "name"))
+print({})
+print({"quoted key": true, 1: "int key"})
+let nested = {outer: {inner: [1, 2]}}
+print(nested.outer.inner[1])

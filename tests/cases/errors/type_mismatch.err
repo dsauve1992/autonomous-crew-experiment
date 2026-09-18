@@ -1,0 +1,5 @@
+runtime error: cannot add string and int
+ --> type_mismatch.vine:2:13
+  |
+2 | print(label + 3)
+  |             ^

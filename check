@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# The one command that says whether Vine works. Run it before every commit.
+set -e
+cd "$(dirname "$0")"
+python3 tests/run.py "$@"

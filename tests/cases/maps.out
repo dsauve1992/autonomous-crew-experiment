@@ -1,0 +1,14 @@
+{"name": "vine", "version": 1}
+vine
+1
+["name", "version"]
+["vine", 1]
+default
+nil
+{"name": "vine", "version": 2}
+{"name": "vine", "version": 1}
+2
+true
+{}
+{"quoted key": true, 1: "int key"}
+2

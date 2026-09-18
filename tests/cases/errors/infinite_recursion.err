@@ -1,0 +1,5 @@
+runtime error: call depth exceeded 500 (infinite recursion?)
+ --> infinite_recursion.vine:1:24
+  |
+1 | let loop = fn(n) { loop(n + 1) }
+  |                        ^
