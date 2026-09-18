@@ -17,7 +17,7 @@ let by_region = reduce(orders, fn(acc, order) {
   set(acc, order.region, get(acc, order.region, 0.0) + total(order))
 }, {})
 
-let line = fn(region) { region + ": " + str(by_region[region]) }
+let line = fn(region) { "{region}: {by_region[region]}" }
 
 print("revenue by region")
 print(keys(by_region) |> sort |> map(line) |> join("\n"))
@@ -26,5 +26,5 @@ let biggest = reduce(orders, fn(best, order) {
   if total(order) > total(best) { order } else { best }
 }, first(orders))
 
-print("largest single order: " + biggest.item + " in " + biggest.region)
-print("orders over 5.0: " + str(len(filter(orders, fn(o) { total(o) > 5.0 }))))
+print("largest single order: {biggest.item} in {biggest.region}")
+print("orders over 5.0: {len(filter(orders, fn(o) { total(o) > 5.0 }))}")
