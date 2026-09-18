@@ -101,12 +101,31 @@ class Lexer:
         out = []
         while True:
             saw_newline = self.skip_trivia()
-            if saw_newline and not self.suppressing() and out:
+            if saw_newline and not self.suppressing() and out and not self.continues():
                 out.append(Token("nl", None, self.here()))
             if self.i >= len(self.text):
                 out.append(Token("eof", None, self.here()))
                 return out
             out.append(self.next_token())
+
+    def continues(self):
+        """True when the next line picks up the previous one, not a new one.
+
+        A pipeline written down the page is the idiom the whole language is
+        built around, and both docs/spec.md and README.md show one at the top
+        level:
+
+            orders
+              |> map(total)
+              |> reduce(add, 0.0)
+
+        Without this the newline after `orders` ends the statement and the next
+        line starts with an infix operator, which is a syntax error. `|>` is
+        the only operator treated this way, and it can be: no expression begins
+        with it, so a line that starts with `|>` can only be a continuation.
+        `-` could never have this, being a prefix operator too.
+        """
+        return self.text.startswith("|>", self.i)
 
     def skip_trivia(self):
         """Consume whitespace and comments. Returns True if a newline was passed."""

@@ -6,3 +6,17 @@ print([1, 2, 3, 4, 5]
 print("a,b,c" |> split(",") |> reverse |> join("-"))
 print(range(5) |> map(fn(n) { n * 10 }))
 print(5 |> range |> len)
+
+# A pipeline written down the page at the top level: a line that starts with
+# `|>` continues the line before it. This is the shape both docs/spec.md and
+# README.md show, and until tick 3 it was a syntax error.
+[1, 2, 3]
+  |> map(square)
+  |> reduce(fn(a, b) { a + b }, 0)
+  |> str
+  |> print
+
+range(3)
+  # a comment between two stages is still the same statement
+  |> len
+  |> print

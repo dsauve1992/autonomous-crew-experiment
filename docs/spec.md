@@ -23,6 +23,10 @@ python3 -m vine -e 'print(1+1)' # run one line
 - Newlines separate statements. Inside `(` `)` and `[` `]` they are ignored, so
   an expression may wrap across lines; inside `{` `}` they matter again, because
   a block's statements need separating.
+- A line ending in an infix operator continues onto the next line, and a line
+  *beginning* with `|>` continues the line before it — which is how a pipeline
+  is written down the page. `|>` is the only operator that works from the left,
+  and it can be, because no expression starts with one.
 - Identifiers are `[A-Za-z_][A-Za-z0-9_]*`.
 - Keywords: `let fn if else do true false nil and or not`.
 - Numbers are `123` (int) or `1.5` (float). There is no exponent syntax yet.

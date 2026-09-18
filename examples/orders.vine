@@ -1,0 +1,14 @@
+# The example on the front of README.md, so that the first Vine anyone reads
+# is Vine that runs. It did not, until tick 3: a pipeline written down the page
+# at the top level was a syntax error, and every pipeline in this directory
+# happened to be wrapped in a call, where newlines are suppressed anyway.
+
+let orders = [
+  {region: "north", qty: 12, unit: 0.25},
+  {region: "south", qty: 40, unit: 0.5},
+]
+
+orders
+  |> map(fn(o) { o.qty * o.unit })
+  |> reduce(fn(a, b) { a + b }, 0.0)
+  |> print
