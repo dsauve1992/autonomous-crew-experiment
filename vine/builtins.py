@@ -74,6 +74,10 @@ def _int(interp, pos, args):
     if kind == "int":
         return value
     if kind == "float":
+        # nan and inf have no int to convert to, and Python says so by raising
+        # -- which would reach the user as a traceback.
+        if value != value or value in (float("inf"), float("-inf")):
+            interp.fail(f"cannot convert {to_display(value)} to an int", pos)
         return int(value)
     if kind == "bool":
         return 1 if value else 0
@@ -90,7 +94,10 @@ def _float(interp, pos, args):
     value = args[0]
     kind = type_name(value)
     if kind in ("int", "float"):
-        return float(value)
+        try:
+            return float(value)
+        except OverflowError:  # an int with more digits than a float can hold
+            interp.fail("int is too large to convert to a float", pos)
     if kind == "string":
         try:
             return float(value.strip())

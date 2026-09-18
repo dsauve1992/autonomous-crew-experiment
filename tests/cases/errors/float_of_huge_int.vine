@@ -1,0 +1,4 @@
+# An int may have more digits than a float can hold. Python raises
+# OverflowError, which reached the user as a traceback until float() caught it.
+let huge = reduce(range(400), fn(a, b) { a * 10 }, 1)
+float(huge)

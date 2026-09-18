@@ -1,0 +1,3 @@
+# The other half of the same guard. A guard nothing has watched fire does not
+# work -- so both halves get a case.
+int(float("inf"))

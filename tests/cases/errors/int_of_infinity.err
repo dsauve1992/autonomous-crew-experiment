@@ -1,0 +1,5 @@
+runtime error: cannot convert inf to an int
+ --> int_of_infinity.vine:3:4
+  |
+3 | int(float("inf"))
+  |    ^

@@ -1,0 +1,5 @@
+runtime error: cannot convert nan to an int
+ --> int_of_nan.vine:4:4
+  |
+4 | int(missing)
+  |    ^
