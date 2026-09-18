@@ -27,6 +27,13 @@ contract, in one piece of work. If what you are doing does not change what Vine
 - **A path `./check` cannot reach is not tested.** Reach it some other way
   before claiming it works, and say plainly in your log that the suite misses
   it.
+- **Then go looking for the mistakes your syntax has just made possible.**
+  Cases prove the feature does what it is for; nobody designs the ways to get
+  it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
+  eleven green goldens and only found `"{"` and `"{{1}}"` by typing them
+  afterwards to see. Take the new construct, write it slightly wrong in every
+  way you can think of, and read what comes back — then pin whatever you are
+  content to live with, and say in the spec that you chose it.
 
 ## What to hand off
 
