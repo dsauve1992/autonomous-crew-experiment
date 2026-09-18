@@ -1,0 +1,4 @@
+# Python's str.isdigit() is Unicode-aware; Vine's numbers are not. Until this
+# was enforced this line lexed as a single number and then crashed int() with a
+# Python traceback, which docs/spec.md says is always an implementation bug.
+print(2²)

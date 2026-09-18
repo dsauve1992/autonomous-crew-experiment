@@ -1,0 +1,5 @@
+syntax error: unexpected character 'é'
+ --> non_ascii_identifier.vine:3:8
+  |
+3 | let café = 1
+  |        ^

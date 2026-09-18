@@ -1,0 +1,5 @@
+syntax error: unexpected character '²'
+ --> non_ascii_digit.vine:4:8
+  |
+4 | print(2²)
+  |        ^

@@ -1,0 +1,3 @@
+# Identifiers are [A-Za-z_][A-Za-z0-9_]*, so this is not one -- even though
+# Python's str.isalpha(), which the lexer used to call, accepts it.
+let café = 1

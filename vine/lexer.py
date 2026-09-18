@@ -34,6 +34,14 @@ OPERATORS = [
 
 ESCAPES = {"n": "\n", "t": "\t", "r": "\r", '"': '"', "\\": "\\"}
 
+# Identifiers are [A-Za-z_][A-Za-z0-9_]* and numbers are ASCII digits, exactly
+# as docs/spec.md says. Python's own str.isalpha/isdigit are Unicode-aware and
+# would silently widen both: `café` would lex as an identifier, and `2²` would
+# lex as a number and then crash int() with a Python traceback.
+DIGITS = frozenset("0123456789")
+IDENT_START = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
+IDENT_REST = IDENT_START | DIGITS
+
 
 @dataclass
 class Token:
@@ -112,11 +120,11 @@ class Lexer:
     def next_token(self):
         pos = self.here()
         ch = self.peek()
-        if ch.isdigit():
+        if ch in DIGITS:
             return self.number(pos)
         if ch == '"':
             return self.string(pos)
-        if ch.isalpha() or ch == "_":
+        if ch in IDENT_START:
             return self.word(pos)
         for op in OPERATORS:
             if self.text.startswith(op, self.i):
@@ -134,11 +142,11 @@ class Lexer:
 
     def number(self, pos):
         digits = ""
-        while self.peek().isdigit():
+        while self.peek() in DIGITS:
             digits += self.advance()
-        if self.peek() == "." and self.peek(1).isdigit():
+        if self.peek() == "." and self.peek(1) in DIGITS:
             digits += self.advance()
-            while self.peek().isdigit():
+            while self.peek() in DIGITS:
                 digits += self.advance()
             return Token("num", float(digits), pos)
         return Token("num", int(digits), pos)
@@ -166,7 +174,7 @@ class Lexer:
 
     def word(self, pos):
         name = ""
-        while self.peek().isalnum() or self.peek() == "_":
+        while self.peek() in IDENT_REST:
             name += self.advance()
         return Token("kw" if name in KEYWORDS else "ident", name, pos)
 
