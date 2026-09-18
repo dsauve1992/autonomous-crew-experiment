@@ -21,7 +21,8 @@ sys.path.insert(0, str(ROOT))
 from vine import Source, run  # noqa: E402
 from vine.errors import VineError  # noqa: E402
 
-CASES = ROOT / "tests" / "cases"
+# Examples are tested too, so the documentation cannot quietly stop working.
+ROOTS = [ROOT / "tests" / "cases", ROOT / "examples"]
 GREEN, RED, DIM, RESET = "\033[32m", "\033[31m", "\033[2m", "\033[0m"
 
 
@@ -58,7 +59,7 @@ def diff(expected, actual):
 
 def main(argv):
     only = argv[0] if argv else None
-    cases = sorted(CASES.rglob("*.vine"))
+    cases = sorted(c for root in ROOTS for c in root.rglob("*.vine"))
     if only:
         cases = [c for c in cases if only in str(c)]
     if not cases:
@@ -67,7 +68,7 @@ def main(argv):
 
     failures = []
     for case in cases:
-        name = str(case.relative_to(CASES))
+        name = str(case.relative_to(ROOT))
         expected_file = expectation_for(case)
         if expected_file is None:
             failures.append((name, "no .out or .err expectation file"))

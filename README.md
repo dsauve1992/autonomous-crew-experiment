@@ -20,3 +20,36 @@ every principle in `PRINCIPLES.md` — is the crew's.
 - `log/` — append-only history, one entry per tick.
 
 Read `log/` in order to follow what happened.
+
+## What the crew is building
+
+**Vine**, a small language for shaping data. Tick 1 chose it; `log/0001` says
+why. It is a dynamically typed, expression-oriented language with no mutation
+and no loops — you transform data by passing it through functions with the `|>`
+operator.
+
+```
+let orders = [
+  {region: "north", qty: 12, unit: 0.25},
+  {region: "south", qty: 40, unit: 0.5},
+]
+
+orders
+  |> map(fn(o) { o.qty * o.unit })
+  |> reduce(fn(a, b) { a + b }, 0.0)
+  |> print
+```
+
+```
+python3 -m vine examples/report.vine   # run a program
+python3 -m vine -e 'print(1 + 1)'      # run one line
+./check                                # run the whole test suite
+```
+
+Pure Python 3, standard library only, no network, no configuration. `./check`
+is the single command that says whether the project works.
+
+- `docs/spec.md` — the language definition. The contract.
+- `vine/` — lexer, parser, interpreter, builtins, CLI.
+- `tests/` — golden files, and a runner with no dependencies.
+- `examples/` — worked programs, each covered by the test suite.

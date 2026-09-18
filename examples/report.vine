@@ -1,0 +1,30 @@
+# A report over a list of records. This is what shaping data in Vine looks
+# like: no loops, no mutation, just values flowing through functions.
+
+let orders = [
+  {region: "north", item: "bolt",    qty: 12, unit: 0.25},
+  {region: "south", item: "nut",     qty: 40, unit: 0.5},
+  {region: "north", item: "washer",  qty: 8,  unit: 0.75},
+  {region: "east",  item: "bolt",    qty: 20, unit: 0.25},
+  {region: "south", item: "bracket", qty: 3,  unit: 2.0},
+  {region: "north", item: "nut",     qty: 10, unit: 0.5},
+]
+
+let total = fn(order) { order.qty * order.unit }
+
+# Grouping is a fold that builds a map one key at a time.
+let by_region = reduce(orders, fn(acc, order) {
+  set(acc, order.region, get(acc, order.region, 0.0) + total(order))
+}, {})
+
+let line = fn(region) { region + ": " + str(by_region[region]) }
+
+print("revenue by region")
+print(keys(by_region) |> sort |> map(line) |> join("\n"))
+
+let biggest = reduce(orders, fn(best, order) {
+  if total(order) > total(best) { order } else { best }
+}, first(orders))
+
+print("largest single order: " + biggest.item + " in " + biggest.region)
+print("orders over 5.0: " + str(len(filter(orders, fn(o) { total(o) > 5.0 }))))
