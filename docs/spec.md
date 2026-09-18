@@ -1,4 +1,4 @@
-# The Vine language, v0.1
+# The Vine language, v0.2
 
 This is the contract. If the implementation and this document disagree, one of
 them is a bug — decide which, fix it, and say so in the commit.
@@ -30,7 +30,8 @@ python3 -m vine -e 'print(1+1)' # run one line
 - Identifiers are `[A-Za-z_][A-Za-z0-9_]*`.
 - Keywords: `let fn if else do true false nil and or not`.
 - Numbers are `123` (int) or `1.5` (float). There is no exponent syntax yet.
-- Strings are double-quoted. Escapes: `\n \t \r \" \\`. No interpolation yet.
+- Strings are double-quoted and do not span lines. Escapes: `\n \t \r \" \\
+  \{ \}`. A `{` opens a string interpolation — see Strings.
 
 ## Types
 
@@ -105,6 +106,63 @@ Calls nested more than 500 deep are reported as runaway recursion.
 
 In a map literal a bare identifier key is shorthand for that name as a string,
 so `{name: 1}` and `{"name": 1}` are the same map.
+
+### Strings
+
+A string is double-quoted and cannot span lines. `{` opens an
+**interpolation**: the expression inside is evaluated and its value spliced in.
+
+```
+let region = "north"
+let totals = {north: 14.0}
+"{region}: {totals[region]}"          # "north: 14.0"
+```
+
+A hole holds exactly one expression. `"{}"` and `"{x y}"` are both syntax
+errors.
+
+Four decisions, and the reasons, because syntax is the part that cannot be
+taken back later:
+
+- **Every string interpolates; there is no prefix.** A language for shaping
+  data ends by turning data into text, so this is the ordinary way to write a
+  string rather than a mode to opt into. The price is that `{` is special in
+  every string — `"{"` on its own is now an error rather than a brace. That is
+  paid once, loudly, at the character that changed meaning. An `f"..."` prefix
+  would have charged a smaller amount on every string forever, and made the
+  common case the one with extra ceremony on it.
+- **A hole holds any expression, not just a name.** The example above needs
+  `totals[region]`, and `region + ": " + str(totals[region])` is precisely what
+  interpolation exists to replace; a name-only rule would have forced a `let`
+  for every computed value. It is also the smaller implementation, not the
+  larger: a hole's expression is lexed in the ordinary token stream, so
+  "any expression" is the *absence* of a restriction.
+- **A literal brace is `\{`.** Not `{{` — doubling is hardest to read exactly
+  where it matters, next to a real hole. A lone `}` needs no escape, because
+  outside a hole there is nothing for it to close; `\}` is accepted anyway,
+  since someone who escapes one brace will reach for the other, and "unknown
+  escape" is a poor answer to a reasonable guess.
+- **The value is converted the way `str` converts it, not `repr`.**
+  `"hi, {name}"` must produce `hi, vine`, not `hi, "vine"`; quoting every
+  string hole would need undoing at almost every use. So `"{x}"` and `str(x)`
+  can never disagree, and the other conversion stays one call away as
+  `"{repr(x)}"`.
+
+A hole is an ordinary piece of the program, so a failure inside one is an
+ordinary error, pointing into the string at the part that failed:
+
+```
+runtime error: cannot add string and int
+ --> report.vine:2:22
+  |
+2 | print("value: {label + 1}")
+  |                      ^
+```
+
+A hole may contain a string, which may contain a hole. It may not contain a
+newline: a string does not span lines, so a line ending inside a hole is an
+unterminated string rather than an unfinished expression — including at a
+prompt, where the entry is not continued.
 
 ### Operators, loosest binding first
 
@@ -195,6 +253,11 @@ if cond { ... } else if cond { ... } else { ... }
   and errors *is* the output.
 - **Ctrl-C** abandons what is half-typed or half-running and returns to the
   `>>> ` prompt. **Ctrl-D** ends the session.
+- **The opening banner carries no version**; `vine --version` does. Settled in
+  tick 4: while the banner printed it, every REPL transcript in `tests/`
+  asserted a version none of them was testing, and a release meant rewriting
+  them all at once — a batch of mechanical golden edits is the one thing a
+  hand-written suite must not require of itself.
 
 Each entry is its own source, named `<repl:n>`, so an error inside a function
 quotes the line that function was written on even if that was twenty entries
@@ -237,10 +300,13 @@ report above on stderr. A problem with the command line itself — an unreadable
 file, or `-e` with nothing after it — exits 2 and is reported as `error: ...`
 with no position, because nothing has been parsed to have a position in.
 
-## Not in v0.1
+## Not in v0.2
 
-Deliberately absent, roughly in the order they look worth adding: string
-interpolation, early `return`, a module/import system, a `match` expression,
-user-defined operators, and a bytecode compiler. Anything here is fair game for
-a later tick — but adding one means adding its tests and updating this file in
-the same commit.
+Deliberately absent, roughly in the order they look worth adding: early
+`return`, a module/import system, a `match` expression, user-defined operators,
+and a bytecode compiler. Anything here is fair game for a later tick — but
+adding one means adding its tests and updating this file in the same commit.
+
+Nothing has ever audited these claims of absence. They are cheap to check and
+worth little until someone adds one of the features, which is why tick 3 left
+them and tick 4 did too.
