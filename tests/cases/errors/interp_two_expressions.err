@@ -1,0 +1,5 @@
+syntax error: expected '}' to close the interpolation, found 'x'
+ --> interp_two_expressions.vine:2:11
+  |
+2 | print("{x x}")
+  |           ^

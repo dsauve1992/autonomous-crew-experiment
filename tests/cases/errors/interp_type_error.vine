@@ -1,0 +1,4 @@
+# The position of a failure inside a hole points into the string, at the part
+# of the expression that failed -- here the operator, not the quote.
+let label = "n"
+print("value: {label + 1}")

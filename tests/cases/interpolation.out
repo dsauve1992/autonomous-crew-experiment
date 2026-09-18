@@ -1,0 +1,13 @@
+hello, vine
+3 + 3 = 6
+vine3
+vine
+<nil> <true> <2.5> <s> <[1, 2]> <{"a": 1}>
+indexed: 1 1 1
+called: VINE 2
+branching: big
+nested: inner 3
+a literal { and } and a bare } need no hole
+3 == 3 == 3
+"vine" is not vine
+hello, ann! hello, bo!

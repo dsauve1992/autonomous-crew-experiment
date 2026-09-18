@@ -1,0 +1,3 @@
+# A string cannot span lines, so neither can an interpolation inside one.
+let s = "count: {1 +
+  1}"

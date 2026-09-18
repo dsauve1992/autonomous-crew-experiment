@@ -32,7 +32,24 @@ OPERATORS = [
     ".",
 ]
 
-ESCAPES = {"n": "\n", "t": "\t", "r": "\r", '"': '"', "\\": "\\"}
+# `\{` is how a literal brace is written, now that a bare one opens a hole.
+# `\}` is accepted for symmetry: a bare `}` outside a hole is already literal,
+# but someone who escapes the open brace will reach for the close one too, and
+# "unknown escape" is a poor answer to a reasonable guess.
+ESCAPES = {
+    "n": "\n",
+    "t": "\t",
+    "r": "\r",
+    '"': '"',
+    "\\": "\\",
+    "{": "{",
+    "}": "}",
+}
+
+# Which opener a closer is allowed to pop off the bracket stack. Popping on any
+# closer would let `)` end a string interpolation, and the lexer would carry on
+# in the wrong mode.
+OPENER = {")": "(", "]": "[", "}": "{"}
 
 # Identifiers are [A-Za-z_][A-Za-z0-9_]* and numbers are ASCII digits, exactly
 # as docs/spec.md says. Python's own str.isalpha/isdigit are Unicode-aware and
@@ -45,7 +62,9 @@ IDENT_REST = IDENT_START | DIGITS
 
 @dataclass
 class Token:
-    kind: str  # 'num' | 'str' | 'ident' | 'kw' | 'op' | 'eof'
+    # 'num' | 'str' | 'ident' | 'kw' | 'op' | 'nl' | 'eof', plus the three
+    # an interpolated string becomes: 'istr' | 'ichunk' | 'iend'. See chunk().
+    kind: str
     value: object
     pos: Pos
 
@@ -61,14 +80,19 @@ class Lexer:
         self.line = 1
         self.col = 1
         # One entry per bracket still open: (suppress newlines?, the bracket,
-        # where it was opened). Inside ( ) or [ ] an expression may wrap
-        # freely, so newlines are suppressed there -- but a { } block nested
-        # inside them (a function body, say) needs them back, so this is a
-        # stack of flags rather than a depth counter. What is left on it when
-        # the input ends is the list of brackets nobody closed, which is what
-        # the parser needs to blame the right character for running out of
-        # input.
+        # where it was opened, is it a string interpolation?). Inside ( ) or
+        # [ ] an expression may wrap freely, so newlines are suppressed there
+        # -- but a { } block nested inside them (a function body, say) needs
+        # them back, so this is a stack of flags rather than a depth counter.
+        # What is left on it when the input ends is the list of brackets
+        # nobody closed, which is what the parser needs to blame the right
+        # character for running out of input.
         self.brackets = []
+        # One Pos per interpolated string currently open, innermost last.
+        # Non-empty means the lexer is inside a `{...}` hole: chunks of
+        # literal text are read to completion the moment they begin, so there
+        # is no third state to be in.
+        self.strings = []
 
     def error(self, message):
         return SyntaxError_(message, self.here(), self.src)
@@ -95,18 +119,26 @@ class Lexer:
 
     def unclosed(self):
         """The brackets still open, outermost first, once tokenizing is done."""
-        return [(bracket, pos) for _, bracket, pos in self.brackets]
+        return [(b, pos) for _, b, pos, hole in self.brackets if not hole]
 
     def tokens(self):
         out = []
         while True:
             saw_newline = self.skip_trivia()
+            if self.strings and saw_newline:
+                raise self.unterminated()
             if saw_newline and not self.suppressing() and out and not self.continues():
                 out.append(Token("nl", None, self.here()))
             if self.i >= len(self.text):
+                if self.strings:
+                    raise self.unterminated()
                 out.append(Token("eof", None, self.here()))
                 return out
-            out.append(self.next_token())
+            self.next_token(out)
+
+    def unterminated(self):
+        """The innermost open string ran off the end of its line."""
+        return SyntaxError_("unterminated string", self.strings[-1], self.src)
 
     def continues(self):
         """True when the next line picks up the previous one, not a new one.
@@ -144,27 +176,36 @@ class Lexer:
                 break
         return saw_newline
 
-    def next_token(self):
+    def next_token(self, out):
+        """Lex one token -- or, for a string, the several a string becomes."""
         pos = self.here()
         ch = self.peek()
         if ch in DIGITS:
-            return self.number(pos)
+            out.append(self.number(pos))
+            return
         if ch == '"':
-            return self.string(pos)
+            self.advance()
+            self.chunk(pos, out, None)
+            return
         if ch in IDENT_START:
-            return self.word(pos)
+            out.append(self.word(pos))
+            return
         for op in OPERATORS:
             if self.text.startswith(op, self.i):
                 for _ in op:
                     self.advance()
                 if op in ("(", "["):
-                    self.brackets.append((True, op, pos))
+                    self.brackets.append((True, op, pos, False))
                 elif op == "{":
-                    self.brackets.append((False, op, pos))
-                elif op in (")", "]", "}"):
-                    if self.brackets:
-                        self.brackets.pop()
-                return Token("op", op, pos)
+                    self.brackets.append((False, op, pos, False))
+                elif self.brackets and self.brackets[-1][1] == OPENER.get(op):
+                    was_hole = self.brackets.pop()[3]
+                    if was_hole:
+                        # `}` ended an interpolation: back to reading text.
+                        self.chunk(self.strings[-1], out, pos)
+                        return
+                out.append(Token("op", op, pos))
+                return
         raise self.error(f"unexpected character {ch!r}")
 
     def number(self, pos):
@@ -178,29 +219,53 @@ class Lexer:
             return Token("num", float(digits), pos)
         return Token("num", int(digits), pos)
 
-    def string(self, pos):
-        self.advance()  # opening quote
-        out = ""
+    def chunk(self, quote, out, after):
+        """Read literal text up to the next hole or the closing quote.
+
+        `quote` is where the string opened. `after` is None for the text that
+        follows the opening quote and the Pos of the `}` that ended the
+        previous hole otherwise -- which is also the token stream's shape: a
+        plain string is one `str` token exactly as before, and an interpolated
+        one is `istr` (the text before the first hole), then the tokens of each
+        hole's expression followed by the `ichunk` of text after it, then
+        `iend`. The parser never has to know where a hole's expression stops;
+        the lexer, which is already counting brackets, tells it.
+        """
+        text = ""
         while True:
             if self.i >= len(self.text):
-                raise SyntaxError_("unterminated string", pos, self.src)
+                raise SyntaxError_("unterminated string", quote, self.src)
             at = self.here()
             ch = self.advance()
             if ch == '"':
-                return Token("str", out, pos)
+                if after is None:
+                    out.append(Token("str", text, quote))
+                else:
+                    out.append(Token("ichunk", text, after))
+                    out.append(Token("iend", None, at))
+                    self.strings.pop()
+                return
+            if ch == "{":
+                if after is None:
+                    out.append(Token("istr", text, quote))
+                    self.strings.append(quote)
+                else:
+                    out.append(Token("ichunk", text, after))
+                self.brackets.append((False, "{", at, True))
+                return
             if ch == "\n":
-                raise SyntaxError_("unterminated string", pos, self.src)
+                raise SyntaxError_("unterminated string", quote, self.src)
             if ch == "\\":
                 if self.i >= len(self.text):
-                    raise SyntaxError_("unterminated string", pos, self.src)
+                    raise SyntaxError_("unterminated string", quote, self.src)
                 esc = self.advance()
                 if esc not in ESCAPES:
                     # `at` is the backslash. self.here() would be the character
                     # after the escape, which is not the thing to look at.
                     raise SyntaxError_(f"unknown escape '\\{esc}'", at, self.src)
-                out += ESCAPES[esc]
+                text += ESCAPES[esc]
             else:
-                out += ch
+                text += ch
 
     def word(self, pos):
         name = ""

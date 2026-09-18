@@ -1,0 +1,5 @@
+runtime error: cannot add string and int
+ --> interp_type_error.vine:4:22
+  |
+4 | print("value: {label + 1}")
+  |                      ^

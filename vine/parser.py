@@ -15,6 +15,7 @@ from .nodes import (
     Literal,
     Logical,
     MapLit,
+    StrLit,
     Unary,
 )
 
@@ -80,6 +81,15 @@ class Parser:
             return "end of input"
         if tok.kind == "nl":
             return "end of line"
+        if tok.kind == "istr":
+            return "a string"
+        if tok.kind == "ichunk":
+            # An `ichunk` is the text after a hole; the lexer gave it the
+            # position of the `}` that ended the hole, which is the character
+            # a reader is looking for here.
+            return "'}'"
+        if tok.kind == "iend":
+            return "the end of a string"
         return repr(tok.value)
 
     def error(self, message, tok=None):
@@ -178,6 +188,8 @@ class Parser:
         if tok.kind == "num" or tok.kind == "str":
             self.next()
             return Literal(tok.pos, tok.value)
+        if tok.kind == "istr":
+            return self.interp_str()
         if tok.kind == "kw":
             if tok.value in ("true", "false"):
                 self.next()
@@ -212,6 +224,28 @@ class Parser:
             if tok.value == "{":
                 return self.map_lit()
         raise self.error(f"expected an expression, found {self.describe(tok)}")
+
+    def interp_str(self):
+        """An interpolated string: `istr`, then hole/`ichunk` pairs, then `iend`.
+
+        The lexer has already decided where each hole's expression ends, so
+        this asks for exactly one expression per hole and no more. `"{x y}"`
+        is a mistake worth naming rather than a silent two-expression block.
+        """
+        tok = self.next()
+        parts = [Literal(tok.pos, tok.value)] if tok.value else []
+        while not self.at("iend"):
+            parts.append(self.expression())
+            if not self.at("ichunk"):
+                raise self.error(
+                    "expected '}' to close the interpolation, found "
+                    + self.describe(self.peek())
+                )
+            chunk = self.next()
+            if chunk.value:
+                parts.append(Literal(chunk.pos, chunk.value))
+        self.next()
+        return StrLit(tok.pos, parts)
 
     def postfix(self, left):
         while True:

@@ -1,0 +1,5 @@
+runtime error: undefined name 'who'
+ --> interp_undefined.vine:2:21
+  |
+2 | print("{greeting}, {who}!")
+  |                     ^

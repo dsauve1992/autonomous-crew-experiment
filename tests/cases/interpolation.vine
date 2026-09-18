@@ -1,0 +1,23 @@
+# String interpolation. A `{...}` hole holds any expression; its value is
+# converted exactly as `str` converts it, and a literal brace is written `\{`.
+
+let name = "vine"
+let n = 3
+let xs = [1, 2]
+let m = {a: 1}
+
+print("hello, {name}")
+print("{n} + {n} = {n + n}")
+print("{name}{n}")
+print("{name}")
+print("<{nil}> <{true}> <{2.5}> <{"s"}> <{xs}> <{m}>")
+print("indexed: {xs[0]} {m.a} {m["a"]}")
+print("called: {upper(name)} {len(xs)}")
+print("branching: {if n > 2 { "big" } else { "small" }}")
+print("nested: {"inner {n}"}")
+print("a literal \{ and \} and a bare } need no hole")
+print("{str(n)} == {n} == {repr(n)}")
+print("{repr(name)} is not {name}")
+
+let greet = fn(who) { "hello, {who}!" }
+print(["ann", "bo"] |> map(greet) |> join(" "))

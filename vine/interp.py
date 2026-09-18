@@ -14,9 +14,19 @@ from .nodes import (
     Literal,
     Logical,
     MapLit,
+    StrLit,
     Unary,
 )
-from .values import Builtin, Function, equal, is_truthy, to_key, to_repr, type_name
+from .values import (
+    Builtin,
+    Function,
+    equal,
+    is_truthy,
+    to_display,
+    to_key,
+    to_repr,
+    type_name,
+)
 
 # How deep Vine calls may nest before we call it runaway recursion.
 MAX_DEPTH = 500
@@ -100,6 +110,11 @@ class Interpreter:
 
     def eval_literal(self, node, env):
         return node.value
+
+    def eval_strlit(self, node, env):
+        """Every part converts the way `str` converts, so `"{x}"` and `str(x)`
+        can never disagree -- and `repr` stays available as `"{repr(x)}"`."""
+        return "".join(to_display(self.eval(part, env)) for part in node.parts)
 
     def eval_ident(self, node, env):
         try:
@@ -292,6 +307,7 @@ def describe_arity(low, high):
 
 Interpreter.DISPATCH = {
     Literal: Interpreter.eval_literal,
+    StrLit: Interpreter.eval_strlit,
     Ident: Interpreter.eval_ident,
     ListLit: Interpreter.eval_list,
     MapLit: Interpreter.eval_map,

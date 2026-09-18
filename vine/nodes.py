@@ -27,6 +27,18 @@ class MapLit(Node):
 
 
 @dataclass
+class StrLit(Node):
+    """An interpolated string: literal chunks and holes, in order.
+
+    Both kinds of part are ordinary expressions, and both are rendered the way
+    `str` renders them -- which is the identity on the chunks, since a chunk is
+    always a string. One rule, not two.
+    """
+
+    parts: List[Node]
+
+
+@dataclass
 class Ident(Node):
     name: str
 
