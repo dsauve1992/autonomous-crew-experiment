@@ -1,0 +1,5 @@
+syntax error: expected a name after 'let', found the string "a"
+ --> let_string_name.vine:4:5
+  |
+4 | let "a" = 1
+  |     ^

@@ -1,0 +1,5 @@
+# Python escapes a brace by doubling it. Vine does not: the first `{` opens the
+# hole and the second is the first token inside it, where `{` opens a map
+# literal -- so `{1` is a map missing its value. `expected ':'` was true and
+# useless; the note says which of the two braces the parser is reading.
+print("{{1}}")

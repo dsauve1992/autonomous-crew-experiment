@@ -1,0 +1,7 @@
+syntax error: expected ':' after the map key, found '}'
+ --> interp_double_brace.vine:5:11
+  |
+5 | print("{{1}}")
+  |           ^
+  = note: '{' inside an interpolation opens a map literal, not an escaped brace
+  = help: a literal brace is written '\{'

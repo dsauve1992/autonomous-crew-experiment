@@ -2,13 +2,19 @@
 
 
 class Function:
-    """A closure: parameters, body, and the environment it was created in."""
+    """A closure: parameters, body, and the environment it was created in.
 
-    def __init__(self, params, body, env, name=None):
+    `pos` is where its `fn` was written. A closure is called from somewhere
+    else -- in the REPL, from an entry typed long after it -- so an arity
+    error has two places worth naming and the caret can only be at one.
+    """
+
+    def __init__(self, params, body, env, name=None, pos=None):
         self.params = params
         self.body = body
         self.env = env
         self.name = name
+        self.pos = pos
 
     @property
     def label(self):

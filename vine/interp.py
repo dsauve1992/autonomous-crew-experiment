@@ -152,7 +152,7 @@ class Interpreter:
         return None
 
     def eval_fn(self, node, env):
-        return Function(node.params, node.body, env, node.name)
+        return Function(node.params, node.body, env, node.name, node.pos)
 
     def eval_if(self, node, env):
         if is_truthy(self.eval(node.cond, env)):
@@ -272,11 +272,15 @@ class Interpreter:
             return callee.fn(self, pos, args)
         if isinstance(callee, Function):
             if len(args) != len(callee.params):
-                self.fail(
+                err = RuntimeError_(
                     f"{callee.label} expects {plural(len(callee.params))}, "
                     f"got {len(args)}",
                     pos,
+                    self.source,
                 )
+                if callee.pos is not None:
+                    err.note(f"{callee.label} is defined at {{pos}}", callee.pos)
+                raise err
             env = Env(callee.env)
             for name, value in zip(callee.params, args):
                 env.define(name, value)

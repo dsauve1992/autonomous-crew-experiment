@@ -1,0 +1,11 @@
+vine — ^D to exit, blank line to abandon an unfinished entry
+>>> let greet = fn(first, last) { "{first} {last}" }
+>>> "an entry in between"
+"an entry in between"
+>>> greet("solo")
+runtime error: greet expects 2 arguments, got 1
+ --> <repl:3>:1:6
+  |
+1 | greet("solo")
+  |      ^
+  = note: greet is defined at <repl:1>:1:13

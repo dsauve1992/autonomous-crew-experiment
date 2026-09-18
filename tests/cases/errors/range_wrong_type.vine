@@ -1,0 +1,4 @@
+# Built by want(), which glued "a " to a type name and so said "a int" for
+# three of the eight types. Every message of this shape that had a case was
+# sound; this one had none, which is where the prose bug was living.
+range("10")

@@ -1,0 +1,6 @@
+syntax error: expected ')', found the number 3
+ --> missing_comma.vine:7:3
+  |
+7 |   3
+  |   ^
+  = note: the '(' at 4:6 is still open

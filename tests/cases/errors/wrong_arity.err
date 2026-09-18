@@ -3,3 +3,4 @@ runtime error: greet expects 2 arguments, got 1
   |
 2 | print(greet("solo"))
   |            ^
+  = note: greet is defined at 1:13

@@ -1,0 +1,3 @@
+let greet = fn(first, last) { "{first} {last}" }
+"an entry in between"
+greet("solo")

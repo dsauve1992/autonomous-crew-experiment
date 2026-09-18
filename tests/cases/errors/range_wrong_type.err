@@ -1,0 +1,5 @@
+runtime error: range bound must be an int, got string
+ --> range_wrong_type.vine:4:6
+  |
+4 | range("10")
+  |      ^

@@ -1,0 +1,8 @@
+# The caret is on the token that stopped the parser. The bracket it has to
+# match may be several lines up, and counting back to it is the work the note
+# does for the reader.
+print(
+  1,
+  2
+  3
+)

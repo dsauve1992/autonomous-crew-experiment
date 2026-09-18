@@ -1,0 +1,4 @@
+# A string token was described with Python's repr, which prints 'a' -- exactly
+# how this parser prints the identifier the line is missing. A message that
+# calls a string an identifier is worse than one that says nothing.
+let "a" = 1
