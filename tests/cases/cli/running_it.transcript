@@ -18,11 +18,11 @@ exit 1
 
 $ vine -e 'print('
 --- stderr
-syntax error: expected an expression, found end of input
- --> <argument>:1:7
+syntax error: unclosed '('
+ --> <argument>:1:6
   |
 1 | print(
-  |       ^
+  |      ^
 exit 1
 
 $ vine nosuchfile.vine

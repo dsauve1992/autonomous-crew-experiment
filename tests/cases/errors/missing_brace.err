@@ -1,5 +1,5 @@
-syntax error: expected an expression, found end of input
- --> missing_brace.vine:3:1
+syntax error: unclosed '{'
+ --> missing_brace.vine:1:15
   |
-3 | 
-  | ^
+1 | let f = fn(x) { x + 1
+  |               ^

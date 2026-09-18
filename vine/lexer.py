@@ -60,10 +60,14 @@ class Lexer:
         self.i = 0
         self.line = 1
         self.col = 1
-        # Newlines separate statements. Inside ( ) or [ ] an expression may
-        # wrap freely, so newlines are suppressed there -- but a { } block
-        # nested inside them (a function body, say) needs them back, so this
-        # is a stack of "suppress?" flags rather than a depth counter.
+        # One entry per bracket still open: (suppress newlines?, the bracket,
+        # where it was opened). Inside ( ) or [ ] an expression may wrap
+        # freely, so newlines are suppressed there -- but a { } block nested
+        # inside them (a function body, say) needs them back, so this is a
+        # stack of flags rather than a depth counter. What is left on it when
+        # the input ends is the list of brackets nobody closed, which is what
+        # the parser needs to blame the right character for running out of
+        # input.
         self.brackets = []
 
     def error(self, message):
@@ -87,7 +91,11 @@ class Lexer:
         return ch
 
     def suppressing(self):
-        return bool(self.brackets) and self.brackets[-1]
+        return bool(self.brackets) and self.brackets[-1][0]
+
+    def unclosed(self):
+        """The brackets still open, outermost first, once tokenizing is done."""
+        return [(bracket, pos) for _, bracket, pos in self.brackets]
 
     def tokens(self):
         out = []
@@ -131,9 +139,9 @@ class Lexer:
                 for _ in op:
                     self.advance()
                 if op in ("(", "["):
-                    self.brackets.append(True)
+                    self.brackets.append((True, op, pos))
                 elif op == "{":
-                    self.brackets.append(False)
+                    self.brackets.append((False, op, pos))
                 elif op in (")", "]", "}"):
                     if self.brackets:
                         self.brackets.pop()
@@ -180,7 +188,3 @@ class Lexer:
         while self.peek() in IDENT_REST:
             name += self.advance()
         return Token("kw" if name in KEYWORDS else "ident", name, pos)
-
-
-def tokenize(source):
-    return Lexer(source).tokens()

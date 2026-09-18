@@ -1,0 +1,5 @@
+# Two brackets are left open here. The caret goes to the inner one: the outer
+# `(` is waiting too, but a reader fixing this file starts at the inner one.
+print(
+  fn() {
+    1

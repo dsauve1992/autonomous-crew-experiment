@@ -1,0 +1,5 @@
+syntax error: unclosed '{'
+ --> unclosed_nested.vine:4:8
+  |
+4 |   fn() {
+  |        ^

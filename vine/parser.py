@@ -1,7 +1,7 @@
 """Pratt parser: tokens in, AST out."""
 
 from .errors import SyntaxError_
-from .lexer import tokenize
+from .lexer import Lexer
 from .nodes import (
     Binary,
     Block,
@@ -42,7 +42,11 @@ POSTFIX_BP = 9
 class Parser:
     def __init__(self, source):
         self.src = source
-        self.toks = tokenize(source)
+        lexer = Lexer(source)
+        self.toks = lexer.tokens()
+        # Brackets nobody closed. Blaming one of these beats blaming the end
+        # of the file; see error().
+        self.unclosed = lexer.unclosed()
         self.i = 0
 
     # -- token helpers ----------------------------------------------------
@@ -80,7 +84,14 @@ class Parser:
 
     def error(self, message, tok=None):
         tok = tok or self.peek()
-        err = SyntaxError_(message, tok.pos, self.src)
+        pos = tok.pos
+        if tok.kind == "eof" and self.unclosed:
+            # Running out of input is rarely a problem with the last line. It
+            # is a problem with the bracket that was never closed, so quote
+            # that line and point the caret at the bracket itself.
+            bracket, pos = self.unclosed[-1]
+            message = f"unclosed '{bracket}'"
+        err = SyntaxError_(message, pos, self.src)
         # Running out of input is not the same failure as finding the wrong
         # thing: the first may just mean the user has not finished typing.
         err.at_eof = tok.kind == "eof"
