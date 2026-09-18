@@ -59,10 +59,10 @@ class Lexer:
         self.brackets = []
 
     def error(self, message):
-        return SyntaxError_(message, Pos(self.line, self.col), self.src)
+        return SyntaxError_(message, self.here(), self.src)
 
     def here(self):
-        return Pos(self.line, self.col)
+        return Pos(self.line, self.col, self.src)
 
     def peek(self, offset=0):
         j = self.i + offset

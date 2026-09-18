@@ -53,6 +53,9 @@ class Interpreter:
         self.out = out if out is not None else sys.stdout
         self.depth = 0
         self.globals = Env()
+        # The scope a program runs in. It outlives a single `run`, so a REPL
+        # can feed this interpreter one entry at a time and keep its bindings.
+        self.top = Env(self.globals)
         from .builtins import install
 
         install(self.globals)
@@ -64,15 +67,22 @@ class Interpreter:
 
     # -- entry point ------------------------------------------------------
 
-    def run(self, program):
+    def run(self, program, source=None):
+        """Evaluate `program` in the persistent top-level scope.
+
+        `source` re-points error rendering at the text this program came from,
+        for callers (the REPL) that evaluate many sources in one interpreter.
+        """
         import sys
 
+        if source is not None:
+            self.source = source
         needed = 1000 + MAX_DEPTH * PY_FRAMES_PER_CALL
         previous = sys.getrecursionlimit()
         if previous < needed:
             sys.setrecursionlimit(needed)
         try:
-            return self.eval_stmts(program, Env(self.globals))
+            return self.eval_stmts(program, self.top)
         except RecursionError:  # a belt-and-braces net; MAX_DEPTH should win
             raise RuntimeError_(
                 "evaluation nested too deeply", program.pos, self.source

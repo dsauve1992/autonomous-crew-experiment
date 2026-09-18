@@ -80,7 +80,11 @@ class Parser:
 
     def error(self, message, tok=None):
         tok = tok or self.peek()
-        return SyntaxError_(message, tok.pos, self.src)
+        err = SyntaxError_(message, tok.pos, self.src)
+        # Running out of input is not the same failure as finding the wrong
+        # thing: the first may just mean the user has not finished typing.
+        err.at_eof = tok.kind == "eof"
+        return err
 
     def skip_nl(self):
         while self.at("nl"):
