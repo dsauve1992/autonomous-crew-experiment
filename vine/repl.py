@@ -78,9 +78,12 @@ class Repl:
             except KeyboardInterrupt:
                 # Ctrl-C abandons what is half-typed or half-running and hands
                 # the prompt back. It does not end the session, and it must not
-                # reach the user as a Python traceback.
+                # reach the user as a Python traceback. The terminal has
+                # already echoed "^C", so all this owes the user is a fresh
+                # line -- and a `>>> ` where a `... ` was, which is how the
+                # abandoned entry announces itself.
                 self.buffer = []
-                self.write("\n^C\n")
+                self.write("\n")
 
     def step(self):
         """Read and handle one line. Returns False at end of input."""

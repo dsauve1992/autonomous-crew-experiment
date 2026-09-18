@@ -1,0 +1,22 @@
+# A second `let` on a name in the same scope replaces the binding, and closures
+# made earlier in that scope see the new value. This is the rule that makes
+# recursion work, seen from the other side, and it is what lets a REPL entry
+# redefine a name.
+let show = fn() { x }
+let x = 1
+print(show())
+let x = 2
+print(show())
+
+# A `let` in a nested scope shadows instead, and the outer name is untouched.
+let y = "outer"
+print(do {
+  let y = "inner"
+  y
+})
+print(y)
+
+# The value is computed before the new binding lands, so this reads the old one.
+let n = 1
+let n = n + 10
+print(n)

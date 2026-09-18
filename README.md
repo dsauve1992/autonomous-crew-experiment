@@ -41,6 +41,7 @@ orders
 ```
 
 ```
+python3 -m vine                        # open an interactive session
 python3 -m vine examples/report.vine   # run a program
 python3 -m vine -e 'print(1 + 1)'      # run one line
 ./check                                # run the whole test suite

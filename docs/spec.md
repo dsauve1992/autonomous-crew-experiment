@@ -11,6 +11,7 @@ functions, usually with the pipeline operator.
 ## Running it
 
 ```
+python3 -m vine                 # open an interactive session
 python3 -m vine script.vine     # run a file
 python3 -m vine -e 'print(1+1)' # run one line
 ./check                         # run the test suite
@@ -48,8 +49,7 @@ and a missing result as the same thing.
 let x = 1
 ```
 
-`let` introduces a name in the current scope, shadowing any outer name. There is
-no assignment operator: a binding is never changed after it is made. A block,
+`let` introduces a name in the current scope, shadowing any outer name. A block,
 a function body and each branch of an `if` are each their own scope.
 
 Recursion works because the closure captures the environment the binding lands
@@ -58,6 +58,23 @@ in, not a snapshot of it:
 ```
 let fact = fn(n) { if n <= 1 { 1 } else { n * fact(n - 1) } }
 ```
+
+There is no assignment operator, so no expression can update a name in place.
+A second `let` on the same name in the *same* scope does replace the binding,
+though, and closures made earlier in that scope then see the new value — the
+same capture-the-environment rule that makes recursion work:
+
+```
+let show = fn() { x }
+let x = 1
+show()                # 1
+let x = 2
+show()                # 2
+```
+
+Whether that should instead be an error is genuinely open; it is what lets a
+REPL entry redefine a name, and tick 2 declined to settle it while adding the
+REPL. See `log/0002`.
 
 Calls nested more than 500 deep are reported as runaway recursion.
 
@@ -130,6 +147,41 @@ if cond { ... } else if cond { ... } else { ... }
 
 `do { ... }` is a block used as an expression, for scoping intermediate names.
 
+## The REPL
+
+`python3 -m vine` with no arguments opens an interactive session.
+
+```
+>>> let x = 21
+>>> x * 2
+42
+```
+
+- **An entry's value is shown, unless it is nil.** `let` and `print` both
+  evaluate to nil and are most of what anyone types at a prompt, so echoing
+  `nil` after each would be noise. Silence means nil. The value is shown the
+  way `repr` shows it, so a string is visibly a string: `"a" + "b"` shows
+  `"ab"`, while `print("ab")` prints `ab` and shows nothing.
+- **Bindings persist**, because the session shares one top-level scope.
+  Re-binding a name works exactly as a second `let` in one scope does in a
+  file (see Bindings), and `let x = x + 1` sees the old `x`: a binding lands
+  only once its value has been computed.
+- **An unfinished entry is continued, not rejected.** If an entry ends in the
+  middle of an expression — an unclosed `{`, `(` or `[`, or a dangling
+  operator — the prompt becomes `... ` and the entry goes on until it parses.
+  A blank line abandons whatever is pending, which is the way out of an entry
+  that can never parse.
+- **An error does not end the session.** It is rendered as usual and the
+  prompt comes back. File mode writes errors to stderr; the REPL writes them
+  to its own output stream, because in a session the interleaving of results
+  and errors *is* the output.
+- **Ctrl-C** abandons what is half-typed or half-running and returns to the
+  `>>> ` prompt. **Ctrl-D** ends the session.
+
+Each entry is its own source, named `<repl:n>`, so an error inside a function
+quotes the line that function was written on even if that was twenty entries
+ago.
+
 ## Builtins
 
 Output: `print(...)` `repr(x)`
@@ -164,7 +216,7 @@ A Python traceback reaching the user is always a bug in the implementation.
 
 ## Not in v0.1
 
-Deliberately absent, roughly in the order they look worth adding: a REPL, string
+Deliberately absent, roughly in the order they look worth adding: string
 interpolation, early `return`, a module/import system, a `match` expression,
 user-defined operators, and a bytecode compiler. Anything here is fair game for
 a later tick — but adding one means adding its tests and updating this file in
