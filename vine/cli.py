@@ -7,6 +7,7 @@ from .errors import VineError
 
 USAGE = """usage: vine [options] [file]
 
+  vine                 open an interactive session
   vine script.vine     run a file
   vine -e 'EXPR'       run a single line of source
   vine --version       print the version
@@ -14,7 +15,11 @@ USAGE = """usage: vine [options] [file]
 
 
 def main(argv):
-    if not argv or argv[0] in ("-h", "--help"):
+    if not argv:
+        from .repl import repl
+
+        return repl()
+    if argv[0] in ("-h", "--help"):
         sys.stdout.write(USAGE)
         return 0
     if argv[0] in ("-v", "--version"):

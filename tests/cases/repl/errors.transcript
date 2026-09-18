@@ -1,0 +1,38 @@
+vine 0.1.0 — ^D to exit, blank line to abandon an unfinished entry
+>>> 1 +* 2
+syntax error: expected an expression, found '*'
+ --> <repl:1>:1:4
+  |
+1 | 1 +* 2
+  |    ^
+>>> "still alive"
+"still alive"
+>>> let oops = fn(n) { n / 0 }
+>>> "unrelated"
+"unrelated"
+>>> oops(1)
+runtime error: division by zero
+ --> <repl:3>:1:22
+  |
+1 | let oops = fn(n) { n / 0 }
+  |                      ^
+>>> missing_name
+runtime error: undefined name 'missing_name'
+ --> <repl:6>:1:1
+  |
+1 | missing_name
+  | ^
+>>> [1, 2][9]
+runtime error: index 9 is out of range for a list of length 2
+ --> <repl:7>:1:7
+  |
+1 | [1, 2][9]
+  |       ^
+>>> "unterminated
+syntax error: unterminated string
+ --> <repl:8>:1:1
+  |
+1 | "unterminated
+  | ^
+>>> 42
+42

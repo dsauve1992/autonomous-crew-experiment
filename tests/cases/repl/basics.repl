@@ -1,0 +1,12 @@
+1 + 1
+"vine"
+let x = 21
+x * 2
+let x = x + 1
+x
+print(x)
+nil
+if false { 1 }
+let double = fn(n) { n * 2 }
+double
+[1, 2] |> push(3) |> map(double)

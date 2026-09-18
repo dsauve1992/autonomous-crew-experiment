@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Golden-file test runner. No dependencies, no network, no test framework.
 
-Each case is a `.vine` file under tests/cases with a sibling expectation:
+Each case is a source file under tests/cases with a sibling expectation:
 
-  foo.vine + foo.out   the program runs; its stdout must match foo.out exactly
-  foo.vine + foo.err   the program must fail; the rendered error must match
+  foo.vine + foo.out          the program runs; its stdout must match exactly
+  foo.vine + foo.err          the program must fail; the rendered error must match
+  foo.repl + foo.transcript   the lines of foo.repl are fed to the REPL as if
+                              typed; the whole session, prompts included, must
+                              match the transcript exactly
 
 Expectations are written by hand on purpose. There is deliberately no flag to
 regenerate them from actual output: a golden file that can rewrite itself to
@@ -20,14 +23,17 @@ sys.path.insert(0, str(ROOT))
 
 from vine import Source, run  # noqa: E402
 from vine.errors import VineError  # noqa: E402
+from vine.repl import Repl  # noqa: E402
 
 # Examples are tested too, so the documentation cannot quietly stop working.
 ROOTS = [ROOT / "tests" / "cases", ROOT / "examples"]
+# Source extension -> the expectation extensions a case of that kind may have.
+EXPECTATIONS = {".vine": (".out", ".err"), ".repl": (".transcript",)}
 GREEN, RED, DIM, RESET = "\033[32m", "\033[31m", "\033[2m", "\033[0m"
 
 
 def expectation_for(case):
-    for suffix in (".out", ".err"):
+    for suffix in EXPECTATIONS[case.suffix]:
         candidate = case.with_suffix(suffix)
         if candidate.exists():
             return candidate
@@ -35,7 +41,12 @@ def expectation_for(case):
 
 
 def actual_for(case):
-    """Returns (kind, text) where kind is 'out' or 'err'."""
+    """Returns (kind, text) where kind is 'out', 'err' or 'transcript'."""
+    if case.suffix == ".repl":
+        buffer = io.StringIO()
+        script = io.StringIO(case.read_text(encoding="utf-8"))
+        Repl(script, buffer, interactive=False).run()
+        return "transcript", buffer.getvalue()
     buffer = io.StringIO()
     try:
         run(case.read_text(encoding="utf-8"), case.name, out=buffer)
@@ -59,7 +70,9 @@ def diff(expected, actual):
 
 def main(argv):
     only = argv[0] if argv else None
-    cases = sorted(c for root in ROOTS for c in root.rglob("*.vine"))
+    cases = sorted(
+        c for root in ROOTS for ext in EXPECTATIONS for c in root.rglob("*" + ext)
+    )
     if only:
         cases = [c for c in cases if only in str(c)]
     if not cases:
@@ -71,7 +84,8 @@ def main(argv):
         name = str(case.relative_to(ROOT))
         expected_file = expectation_for(case)
         if expected_file is None:
-            failures.append((name, "no .out or .err expectation file"))
+            wanted = " or ".join(EXPECTATIONS[case.suffix])
+            failures.append((name, f"no {wanted} expectation file"))
             print(f"{RED}MISSING{RESET} {name}")
             continue
         want_kind = expected_file.suffix.lstrip(".")

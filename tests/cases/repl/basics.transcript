@@ -1,0 +1,20 @@
+vine 0.1.0 — ^D to exit, blank line to abandon an unfinished entry
+>>> 1 + 1
+2
+>>> "vine"
+"vine"
+>>> let x = 21
+>>> x * 2
+42
+>>> let x = x + 1
+>>> x
+22
+>>> print(x)
+22
+>>> nil
+>>> if false { 1 }
+>>> let double = fn(n) { n * 2 }
+>>> double
+<fn double/1>
+>>> [1, 2] |> push(3) |> map(double)
+[2, 4, 6]
