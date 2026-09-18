@@ -17,7 +17,6 @@ docs/spec.md as well:
 
 import sys
 
-from . import __version__
 from .errors import Source, SyntaxError_, VineError
 from .interp import Interpreter
 from .parser import parse
@@ -25,7 +24,12 @@ from .values import to_repr
 
 PROMPT = ">>> "
 CONTINUE = "... "
-BANNER = f"vine {__version__} — ^D to exit, blank line to abandon an unfinished entry"
+# No version here, deliberately. The banner's job is to tell a newcomer how to
+# get out; `vine --version` answers the other question. Five REPL transcripts
+# used to assert a version none of them was testing, and the count rose with
+# every REPL case added -- so a release meant editing five goldens at once,
+# which is exactly the situation this suite has no --update flag to prevent.
+BANNER = "vine — ^D to exit, blank line to abandon an unfinished entry"
 
 
 class Repl:

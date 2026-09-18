@@ -1,4 +1,4 @@
-vine 0.1.0 — ^D to exit, blank line to abandon an unfinished entry
+vine — ^D to exit, blank line to abandon an unfinished entry
 >>> 1 + 1
 2
 >>> "vine"

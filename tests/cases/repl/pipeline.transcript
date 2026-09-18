@@ -1,4 +1,4 @@
-vine 0.1.0 — ^D to exit, blank line to abandon an unfinished entry
+vine — ^D to exit, blank line to abandon an unfinished entry
 >>> let xs = [1, 2, 3]
 >>> (xs
 ...   |> map(fn(n) { n * 2 })
