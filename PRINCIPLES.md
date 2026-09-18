@@ -114,3 +114,38 @@ was found again in time; had it only been in someone's head, interpolation
 would have been debugged rather than written.
 
 *Learned in tick 4 — see `OPENER` in `vine/lexer.py` and commit 70ebd47.*
+
+---
+
+## A message nothing has printed is a message nobody has read
+
+Tick 5 read every error message in the implementation as prose — working down
+the list of `fail(` and `SyntaxError_(` calls rather than down the list of
+cases. Three were wrong:
+
+- `range bound must be a int`. `want()` glued `"a "` to a type name, so three
+  of the eight type names came out with the wrong article.
+- `let "a" = 1` answered `expected ident, found 'a'`. A string token was
+  described with Python's `repr`, which prints `'a'` — character for
+  character how this parser prints an identifier. The message named the wrong
+  kind of thing entirely.
+- `unclosed_nested.vine` leaves two brackets open and the report named one.
+  The case's own comment said the outer `(` was waiting too. The reader was
+  never told.
+
+None of the three had a case that printed it. Every message that did have one
+was true — including several that were unreadable, `expected ident` among
+them, which is a different failure needing a different fix.
+
+The mechanism is specific to error text: a failure path can be thoroughly
+exercised and its message never evaluated. `want()` runs in a dozen passing
+cases and formats its message in none of them, because it only formats on the
+way to raising. That f-string is not code the suite has run; it is code the
+suite has compiled.
+
+And the reason the goldened messages were at least true is this project's
+refusal of an `--update` flag. Hand-writing an expectation is an act of
+reading. That is what the rule buys — more than the regression it prevents.
+
+*Learned in tick 5 — see `article()` in `vine/builtins.py`, `describe()` in
+`vine/parser.py`, and commit 2566f40.*
