@@ -3,3 +3,4 @@ syntax error: unclosed '{'
   |
 4 |   fn() {
   |        ^
+  = note: '(' at 3:6 is also unclosed

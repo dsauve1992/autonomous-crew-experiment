@@ -3,3 +3,4 @@ syntax error: unknown escape '\q'
   |
 2 | print("a\qb")
   |         ^
+  = help: the escapes are \n \t \r \" \\ \{ and \}

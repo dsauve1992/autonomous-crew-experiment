@@ -121,6 +121,35 @@ class Lexer:
         """The brackets still open, outermost first, once tokenizing is done."""
         return [(b, pos) for _, b, pos, hole in self.brackets if not hole]
 
+    def open_hole(self):
+        """Where the innermost open interpolation began, or None."""
+        for _, _, pos, hole in reversed(self.brackets):
+            if hole:
+                return pos
+        return None
+
+    def unterminated_string(self, quote):
+        """`unterminated string`, blaming `quote` -- plus what a hole changes.
+
+        The message is true wherever it comes from, and true is not the same
+        as useful. `"{"` is a brace to everyone who has written one anywhere
+        else: the `{` opens a hole, the `"` after it opens a *second* string,
+        and that one runs to the end of the file. Blaming the `{` instead
+        would be a guess -- `"{ "abc` is a genuinely unterminated inner string
+        -- so the caret stays where the parser actually stopped and the note
+        supplies the fact both cases are missing.
+        """
+        err = SyntaxError_("unterminated string", quote, self.src)
+        hole = self.open_hole()
+        if hole is not None:
+            err.note(
+                "this string is inside the interpolation "
+                "opened by the '{' at {pos}",
+                hole,
+            )
+            err.help("a literal brace is written '\\{'")
+        return err
+
     def tokens(self):
         out = []
         while True:
@@ -234,7 +263,7 @@ class Lexer:
         text = ""
         while True:
             if self.i >= len(self.text):
-                raise SyntaxError_("unterminated string", quote, self.src)
+                raise self.unterminated_string(quote)
             at = self.here()
             ch = self.advance()
             if ch == '"':
@@ -254,15 +283,17 @@ class Lexer:
                 self.brackets.append((False, "{", at, True))
                 return
             if ch == "\n":
-                raise SyntaxError_("unterminated string", quote, self.src)
+                raise self.unterminated_string(quote)
             if ch == "\\":
                 if self.i >= len(self.text):
-                    raise SyntaxError_("unterminated string", quote, self.src)
+                    raise self.unterminated_string(quote)
                 esc = self.advance()
                 if esc not in ESCAPES:
                     # `at` is the backslash. self.here() would be the character
                     # after the escape, which is not the thing to look at.
-                    raise SyntaxError_(f"unknown escape '\\{esc}'", at, self.src)
+                    raise SyntaxError_(
+                        f"unknown escape '\\{esc}'", at, self.src
+                    ).help('the escapes are \\n \\t \\r \\" \\\\ \\{ and \\}')
                 text += ESCAPES[esc]
             else:
                 text += ch

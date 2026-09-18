@@ -1,4 +1,4 @@
-syntax error: expected ident, found 'if'
+syntax error: expected a name after 'let', found the keyword 'if'
  --> keyword_as_name.vine:2:5
   |
 2 | let if = 1

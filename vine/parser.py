@@ -1,7 +1,7 @@
 """Pratt parser: tokens in, AST out."""
 
 from .errors import SyntaxError_
-from .lexer import Lexer
+from .lexer import OPENER, Lexer
 from .nodes import (
     Binary,
     Block,
@@ -18,6 +18,7 @@ from .nodes import (
     StrLit,
     Unary,
 )
+from .values import to_repr
 
 # Binding power of each infix operator. Higher binds tighter.
 INFIX = {
@@ -38,6 +39,20 @@ INFIX = {
 }
 UNARY_BP = 8
 POSTFIX_BP = 9
+
+# What a token kind is called when a message has to name one. `ident`, `istr`
+# and `iend` are names for the parser's own use; a person writing Vine has
+# never been told what they mean, and a message that uses one is asking the
+# reader to debug the implementation instead of their program.
+KIND_NAMES = {
+    "ident": "a name",
+    "num": "a number",
+    "str": "a string",
+    "istr": "a string",
+    "kw": "a keyword",
+    "eof": "end of input",
+    "nl": "end of line",
+}
 
 
 class Parser:
@@ -70,19 +85,27 @@ class Parser:
             return self.next()
         return None
 
-    def expect(self, kind, value=None):
+    def expect(self, kind, value=None, why=None, decorate=None):
+        """Consume a token of `kind` (and `value`), or fail saying what was
+        wanted. `why` says what the token was for -- `expected ':'` names a
+        character, `expected ':' after the map key` names a mistake.
+        `decorate` is called with the error before it is raised, for the sites
+        that know something extra about how this one goes wrong.
+        """
         if self.at(kind, value):
             return self.next()
-        want = repr(value) if value is not None else kind
-        raise self.error(f"expected {want}, found {self.describe(self.peek())}")
+        want = repr(value) if value is not None else KIND_NAMES.get(kind, kind)
+        if why:
+            want += " " + why
+        err = self.error(f"expected {want}, found {self.describe(self.peek())}")
+        if decorate is not None:
+            decorate(err)
+        raise err
 
     def describe(self, tok):
-        if tok.kind == "eof":
-            return "end of input"
-        if tok.kind == "nl":
-            return "end of line"
-        if tok.kind == "istr":
-            return "a string"
+        """Name a token the way a reader of the program would name it."""
+        if tok.kind in ("eof", "nl", "istr"):
+            return KIND_NAMES[tok.kind]
         if tok.kind == "ichunk":
             # An `ichunk` is the text after a hole; the lexer gave it the
             # position of the `}` that ended the hole, which is the character
@@ -90,6 +113,16 @@ class Parser:
             return "'}'"
         if tok.kind == "iend":
             return "the end of a string"
+        if tok.kind == "str":
+            # Vine strings are double-quoted; Python's repr would print
+            # 'abc', which is what this parser calls an identifier.
+            return f"the string {to_repr(tok.value)}"
+        if tok.kind == "num":
+            return f"the number {to_repr(tok.value)}"
+        if tok.kind == "ident":
+            return f"the name {tok.value!r}"
+        if tok.kind == "kw":
+            return f"the keyword {tok.value!r}"
         return repr(tok.value)
 
     def error(self, message, tok=None):
@@ -100,12 +133,29 @@ class Parser:
             # is a problem with the bracket that was never closed, so quote
             # that line and point the caret at the bracket itself.
             bracket, pos = self.unclosed[-1]
-            message = f"unclosed '{bracket}'"
+            message = f"unclosed {bracket!r}"
         err = SyntaxError_(message, pos, self.src)
+        if tok.kind == "eof":
+            # Every bracket but the innermost is a second place to look. The
+            # caret can only be in one of them, and a reader told about one
+            # unclosed bracket has no reason to suspect a second.
+            for bracket, other in reversed(self.unclosed[:-1]):
+                err.note(f"{bracket!r} at {{pos}} is also unclosed", other)
         # Running out of input is not the same failure as finding the wrong
         # thing: the first may just mean the user has not finished typing.
         err.at_eof = tok.kind == "eof"
         return err
+
+    def waiting(self, bracket, pos):
+        """A `decorate` that names the bracket the missing one has to match.
+
+        The caret can only be in one place, and for a closer the interesting
+        place is usually the opener -- which may be lines away and is the
+        thing a reader has to go and count.
+        """
+        if pos is None:  # pragma: no cover - every caller has the opener
+            return None
+        return lambda err: err.note(f"the {bracket!r} at {{pos}} is still open", pos)
 
     def skip_nl(self):
         while self.at("nl"):
@@ -149,8 +199,8 @@ class Parser:
 
     def let_stmt(self):
         pos = self.next().pos
-        name = self.expect("ident").value
-        self.expect("op", "=")
+        name = self.expect("ident", why="after 'let'").value
+        self.expect("op", "=", why="after the name being bound")
         self.skip_nl()
         value = self.expression()
         if isinstance(value, FnLit) and value.name is None:
@@ -217,7 +267,7 @@ class Parser:
             if tok.value == "(":
                 self.next()
                 inner = self.expression()
-                self.expect("op", ")")
+                self.expect("op", ")", decorate=self.waiting("(", tok.pos))
                 return inner
             if tok.value == "[":
                 return self.list_lit()
@@ -251,21 +301,21 @@ class Parser:
         while True:
             if self.at("op", "("):
                 pos = self.next().pos
-                args = self.comma_list(")")
+                args = self.comma_list(")", pos)
                 left = Call(pos, left, args)
             elif self.at("op", "["):
                 pos = self.next().pos
                 key = self.expression()
-                self.expect("op", "]")
+                self.expect("op", "]", decorate=self.waiting("[", pos))
                 left = Index(pos, left, key)
             elif self.at("op", "."):
                 pos = self.next().pos
-                name = self.expect("ident").value
+                name = self.expect("ident", why="after '.'").value
                 left = Index(pos, left, Literal(pos, name))
             else:
                 return left
 
-    def comma_list(self, close):
+    def comma_list(self, close, opener=None):
         """Parse `expr, expr, ...` up to and including `close`."""
         items = []
         self.skip_nl()
@@ -282,14 +332,19 @@ class Parser:
                 continue
             break
         self.skip_nl()
-        self.expect("op", close)
+        self.expect("op", close, decorate=self.waiting(OPENER[close], opener))
         return items
 
     def list_lit(self):
         pos = self.expect("op", "[").pos
-        return ListLit(pos, self.comma_list("]"))
+        return ListLit(pos, self.comma_list("]", pos))
 
     def map_lit(self):
+        # A `{` that is the very first token of an interpolation is almost
+        # always someone reaching for another language's `{{` escape. The
+        # check is exact rather than a guess: the previous token is the text
+        # the lexer emitted immediately before opening the hole.
+        in_hole = self.i > 0 and self.toks[self.i - 1].kind in ("istr", "ichunk")
         pos = self.expect("op", "{").pos
         pairs = []
         self.skip_nl()
@@ -298,7 +353,9 @@ class Parser:
         while True:
             self.skip_nl()
             key = self.map_key()
-            self.expect("op", ":")
+            self.expect(
+                "op", ":", why="after the map key", decorate=self.doubled(in_hole)
+            )
             self.skip_nl()
             pairs.append((key, self.expression()))
             self.skip_nl()
@@ -309,8 +366,18 @@ class Parser:
                 continue
             break
         self.skip_nl()
-        self.expect("op", "}")
+        self.expect("op", "}", decorate=self.waiting("{", pos))
         return MapLit(pos, pairs)
+
+    def doubled(self, in_hole):
+        """A `decorate` for the `{{` mistake: `"{{1}}"` is a hole holding the
+        map literal `{1`, and `expected ':'` is true about it and unhelpful."""
+        if not in_hole:
+            return None
+        return lambda err: err.note(
+            "'{' inside an interpolation opens a map literal, "
+            "not an escaped brace"
+        ).help("a literal brace is written '\\{'")
 
     def map_key(self):
         """A bare identifier is shorthand for its own name as a string key."""
@@ -322,13 +389,13 @@ class Parser:
 
     def fn_lit(self):
         pos = self.expect("kw", "fn").pos
-        self.expect("op", "(")
+        paren = self.expect("op", "(", why="to open the parameter list").pos
         params = []
         self.skip_nl()
         if not self.accept("op", ")"):
             while True:
                 self.skip_nl()
-                params.append(self.expect("ident").value)
+                params.append(self.expect("ident", why="for a parameter").value)
                 self.skip_nl()
                 if self.accept("op", ","):
                     self.skip_nl()
@@ -337,7 +404,7 @@ class Parser:
                     continue
                 break
             self.skip_nl()
-            self.expect("op", ")")
+            self.expect("op", ")", decorate=self.waiting("(", paren))
         seen = set()
         for p in params:
             if p in seen:
@@ -359,7 +426,7 @@ class Parser:
         return If(pos, cond, then, None)
 
     def block(self):
-        pos = self.expect("op", "{").pos
+        pos = self.expect("op", "{", why="to open a block").pos
         stmts = self.statements(terminators={"}"})
         self.expect("op", "}")
         return Block(pos, stmts)

@@ -1,4 +1,4 @@
-syntax error: expected end of line between statements, found 2
+syntax error: expected end of line between statements, found the number 2
  --> two_statements_in_block.vine:3:16
   |
 3 | print(fn() { 1 2 })

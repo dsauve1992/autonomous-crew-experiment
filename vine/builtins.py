@@ -20,9 +20,15 @@ def install(env):
         env.define(b.name, b)
 
 
+def article(kind):
+    """`a list`, `an int`. Gluing "a " to a type name says "a int" one time in
+    three, and no case had ever printed one of those three."""
+    return f"an {kind}" if kind[0] in "aeiou" else f"a {kind}"
+
+
 def want(interp, pos, value, kind, what):
     if type_name(value) != kind:
-        interp.fail(f"{what} must be a {kind}, got {type_name(value)}", pos)
+        interp.fail(f"{what} must be {article(kind)}, got {type_name(value)}", pos)
     return value
 
 
@@ -86,7 +92,7 @@ def _int(interp, pos, args):
             return int(value.strip())
         except ValueError:
             interp.fail(f"cannot convert {to_repr(value)} to an int", pos)
-    interp.fail(f"cannot convert {kind} to an int", pos)
+    interp.fail(f"cannot convert {article(kind)} to an int", pos)
 
 
 @builtin("float", 1, 1)
@@ -103,7 +109,7 @@ def _float(interp, pos, args):
             return float(value.strip())
         except ValueError:
             interp.fail(f"cannot convert {to_repr(value)} to a float", pos)
-    interp.fail(f"cannot convert {kind} to a float", pos)
+    interp.fail(f"cannot convert {article(kind)} to a float", pos)
 
 
 # -- lists ----------------------------------------------------------------

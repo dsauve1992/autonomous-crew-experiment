@@ -3,3 +3,5 @@ syntax error: unterminated string
   |
 5 | print("{")
   |         ^
+  = note: this string is inside the interpolation opened by the '{' at 5:8
+  = help: a literal brace is written '\{'

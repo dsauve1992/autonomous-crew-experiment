@@ -41,6 +41,33 @@ class VineError(Exception):
         self.message = message
         self.pos = pos
         self.source = source
+        # Extra lines under the caret, as (label, text, pos). See note().
+        self.notes = []
+
+    def note(self, text, pos=None):
+        """Add a fact the headline message leaves out, and return self.
+
+        A note exists for the case where the message is true and still
+        misleading -- `unterminated string` is correct about `"{"` and says
+        nothing about the brace that changed meaning. It states a fact; it
+        does not guess what the user meant. `{pos}` in `text` is replaced by
+        the position given, which is how a failure carries a *second* place
+        to look: the caret is where the parser stopped, the note is where the
+        cause is.
+        """
+        self.notes.append(("note", text, pos))
+        return self
+
+    def help(self, text):
+        """Add a suggestion, and return self.
+
+        Separate from note() on purpose: a note is a fact about this program,
+        a help is a rule of the language offered because it is likely to be
+        the one the reader wants. Keeping them apart is what stops a guess
+        from being printed in the voice of a fact.
+        """
+        self.notes.append(("help", text, None))
+        return self
 
     def render(self):
         """Format as a caret-annotated report. Falls back gracefully."""
@@ -49,7 +76,7 @@ class VineError(Exception):
         if self.pos is not None and self.pos.source is not None:
             source = self.pos.source  # the position knows best; see Pos
         if self.pos is None or source is None:
-            return head
+            return "\n".join([head] + self.note_lines("", source))
         line, col = self.pos.line, self.pos.col
         name = source.name
         text = source.line_text(line)
@@ -63,7 +90,21 @@ class VineError(Exception):
                 f"{gutter} | {text}",
                 f"{pad} | {' ' * (col - 1)}^",
             ]
+            + self.note_lines(pad, source)
         )
+
+    def note_lines(self, pad, source):
+        out = []
+        for label, text, pos in self.notes:
+            if pos is not None:
+                where = f"{pos.line}:{pos.col}"
+                if pos.source is not None and pos.source is not source:
+                    # A second source is alive: bare line:col would be read
+                    # against the wrong text. See Pos, and PRINCIPLES.md.
+                    where = f"{pos.source.name}:{where}"
+                text = text.replace("{pos}", where)
+            out.append(f"{pad} = {label}: {text}")
+        return out
 
 
 class SyntaxError_(VineError):
