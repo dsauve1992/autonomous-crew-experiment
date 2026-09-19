@@ -1,5 +1,7 @@
 """Pratt parser: tokens in, AST out."""
 
+import sys
+
 from .errors import SyntaxError_
 from .lexer import OPENER, Lexer
 from .nodes import (
@@ -40,6 +42,21 @@ INFIX = {
 UNARY_BP = 8
 POSTFIX_BP = 9
 
+# How deep expressions may nest before we call it too deep. Everything the
+# parser recurses on -- a list, a map, a block, a function body, an `if`, a
+# parenthesis, a hole in a string, a unary operator -- reaches itself through
+# expression(), so counting there counts all of them. 200 is far beyond any
+# program written by hand; what the number is for is firing before the stack
+# does, and the value only has to be generous enough not to refuse real work.
+MAX_NESTING = 200
+# A nesting level costs up to six Python frames, so CPython's own limit fired
+# first at between 165 and 495 levels depending on the construct -- and a
+# RecursionError is a Python traceback, not a Vine error. Raise the ceiling
+# high enough that our guard wins, exactly as the interpreter does for call
+# depth. Measured in tick 7; function bodies and `if` were the most expensive,
+# and this doubles them.
+PY_FRAMES_PER_LEVEL = 12
+
 # What a token kind is called when a message has to name one. `ident`, `istr`
 # and `iend` are names for the parser's own use; a person writing Vine has
 # never been told what they mean, and a message that uses one is asking the
@@ -64,6 +81,8 @@ class Parser:
         # of the file; see error().
         self.unclosed = lexer.unclosed()
         self.i = 0
+        # How many expressions are open above this point. See MAX_NESTING.
+        self.depth = 0
 
     # -- token helpers ----------------------------------------------------
 
@@ -210,21 +229,31 @@ class Parser:
     # -- expressions ------------------------------------------------------
 
     def expression(self, min_bp=0):
-        left = self.prefix()
-        while True:
-            left = self.postfix(left)
-            tok = self.peek()
-            op = tok.value if tok.kind in ("op", "kw") else None
-            if op not in INFIX or INFIX[op] < min_bp:
-                return left
-            self.next()
-            self.skip_nl()
-            if op == "|>":
-                left = self.pipe(left, tok)
-            elif op in ("and", "or"):
-                left = Logical(tok.pos, op, left, self.expression(INFIX[op] + 1))
-            else:
-                left = Binary(tok.pos, op, left, self.expression(INFIX[op] + 1))
+        """The one place the parser reaches itself, and so the one place
+        nesting is counted. An operator chain does not nest -- `1 + 1 + 1`
+        loops here rather than recursing -- so the count is of brackets,
+        blocks, holes and unary operators, which is what costs stack."""
+        self.depth += 1
+        if self.depth > MAX_NESTING:
+            raise self.error(f"expression nested more than {MAX_NESTING} deep")
+        try:
+            left = self.prefix()
+            while True:
+                left = self.postfix(left)
+                tok = self.peek()
+                op = tok.value if tok.kind in ("op", "kw") else None
+                if op not in INFIX or INFIX[op] < min_bp:
+                    return left
+                self.next()
+                self.skip_nl()
+                if op == "|>":
+                    left = self.pipe(left, tok)
+                elif op in ("and", "or"):
+                    left = Logical(tok.pos, op, left, self.expression(INFIX[op] + 1))
+                else:
+                    left = Binary(tok.pos, op, left, self.expression(INFIX[op] + 1))
+        finally:
+            self.depth -= 1
 
     def pipe(self, left, tok):
         """`x |> f(a)` is `f(x, a)`; `x |> f` is `f(x)`."""
@@ -433,4 +462,26 @@ class Parser:
 
 
 def parse(source):
-    return Parser(source).parse_program()
+    """Parse `source` into a Block, or raise SyntaxError_.
+
+    The pair around the call is the one the interpreter keeps for call depth:
+    a limit the user is told about, and a raised recursion ceiling that lets
+    that limit fire before CPython's does. The RecursionError below is belt
+    and braces -- MAX_NESTING should win -- and it exists because before tick
+    7 the parser had neither half, and a deeply nested program left as a
+    traceback from a file, from `-e`, and at a prompt, where it also ended
+    the session.
+    """
+    parser = Parser(source)
+    needed = 1000 + MAX_NESTING * PY_FRAMES_PER_LEVEL
+    previous = sys.getrecursionlimit()
+    if previous < needed:
+        sys.setrecursionlimit(needed)
+    try:
+        return parser.parse_program()
+    except RecursionError:  # pragma: no cover - MAX_NESTING fires first
+        raise SyntaxError_(
+            "expression nested too deeply", parser.peek().pos, source
+        ) from None
+    finally:
+        sys.setrecursionlimit(previous)

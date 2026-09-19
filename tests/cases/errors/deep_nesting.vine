@@ -1,0 +1,8 @@
+# Nesting is recursion in the parser, and nothing counted it: Python's stack
+# ran out first, at between 165 and 495 levels depending on the construct, and
+# the program left as a RecursionError traceback. The next line opens exactly
+# 200 lists, which is the limit. The '[' on the line after it is the 201st and
+# is where the guard fires -- so the file is deliberately unbalanced, because
+# the parse never reaches a closer.
+[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[
+[1]

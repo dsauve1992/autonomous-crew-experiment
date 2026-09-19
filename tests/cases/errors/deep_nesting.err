@@ -1,0 +1,5 @@
+syntax error: expression nested more than 200 deep
+ --> deep_nesting.vine:8:1
+  |
+8 | [1]
+  | ^

@@ -100,6 +100,13 @@ Calls nested more than 500 deep are reported as runaway recursion.
 
 ## Expressions
 
+Expressions nested more than 200 deep are a syntax error, reported at the
+opener that went too far. Nesting is what the parser recurses on, so the limit
+is there for the same reason the one on call depth is: past some depth the
+implementation runs out of stack, and running out of stack is not an answer a
+reader can act on. An operator chain does not nest — `1 + 1 + 1` is flat — so
+the count is of brackets, blocks, holes and unary operators.
+
 ### Literals
 
 ```
