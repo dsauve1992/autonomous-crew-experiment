@@ -1,4 +1,4 @@
-syntax error: codepoint escape '\u{d800}' is a surrogate half, which is not a character
+syntax error: codepoint escape '\u{d800}' is a surrogate half, not a character
  --> codepoint_surrogate.vine:2:8
   |
 2 | print("\u{d800}")

@@ -26,8 +26,8 @@ from vine.values import to_repr
 
 CLAIM = (
     "repr of a string writes every codepoint as itself or as an escape and "
-    "never as a character that does not print, and no string can hold a "
-    "surrogate half"
+    "never as a character that does not print, no string can hold a surrogate "
+    "half, and no error message quoting such a string holds one either"
 )
 
 # The characters that do not print: the C0 and C1 controls. A tab and a
@@ -38,6 +38,22 @@ INVISIBLE = frozenset(
 )
 
 SURROGATES = range(0xD800, 0xE000)
+
+# Programs that fail while quoting a string back at the reader, one per place
+# in the implementation that builds a message out of a value. Every one of
+# them uses `to_repr` today, which is why they are all legible -- and the
+# reason to check rather than to note it is that an f-string is one keystroke
+# away from embedding the value raw, in the message where which character was
+# meant is the entire question. `{E}` is the escape for the codepoint under
+# test, so the program text is ASCII whatever is being checked, and `a` and
+# `b` around it keep every one of them failing for the same reason each time.
+QUOTING = [
+    'let "a{E}b" = 1',
+    'let m = {{}}\nm["a{E}b"]',
+    'int("a{E}b")',
+    'float("a{E}b")',
+    '{{"a{E}b": 1, "a{E}b": 2}}',
+]
 
 
 def check():
@@ -63,4 +79,18 @@ def check():
         except VineError:
             continue
         failures.append((f"U+{c:04X}", f"{source} was accepted -- it must not be"))
+    for c in sorted(ord(ch) for ch in INVISIBLE) + [0xA0, 0x2028]:
+        for template in QUOTING:
+            checked += 1
+            source = template.format(E=f"\\u{{{c:x}}}")
+            try:
+                run(source, "<property>", io.StringIO())
+            except VineError as exc:
+                rendered = exc.render()
+                raw = INVISIBLE.intersection(rendered.replace("\n", ""))
+                if raw:
+                    shown = " ".join(f"U+{ord(ch):04X}" for ch in sorted(raw))
+                    failures.append((source, f"the message holds {shown}"))
+                continue
+            failures.append((source, "did not fail -- it is here because it does"))
     return checked, failures

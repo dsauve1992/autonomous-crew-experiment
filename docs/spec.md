@@ -48,7 +48,7 @@ name. See **Errors** for what each way of ending means.
 - Keywords: `let fn if else do true false nil and or not`.
 - Numbers are `123` (int), and `1.5` or `1e-9` (float). See **Literals**.
 - Strings are double-quoted and do not span lines. Escapes: `\n \t \r \" \\
-  \{ \}`. A `{` opens a string interpolation — see Strings.
+  \{ \}` and `\u{...}`. A `{` opens a string interpolation — see Strings.
 
 ## Types
 
@@ -213,7 +213,7 @@ let totals = {north: 14.0}
 A hole holds exactly one expression. `"{}"` and `"{x y}"` are both syntax
 errors.
 
-Four decisions, and the reasons, because syntax is the part that cannot be
+Five decisions, and the reasons, because syntax is the part that cannot be
 taken back later:
 
 - **Every string interpolates; there is no prefix.** A language for shaping
@@ -234,6 +234,20 @@ taken back later:
   outside a hole there is nothing for it to close; `\}` is accepted anyway,
   since someone who escapes one brace will reach for the other, and "unknown
   escape" is a poor answer to a reasonable guess.
+- **A codepoint is written `\u{...}`.** Hex digits in braces, either case, and
+  it is the escape for everything the other seven do not reach. What it is for
+  is the characters a reader cannot see: `\u{1e}` is a record separator and
+  `\u{a0}` a non-breaking space, and `trim` removes both — see **Text**.
+  Before it they reached a string only by being pasted into a literal, which
+  worked and left a line of source nobody can read, and a *file* whose subject
+  is a character that every rendering of it drops. There is one limit and not
+  two: the digits are not counted, so `\u{41}` and `\u{000041}` are both `A`,
+  and what is checked is the value. Past `\u{10ffff}` is a syntax error, and so
+  is a surrogate half — `\u{d800}` through `\u{dfff}` — not on taste but
+  because a string holding one cannot be printed at all, and printable is what
+  every Vine value is. An escape makes a *character* and never syntax, so
+  `\u{7b}` is a brace that opens no hole and `\u{22}` a quote that ends no
+  string.
 - **The value is converted the way `str` converts it, not `repr`.**
   `"hi, {name}"` must produce `hi, vine`, not `hi, "vine"`; quoting every
   string hole would need undoing at almost every use. So `"{x}"` and `str(x)`
@@ -243,6 +257,14 @@ taken back later:
   `"{["a", "b"]}"` is `["a", "b"]` with the quotes. The hole inherits that
   from `str` along with everything else — see **Inside a container**, which
   says why the two depths differ.
+
+```
+"\u{48}\u{49}"                # "HI"
+"\u{41}" == "\u{000041}"      # true
+len("\u{1f600}")              # 1
+len("\u{7b}1 + 1\u{7d}")      # 7 — a brace that opens no hole
+"\u{d800}"    # error: codepoint escape '\u{d800}' is a surrogate half, not a character
+```
 
 A hole is an ordinary piece of the program, so a failure inside one is an
 ordinary error, pointing into the string at the part that failed:
@@ -621,12 +643,20 @@ len(split(trim(row), " "))            # 2 — trim ate the outer delimiters
 map(split(row, " "), trim)            # ["", "a", "b", ""] — still 4
 ```
 
-That holds for any separator, including the ones `trim` eats and a program
-cannot type. The escapes are `\n \t \r \" \\ \{` and `\}`, so a record
-separator reaches a Vine string only by being pasted into a literal — which
-works: the lexer takes the character, a literal holding one between two letters
-is three codepoints long, and `repr` hands it back as itself. What that costs
-is a line of source nobody can read; see **repr and str**.
+That holds for any separator, including the ones `trim` eats and no keyboard
+produces. Those are written as codepoint escapes — `\u{1e}` for a record
+separator, `\u{a0}` for a non-breaking space, see **Strings** — so a program
+that splits on one says so in a line a reader can read:
+
+```
+len(split("a\u{1e}b", "\u{1e}"))      # 2
+```
+
+Until tick 20 there was no such escape and they reached a string only by being
+pasted into a literal. That worked — the lexer took the character, `len`
+counted it and `repr` handed it back — and it left every line holding one
+illegible, in exactly the place where what the line says is which character it
+means. See **repr and str** for the half of that which was `repr`'s.
 
 **`split` and `join` are a pair, and the pair is why the empty cases look
 odd.** `split(s, sep)` answers one more piece than there are separators, so
@@ -1329,14 +1359,38 @@ values were in that state, all the same shape — no way to write them down:
   float beyond about `1.8e308` even briefly, which is the price of every value
   being writable, and it is small.
 
-**The promise is that the output is a Vine expression, not that a reader can
-type it.** A string holding an invisible character — a record separator, a
-non-breaking space — reprs as itself between quotes, and that really is source:
-paste it back and `==` says `true`. What it is not is legible, and Vine has no
-escape that would make it so, because the escapes are `\n \t \r \" \\ \{` and
-`\}`. Adding one is a change to **Strings**, where the escape list lives, and
-the reason it has not been made here is that it would be a syntax decision
-taken as a side effect of a paragraph about printing.
+**There is a second promise, and it is the narrower one: the output holds no
+character a reader cannot see.** `repr` writes every C0 and C1 control as a
+codepoint escape — `\u{0}` through `\u{1f}` and `\u{7f}` through `\u{9f}`, less
+the three that already have `\n`, `\t` and `\r`. A string holding a record
+separator therefore reprs as something a reader can type and not only paste:
+
+```
+repr("a\u{1e}b")                      # "a\u{1e}b"
+```
+
+That range and no wider, and the reason is the one **Text** gives for `len`
+counting codepoints. Asking a Unicode table which characters are invisible
+would catch the non-breaking space as well, and would make `repr(s)` — a value
+a Vine program can compare, print and write into a file — depend on which
+Unicode release the implementation was built against. The controls are the
+largest set the standard has closed forever, so this answer is the same on
+every machine. What that costs is that a non-breaking space still reprs as
+itself, one column wide and indistinguishable from a space:
+
+```
+len(repr("\u{a0}"))                   # 3 — quote, the space, quote
+```
+
+That is a real cost and it is the smaller one. **Invisible** and **confusable**
+are two complaints, and only the first is one `repr` can answer the same way
+twice.
+
+The first promise held through all of this and was never the whole of it: for
+as long as `repr` of a record separator answered a line with one sitting inside
+it, the output was source, read back `==`, and could not be read.
+`tests/properties/repr_is_source.py` checks the first sentence and
+`repr_is_legible.py` the second, over every codepoint a Vine string can hold.
 
 **Functions are the exception, and the only one.** A closure is its parameters,
 its body *and* the environment it captured; no expression denotes that. One

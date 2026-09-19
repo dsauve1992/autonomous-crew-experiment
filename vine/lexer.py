@@ -423,7 +423,7 @@ class Lexer:
         if 0xD800 <= value <= 0xDFFF:
             raise SyntaxError_(
                 f"codepoint escape '\\u{{{digits}}}' is a surrogate half, "
-                "which is not a character",
+                "not a character",
                 at,
                 self.src,
             ).help(
