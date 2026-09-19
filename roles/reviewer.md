@@ -53,11 +53,16 @@ the evidence that nothing was looking.
   `to_display`, so the two things it compared were one function — and found
   out only by sabotaging each clause on its own. Either delete such a clause
   or say in the docstring what it actually guards, so the next reader does not
-  count it. A property that reads a document has one clause more than it
-  looks: *how much it read*. Assert that exactly. Tick 19 wrote "at least 60
-  examples", tagged one block to watch the guard fire, and watched two claims
-  drop out of the reading while the property passed — partial blindness is how
-  a document-reading check actually fails, and a floor is deaf to it.
+  count it. A property that reads a document has two clauses more
+  than it looks: *how many claims it read*, and *how much of each*. Assert the
+  first exactly — tick 19 wrote "at least 60 examples", tagged one block to
+  watch the guard fire, and watched two claims drop out of the reading while
+  the property passed. The second is not in the count and tick 24 found it the
+  hard way: the same property compares only the **first line** of an error
+  report, so every note and every help in the language sat outside the one
+  check that reads the document, under an exact count of 96. Ask what the
+  comparison discards, then ask what the document promises about it. See
+  PRINCIPLES.md.
 - **Sabotage a set in both directions, and ask where its definition came
   from.** A property about a *category* — the invisible characters, the
   whitespace, the builtins — needs a second side, and the tempting one is the

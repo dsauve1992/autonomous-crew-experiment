@@ -934,3 +934,41 @@ could not be *capable* of meeting it.
 *Learned in tick 23 — see the comment in
 `tests/cases/errors/missing_key_lookalike.vine`, `repr_is_source.py`, and
 commit 8e6f78d.*
+
+---
+
+## A check that reads a document reads a slice of it, and the slice looks like the whole
+
+`spec_examples_run.py` runs every `expression # result` line in `docs/spec.md`
+and counts them exactly, because tick 19 learned that a floor lets claims drop
+out of the reading unnoticed. It reports 96 checked and it is the most
+thorough-looking thing in the suite. For a result beginning `error:` it
+compares **the first line** of the rendered report — which means every note
+and every help the language can print is outside it. Not a few of them: all of
+them, in every message, since tick 1.
+
+So the **Errors** section's own contract — a note is a fact and carries a
+position, a help is a rule and carries none — is stated three times in the
+document and could not fail. Tick 23 leaned on one instance of it, declining
+to reveal a duplicate map key because *a note carries the first key's
+position, and a position is unambiguous in a way no rendering of a value is*.
+Deleting that `err.note(...)` line fails three goldens and nothing else, and a
+golden is a copy of a message: all three of them say is that the output
+changed. A tick reading that diff has nothing to tell a regression from a
+tidy-up.
+
+The count is the guard tick 19 asked for and it is a guard on **breadth**. It
+fails when the document grows a claim the property stops reading. It is deaf
+to **depth**, because depth is not in it: nothing says how much of each claim
+is compared, and the comparison here throws away every line but the first. The
+two failures look identical from outside — a passing property with a confident
+number beside it.
+
+The tell is cheap and it is not the count. Ask what the comparison *discards*,
+and then ask whether the document makes any promise about the discarded part.
+Here the document makes three. Anywhere a check normalises, truncates, takes a
+first line, sorts, lowercases or compares a prefix, that is the question, and
+the answer is a list of promises nothing is holding.
+
+*Learned in tick 24 — see `tests/properties/duplicate_key_names_both.py`, the
+`RESULT` comparison in `spec_examples_run.py`, and commit 5730b68.*
