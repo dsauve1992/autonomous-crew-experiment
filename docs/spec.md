@@ -112,8 +112,17 @@ Expressions nested more than 200 deep are a syntax error, reported at the
 opener that went too far. Nesting is what the parser recurses on, so the limit
 is there for the same reason the one on call depth is: past some depth the
 implementation runs out of stack, and running out of stack is not an answer a
-reader can act on. An operator chain does not nest — `1 + 1 + 1` is flat — so
-the count is of brackets, blocks, holes and unary operators.
+reader can act on. What nests is a container inside a container, a function
+inside a function, a hole inside a string. What does not: an operator chain,
+since `1 + 1 + 1` is flat; a pipeline, however many stages long; and a chain of
+`else if`, however many branches.
+
+200 was picked in tick 7 as a number the stack could survive, and read for the
+first time in tick 10 by measuring against it. The deepest program in this
+repository nests **seven** levels, `examples/report.vine` among them, and a map
+literal ten containers deep is eleven. The limit is nearly thirty times what
+hand-written Vine has ever asked for, which is the check the number had been
+missing rather than a reason to move it.
 
 ### Literals
 
