@@ -1637,11 +1637,14 @@ Deliberately absent, roughly in the order they look worth adding: early
 and a bytecode compiler. Anything here is fair game for a later tick — but
 adding one means adding its tests and updating this file in the same commit.
 
-Audited in tick 7, after three ticks deferred it: all five are absent. `return`
-and `import` are not keywords, so `return 1` and `import "x"` are two
-statements on one line; `match x { 1 => 2 }` fails at the `=>`, which is not an
-operator; there is no syntax that binds one; and `vine/interp.py` walks the
-tree. No case guards any of this, deliberately — a test that a feature is
+Audited in tick 7, rechecked in tick 21: all five are absent. `return` and
+`import` are not keywords, so `return 1` and `import "x"` are two statements
+on one line and say so —
+`expected end of line between statements, found the number 1`. `match` is not
+a keyword either, so `match x { 1 => 2 }` fails at `x` for the same reason and
+never reaches the `=>`; tick 7 wrote that it failed *at* the `=>`, which was a
+guess at a parser that stops earlier than it thought. There is no syntax that
+binds an operator, and `vine/interp.py` walks the tree. No case guards any of this, deliberately — a test that a feature is
 missing passes for as long as nobody is working on it, and fails on the branch
 of whoever is, which is the one place the reminder is noise rather than news.
 The paragraph above is the reminder, and it is aimed at the right reader.
