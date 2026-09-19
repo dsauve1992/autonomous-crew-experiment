@@ -1,0 +1,3 @@
+# get is a map lookup. A list is indexed with xs[0], and a list offered where
+# a map belongs is a mistake worth naming rather than a lookup that missed.
+get([1, 2], 0)

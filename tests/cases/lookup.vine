@@ -1,0 +1,25 @@
+# Four spellings of a lookup. They agree on a key the map has and differ only
+# on one it does not.
+let m = {name: "vine", version: 1}
+print(m.name, m["version"])
+print(repr(get(m, "kind")), get(m, "kind", "?"), contains(m, "kind"))
+print(repr(get(m, "name")), get(m, "name", "?"), contains(m, "name"))
+
+# get with a default is what makes accumulating a map short.
+let tally = reduce(["a", "b", "a"], fn(acc, k) { set(acc, k, get(acc, k, 0) + 1) }, {})
+print(tally)
+
+# The default is reached when the key is absent, never because the value is
+# falsy. Truthiness is not consulted.
+let holes = {a: nil, b: false}
+print(repr(get(holes, "a", 0)), repr(get(holes, "b", 0)), repr(get(holes, "z", 0)))
+print(contains(holes, "a"), contains(holes, "z"))
+
+# keys and values are the whole map: same length, same order, and it goes
+# back together.
+let ks = keys(m)
+let vs = values(m)
+let rebuilt = reduce(range(len(ks)), fn(acc, i) { set(acc, ks[i], vs[i]) }, {})
+print(rebuilt)
+print(rebuilt == m, keys(rebuilt) == ks)
+print(keys({}), values({}), len(m) == len(keys(m)))

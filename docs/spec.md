@@ -613,6 +613,84 @@ In a map it looks for a *key*, so a needle no key could be — a list, a map, a
 function — is an error rather than `false`: that is a category mistake and not
 a lookup that missed. Absence is what `get(m, k, default)` is for.
 
+## Looking up a key
+
+Four spellings ask a map about a key. They agree on every key the map has, and
+the whole of their difference is what they do when it does not have it — which
+is worth four spellings, because a key that is not there is four different
+situations.
+
+```
+let m = {name: "vine", version: 1}
+m.name                 # "vine"
+m["version"]           # 1
+get(m, "kind")         # nil
+get(m, "kind", "?")    # "?"
+contains(m, "kind")    # false
+```
+
+- **`m.k` and `m["k"]` fail.** `{a: 1}["z"]` is
+  `runtime error: map has no key "z"`. This is the spelling for a key the
+  program requires — a field of a record it is reading — where a missing one
+  means the data is not what the program was written for, and stopping at the
+  lookup names the key instead of letting a `nil` travel.
+- **`get(m, k)` answers `nil`.** The spelling for a key that may or may not be
+  there, where absence is not an event.
+- **`get(m, k, default)` answers the default.** The same question with the
+  caller supplying the absent case, which is what makes accumulating a map
+  short: `set(m, k, get(m, k, 0) + 1)` counts.
+- **`contains(m, k)` answers whether it is there**, and nothing about the
+  value. It is the only one of the four that asks the actual question, and the
+  only one that can tell a key holding `nil` from no key.
+
+**`get(m, k)` cannot tell a missing key from a key holding `nil`.** Both
+answer `nil`. That is the same ambiguity `first([])` has — **Taking and
+dropping** names this function as the thing that removes it for maps — and
+here the removal is real, because the default is reached only when the key is
+*absent* and never because the value is falsy:
+
+```
+let m = {a: nil}
+get(m, "a", 0)     # nil  -- the key is there, and holds nil
+get(m, "z", 0)     # 0    -- the key is not there
+contains(m, "a")   # true
+```
+
+Worth reading twice, because every language that has this function has an
+opinion about it and they are not all this one. A default here is not a
+replacement for a falsy value: `get(m, k, 0)` on a key holding `nil` answers
+`nil`, and on a key holding `false` answers `false`. **Truthiness** is not
+consulted at all.
+
+**Why the two-argument form answers `nil` rather than failing.** Because
+`m[k]` is already the spelling that fails, and a language with only that one
+has no way to tolerate a missing key at all. The two forms of `get` are then
+the two ways of tolerating it, and the split between them is not *is this an
+error* but *who says what absent looks like*. It is the mirror of `first`,
+decided the other way for the reason **Taking and dropping** gives: a list has
+no first element only when it is empty, which is `len(xs) == 0` and is usually
+the question that was meant, while a map key came from somewhere else and
+missing is ordinary.
+
+`get`'s target is a map and nothing else — `get([1], 0)` is an error and not
+an index, because a list is indexed with `xs[0]` and a list offered where a map
+belongs is a mistake worth naming. What may be a key is in **Types**, and it is
+the same rule in `get`, `set`, `contains`, `m[k]` and a literal.
+
+**`keys(m)` and `values(m)` are the whole map.** They are lists of the same
+length in the same order — see **Map order** — so a map taken apart by them
+goes back together:
+
+```
+let ks = keys(m)
+let vs = values(m)
+reduce(range(len(ks)), fn(acc, i) { set(acc, ks[i], vs[i]) }, {})
+```
+
+which is `==` to `m` and in `m`'s own key order. `keys({})` and `values({})`
+are both `[]`, and `len(m)` is `len(keys(m))`. Neither builtin takes anything
+but a map; for the values of a list there is nothing to ask.
+
 ## Range
 
 `range(n)` is the integers from 0 up to but not including `n`, and

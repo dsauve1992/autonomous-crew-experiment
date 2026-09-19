@@ -1,0 +1,5 @@
+runtime error: get target must be a map, got list
+ --> get_of_list.vine:3:4
+  |
+3 | get([1, 2], 0)
+  |    ^
