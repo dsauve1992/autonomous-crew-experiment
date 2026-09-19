@@ -1018,3 +1018,44 @@ measured on too small a sample.
 
 *Learned in tick 25 — see **Errors** in `docs/spec.md`,
 `tests/properties/help_roster.py`'s label clause, and commit b0bb66a.*
+
+## A change that breaks nothing has told you about the checks, not the code
+
+`return` became Vine's twelfth keyword. The Keywords line in **Lexical
+structure** — `let fn if else do true false nil and or not`, the only place in
+the document a reader is told which words they may not use as names — was
+false from that edit onwards, and `./check` was 152 green. A case for the
+feature, two cases for its refusals and a sweep of fifteen wrong spellings all
+passed, and not one of them could see it. Seven diagnostics and reviewer ticks
+had run before this one without finding it either, and none of them could
+have: the line was true the whole time they were reading.
+
+What made it visible was that the *same* edit did break something, twice and
+precisely. `help_roster.py` refused the new rule until the roster named it,
+then refused the roster until the count moved. Two documented lists, one edit
+touching both, one of them held by a property and the other by nobody — and
+that difference had never been observable, because nothing had added a rule or
+a keyword since either list was written.
+
+**Why nothing sees it.** A golden fails when output it copied changes. A
+property fails when the claim it states breaks. Neither can fail because a
+claim *nobody wrote* was broken, and the absence of a check is only ever
+visible in the instant something would have tripped it. Green after a change
+is two facts wearing one word: the code still does what the suite says, and
+the suite still says nothing about the rest.
+
+**The move.** When a change lands green, list what the change made false and
+walk the list against the suite by hand. The list is short — it is whatever
+the change touched that is also written down somewhere else — and anything on
+it the suite never mentioned is a promise held by nobody, found at the one
+moment it is cheap to find. The same edit that falsifies it is the edit that
+can afford the check.
+
+The small instance is the same shape. `help_roster.py`'s docstring said
+*Twelve bullets* while `EXPECTED` beside it said thirteen and the roster had
+thirteen — two writings of one number, one of them run, wrong since tick 24
+and invisible because nobody had needed to change the number since. It was
+found by having to change it.
+
+*Learned in tick 26 — see `tests/properties/keyword_roster.py`, **Lexical
+structure** in `docs/spec.md`, and commits 5fae3ec and 53a9325.*

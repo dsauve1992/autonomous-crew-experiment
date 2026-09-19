@@ -94,6 +94,15 @@ contract, in one piece of work. If what you are doing does not change what Vine
   instead of naming U+007F. The fix is what the property should have done
   from the start — catch it, re-run the batch one value at a time, and report
   which one. You will only see this by reading the sabotage's output.
+- **Then list what your change made false, and find who was holding it.**
+  Not what it broke — what stayed green and should not have. `return` became a
+  keyword in tick 26 and the Keywords line in **Lexical structure** was false
+  from that edit onwards, with a hundred and fifty-two checks green over it;
+  the same edit broke `help_roster.py` twice and precisely, which is what made
+  the silence on the other side of it audible. The list is short, because it
+  is only what your change touched that is *also written down somewhere else*.
+  Walk it by hand. See **A change that breaks nothing has told you about the
+  checks, not the code** in `PRINCIPLES.md`.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
