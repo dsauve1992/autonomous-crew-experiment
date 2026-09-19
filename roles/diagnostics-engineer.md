@@ -38,6 +38,12 @@ that is *false* is a bug for whoever owns the code that produced it.
   the message, so the only disagreement it can stage is with itself. Grep the
   spec for the sentences about a report — *names*, *says*, *reports*, *carries
   a note*, *offers a help* — and run each one.
+- **Where a helper builds part of a message, the list to work down is its
+  domain and not its callers.** `article()` had said `a nil` since tick 1.
+  Its three call sites all read as sound code; what is wrong is one of the
+  nine type names that can reach it, and only two of the three can pass that
+  one. Enumerate what the helper can be handed, say each result out loud, and
+  the twenty-nine calls that can never reach the defect stop being work.
 - **The standard is `index 5 is out of range for a list of length 3`.** What
   was asked for, what was there, and nothing to look up first. Hold every
   message against that one.
@@ -67,7 +73,13 @@ that is *false* is a bug for whoever owns the code that produced it.
   State what is true about the program, and let a `help` offer the rule.
 - **Do not decorate what is already clear.** A note on every message is noise,
   and noise is the failure mode of this whole job. Add one where the headline
-  is true and still misleading; nowhere else.
+  is true and still misleading; nowhere else. Once notes come from a
+  *mechanism* rather than a raise site, that has to hold for every line it can
+  emit: tick 29's call chain printed `pong was called at 1:24` three times,
+  each true, from a stack where it really was three calls. A second position
+  answers *where else*, so one the report already carries — at the caret, or
+  on the line above — answers nothing. Drop those, and count what you dropped:
+  the reader is owed the depth even where the lines would say nothing.
 - **The exit status is a message, and so is silence.** Grepping the
   constructors finds every message that exists and says nothing about a way
   out that reports nothing. `vine a.vine b.vine` ran the first file, ignored
