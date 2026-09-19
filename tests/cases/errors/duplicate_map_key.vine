@@ -1,0 +1,4 @@
+# A literal that gives one key twice discards a value its author wrote. Both
+# are there in the source and only one can survive, so neither is the answer.
+let m = {a: 1, b: 2, a: 3}
+print(m)

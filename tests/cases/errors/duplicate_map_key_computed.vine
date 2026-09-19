@@ -1,0 +1,5 @@
+# The duplicate need not look like one. A parenthesised expression is a key
+# too, so two keys that read differently can be the same key -- which is the
+# case worth an error rather than a quiet collapse to one entry.
+let region = "north"
+print({(region): 1, north: 2})

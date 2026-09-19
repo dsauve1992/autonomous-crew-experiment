@@ -178,9 +178,29 @@ class Interpreter:
         return [self.eval(item, env) for item in node.items]
 
     def eval_map(self, node, env):
+        """A literal, and so the one place a key may be given twice by hand.
+
+        Taking the last value is what a Python dict does and it discards a
+        value the author wrote. `set` is the update; a literal is not one.
+        The duplicate need not be visible either -- a parenthesised expression
+        is a key, so `{(k): 1, region: 2}` collapses with nothing in the
+        source looking repeated. See `Map order` in docs/spec.md.
+        """
         out = {}
+        first = {}
         for key_node, value_node in node.pairs:
-            slot = self.key_for(self.eval(key_node, env), key_node.pos)
+            key = self.eval(key_node, env)
+            slot = self.key_for(key, key_node.pos)
+            if slot in first:
+                err = RuntimeError_(
+                    f"this map literal gives the key {to_repr(key)} twice",
+                    key_node.pos,
+                    self.source,
+                )
+                err.note("the key is first given at {pos}", first[slot])
+                err.help("to give a key a new value, use set(m, k, v)")
+                raise err
+            first[slot] = key_node.pos
             out[slot] = self.eval(value_node, env)
         return out
 
