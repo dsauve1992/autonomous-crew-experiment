@@ -15,8 +15,29 @@ Each case is a source file under tests/cases with a sibling expectation:
 Expectations are written by hand on purpose. There is deliberately no flag to
 regenerate them from actual output: a golden file that can rewrite itself to
 match a regression is not a test.
+
+Beside the cases are properties, in tests/properties/*.py. A property is one
+sentence that must hold of *every* Vine program, checked against as many as
+can be enumerated cheaply -- fifty thousand of them, in a couple of seconds.
+It is not a golden and has no expectation file, because there is nothing to
+write down per program: the expectation is the sentence, and the sentence is
+written once, in the module. Each exports `CLAIM`, the sentence, and
+`check()`, returning how many programs it tried and the ones that broke it.
+
+They live here rather than in a scratch file because tick 6 found five Python
+tracebacks with a grid it then threw away, and tick 7 found three more with
+the same technique -- against bugs that three ticks of careful reading had
+walked past. What ./check cannot do by itself, nobody does twice.
+
+The rule these do not break is the one about hand-written expectations. That
+rule exists because writing an expectation is an act of reading; a property is
+read the same way, once, and applied by the machine. What it must never become
+is a check that reports whatever the implementation happens to do -- so a
+property states its claim in its own words, and never compares one run of Vine
+against another.
 """
 
+import importlib.util
 import io
 import pathlib
 import shlex
@@ -32,6 +53,7 @@ from vine.repl import Repl  # noqa: E402
 
 # Examples are tested too, so the documentation cannot quietly stop working.
 ROOTS = [ROOT / "tests" / "cases", ROOT / "examples"]
+PROPERTIES = ROOT / "tests" / "properties"
 # Source extension -> the expectation extensions a case of that kind may have.
 EXPECTATIONS = {
     ".vine": (".out", ".err"),
@@ -114,6 +136,29 @@ def actual_for(case):
     return "out", buffer.getvalue()
 
 
+def load_property(path):
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def report_property(module, checked, broke):
+    """What a broken property prints: the claim, and the programs that broke
+    it. A counterexample is the whole of the evidence, so it is quoted as
+    source you can paste at a prompt."""
+    lines = [
+        f"      claim: {module.CLAIM}",
+        f"      {len(broke)} of {checked} programs broke it:",
+    ]
+    for source, what in broke[:20]:
+        lines.append(f"        {source}")
+        lines.append(f"          {what}")
+    if len(broke) > 20:
+        lines.append(f"        ... and {len(broke) - 20} more")
+    return "\n".join(lines)
+
+
 def diff(expected, actual):
     exp, act = expected.split("\n"), actual.split("\n")
     lines = []
@@ -132,9 +177,11 @@ def main(argv):
     cases = sorted(
         c for root in ROOTS for ext in EXPECTATIONS for c in root.rglob("*" + ext)
     )
+    properties = sorted(PROPERTIES.glob("*.py")) if PROPERTIES.is_dir() else []
     if only:
         cases = [c for c in cases if only in str(c)]
-    if not cases:
+        properties = [p for p in properties if only in str(p)]
+    if not cases and not properties:
         print("no cases found")
         return 1
 
@@ -164,15 +211,25 @@ def main(argv):
         else:
             print(f"{GREEN}ok{RESET}      {name}")
 
+    for path in properties:
+        name = str(path.relative_to(ROOT))
+        module = load_property(path)
+        checked, broke = module.check()
+        if broke:
+            failures.append((name, report_property(module, checked, broke)))
+            print(f"{RED}FAIL{RESET}    {name}")
+        else:
+            print(f"{GREEN}ok{RESET}      {name} {DIM}({checked} programs){RESET}")
+
     print()
     if failures:
         for name, detail in failures:
             print(f"{RED}--- {name}{RESET}")
             print(detail)
             print()
-        print(f"{RED}{len(failures)} of {len(cases)} failed{RESET}")
+        print(f"{RED}{len(failures)} of {len(cases) + len(properties)} failed{RESET}")
         return 1
-    print(f"{GREEN}{len(cases)} passed{RESET}")
+    print(f"{GREEN}{len(cases) + len(properties)} passed{RESET}")
     return 0
 
 
