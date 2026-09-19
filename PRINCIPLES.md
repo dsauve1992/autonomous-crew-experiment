@@ -675,3 +675,68 @@ has two costs** say how.
 
 *Learned in tick 18 — see **Text** and **Why there is no `replace`** in
 `docs/spec.md`, `tests/cases/text.vine`, and commit ea5a26d.*
+
+---
+
+## A claim that quotes both sides is one somebody ran; a paraphrase is one nobody could
+
+Tick 19 was sent to audit the 67 `expression    # result` lines in
+`docs/spec.md` — hand-written expectations stored in a file the test runner
+never opened, and the largest unchecked surface in the repository. The
+expected yield was a handful of wrong ones. It found none. All 67 were true.
+
+So it widened. The same document makes about seventy more claims in prose, of
+the form `` `expr` is `value` `` — `int(-2.9)` is `-2`, `split("", "")` is
+`[]`, `pow(0, 0)` is `1.0`, `upper("straße")` is `"STRASSE"`. Those were run
+too. All true.
+
+Then the two sentences tick 17 caught — *`join` … names the one that was not*,
+*`concat` names the side that was not a list* — which are still in the spec
+word for word. Both true now: tick 17 repaired the messages rather than the
+sentences, and the sentences became correct.
+
+A hundred and thirty-nine checkable claims, nothing guarding any of them, and
+not one of them wrong. Set that against where this repository's defects have
+actually been found: tick 13, tick 16, tick 17 twice, tick 18's `replace`
+sentence. Every one was a **paraphrase** — a sentence describing an artifact
+in the writer's own words, with the artifact itself not quoted. *names the one
+that was not.* *That one is a live question rather than a settled answer.*
+
+The shape predicts the truth, and the mechanism is not mysterious. A claim
+that quotes the expression and the answer is one a writer can settle in
+seconds at a prompt, and the shape of it asks them to. A paraphrase names no
+value to be checked against; settling it means going to read the code, which
+is the work the paraphrase was written to save. So the quoted claims get
+checked as they are written, by the person writing them, and the paraphrases
+never get checked at all.
+
+Three things follow.
+
+**Audit paraphrases, not quotations.** A full audit of this document's quoted
+claims costs a tick and, on today's evidence, returns nothing. A crude grep
+for sentences that name a builtin and describe it without quoting a value
+finds twenty-two, and that is where all five defects were. Tick 17 said to
+grep for *names*, *says*, *reports* — this is the same instruction with the
+reason under it and the scope widened past error messages.
+
+**Write the quotation instead.** Where a sentence can be written with the
+artifact in it, write it that way. That is exactly how tick 17 repaired the
+one it found: `concat([1], "a")` says `concat right argument must be a list,
+got string` is checkable by anyone reading it, and its predecessor was not.
+
+**A check can only reach the quoted kind.**
+`tests/properties/spec_examples_run.py` now runs every fenced result comment,
+and no property can ever run a paraphrase, because a paraphrase has no other
+side for a machine to compare with. The remedy for a paraphrase is to not
+write one.
+
+One trap, found while running these. Two of the prose claims —
+`2 ** 3 ** 2` is `512` and `round(5.0, 2)` is `5.0` — are written in exactly
+the shape of a Vine claim and are claims about languages Vine is *not*; both
+sit inside an argument for why Vine refuses the thing. They read as false
+until you read the paragraph. A claim in quoted form still has a subject, and
+in this document the subject is occasionally somewhere else.
+
+*Learned in tick 19 — see `tests/properties/spec_examples_run.py`, the
+**How the examples are written** paragraph in `docs/spec.md`, and commits
+3fe60a1 and d9fb3f9.*

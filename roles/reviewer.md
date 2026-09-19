@@ -53,7 +53,11 @@ the evidence that nothing was looking.
   `to_display`, so the two things it compared were one function — and found
   out only by sabotaging each clause on its own. Either delete such a clause
   or say in the docstring what it actually guards, so the next reader does not
-  count it.
+  count it. A property that reads a document has one clause more than it
+  looks: *how much it read*. Assert that exactly. Tick 19 wrote "at least 60
+  examples", tagged one block to watch the guard fire, and watched two claims
+  drop out of the reading while the property passed — partial blindness is how
+  a document-reading check actually fails, and a floor is deaf to it.
 - **Run the implementation, not only the document.** Reading found three bugs
   in tick 3 and three in tick 5. One grid — every builtin against a list of
   values, asserting only that the failure was a Vine error — found five in
