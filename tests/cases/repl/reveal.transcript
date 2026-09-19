@@ -1,0 +1,14 @@
+vine — ^D to exit, blank line to abandon an unfinished entry
+>>> let scraped = "east\u{a0}1"
+>>> reveal(scraped)
+"\"east\\u\{a0}1\""
+>>> print(reveal(scraped))
+"east\u{a0}1"
+>>> reveal(scraped) == repr(scraped)
+false
+>>> reveal(1)
+runtime error: reveal argument must be a string, got int
+ --> <repl:5>:1:7
+  |
+1 | reveal(1)
+  |       ^

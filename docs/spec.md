@@ -1536,6 +1536,22 @@ join(map(rows, reveal), " ")            # "east\u{a0}1" "east 1"
 reveal(rows)                            # error: reveal argument must be a string, got list
 ```
 
+**And it is a string at the prompt too**, which is the one place the answer
+surprises. The REPL echoes a value the way `repr` shows it — see **The REPL** —
+so a bare `reveal(s)` there is a revealed string being revealed a second time,
+and every backslash doubles. `print` is what shows it once:
+
+```
+>>> reveal("east\u{a0}1")
+"\"east\\u\{a0}1\""
+>>> print(reveal("east\u{a0}1"))
+"east\u{a0}1"
+```
+
+Nothing is wrong in that first line and it is not worth a special case: the
+echo has one rule and this is it, applied to a value like any other. It is
+written down because the prompt is where somebody reaches for `reveal` first.
+
 #### Why a builtin and not a composition
 
 **add what cannot be composed, refuse what can**, so here is the measurement.

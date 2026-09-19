@@ -1,0 +1,5 @@
+let scraped = "east\u{a0}1"
+reveal(scraped)
+print(reveal(scraped))
+reveal(scraped) == repr(scraped)
+reveal(1)
