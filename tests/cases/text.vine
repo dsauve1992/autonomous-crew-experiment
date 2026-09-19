@@ -1,0 +1,21 @@
+# Every claim in **Text**, run. The two spellings of é are written side
+# by side, because a reader cannot see which is which and that is the point:
+# the same text, two strings, and Vine answering about the string.
+let composed = "é"
+let decomposed = "é"
+print(len(composed), len(decomposed), composed == decomposed)
+print(repr(decomposed[0]), len(decomposed[0]))
+print(contains(decomposed, composed), contains(composed, "e"), contains(decomposed, "e"))
+print(len(split(decomposed, "")))
+print(reverse("née"), reverse("née"))
+print(len(keys({} |> set(composed, 1) |> set(decomposed, 2))))
+
+# Case conversion changes the length and does not undo itself.
+print(upper("straße"), len("straße"), len(upper("straße")))
+print(upper("ﬁ"), lower(upper("straße")))
+print(len("İ"), len(lower("İ")))
+
+# trim removes what Unicode calls whitespace, which is wider than the four
+# characters a program may have: a non-breaking space and a record separator
+# both go.
+print(len(trim(" x ")), len(trim("x")), len(trim(" \t x \n ")))

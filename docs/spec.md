@@ -483,6 +483,48 @@ else would read carries the rule as a help, because every character of
 `"1_000"` was meant as part of a number and the headline on its own reads like
 a mistake.
 
+## Text
+
+A Vine string is a sequence of **codepoints**, and every builtin that measures,
+cuts or walks one counts codepoints. **Operators** already says this about `<`;
+it is the same unit for `len`, indexing, `reverse`, `split(s, "")`, `contains`,
+`==` and a map key.
+
+**Nothing is normalized.** `"é"` written as one codepoint and `"é"` written as
+`e` followed by a combining acute are two different strings. `len` answers 1
+and 2, `==` answers `false`, and `reverse` carries the accent back onto
+whatever letter lands before it. Both spellings are the same text to a reader
+and neither is wrong, so both answers are right about the string they were
+handed and neither is right about the text. Vine does not have an answer about
+the text. This paragraph is the whole of what it promises, rather than a gap a
+reader is meant to fill in.
+
+Codepoints are the unit because they are the only one Vine can count without a
+table. A *grapheme* — what a person means by a character — needs the Unicode
+segmentation data, which changes with every Unicode release, so `len` would
+answer differently on two machines running the same program. A *byte* would
+make `len("é")` 2 for one spelling and 3 for a difference nobody can see. The
+unit that is left is stable, cheap and occasionally surprising, and the
+surprises are the rest of this section.
+
+**Case conversion does not preserve length.** `upper("straße")` is `"STRASSE"`
+— six codepoints in, seven out — and `upper("ﬁ")` is `"FI"`. The `pad` one-liner
+under **Formatting** measures with `len`, so a column padded before converting
+and printed after is a column that does not line up. **It does not reverse
+either**: `lower(upper("straße"))` is `"strasse"`, and `lower("İ")` is two
+codepoints where the input was one. Neither is a defect in the table; that is
+what case conversion is once there is more than one alphabet in it.
+
+**`trim` removes more than a program's whitespace.** It removes every character
+Unicode calls whitespace — twenty-nine of them, including the non-breaking
+space and the four ASCII information separators — where the lexer, `int` and
+`float` all take the same four. The two sets differ because they read different
+things: source never contains a non-breaking space and scraped data is full of
+them, and `trim` is what a report calls on a column before anything else. The
+cost is that `trim` takes a record separator off data delimited by one, and
+there is no narrower spelling to reach for, because Vine has no `replace`.
+That one is a live question rather than a settled answer.
+
 ## Range
 
 `range(n)` is the integers from 0 up to but not including `n`, and
