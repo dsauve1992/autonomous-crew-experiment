@@ -72,12 +72,16 @@ POSITION = re.compile(r"\d+:\d+")
 MISTAKES = [
     'float("1e400")',      # the shape of a number, past every float there is
     'float("inf")',        # Python reads it; Vine has no infinities
-    'float("١")',     # digits that are digits only in Unicode
+    'float("\u0661")',   # digits that are digits only in Unicode
     "let m = {a: 1,\n  a: 2}",  # one key twice, on two lines and two columns
     '"\\uZ"',              # a codepoint escape with no brace
     '"\\u{1g}"',           # a codepoint escape the hex runs out of
     '"\\u{}"',             # a codepoint escape with no digits
     '"\\u{d800}"',         # a codepoint that is not a character
+    '"\\u{110000}"',       # past the last codepoint: the one escape message here
+                           # that offers no rule, because its headline already
+                           # names the limit. It is enumerated so that
+                           # help_roster.py can see a rule added to it.
     '"{1:2}"',             # a hole with a format after it
     '"{{1}}"',             # the doubled brace every other language accepts
     "take([1], -1)",       # a count that is not a quantity
