@@ -15,6 +15,15 @@ hold (four operators), `range(2 ** 63)`, and expressions nested past the
 Python stack (nine constructs, three entry paths). Tick 6 found five more with
 the first version of it, which lived in a scratch file and was thrown away.
 
+Every string in VALUES was ASCII until tick 15, which is a fact about the
+list and not about strings. The five added there are the ones the string
+builtins actually bend at: an accent written as a combining codepoint, a word
+whose `upper` is longer than it is, a non-breaking space, digits that are
+digits only in Unicode, and digits with an underscore between them. They
+found nothing: the grid went from 61874 programs to 74204 and stayed quiet.
+They are here anyway, because the next thing to touch `len`, `upper`, `split`
+or a conversion will be checked against them without anyone remembering to.
+
 The last value in VALUES is the one boundary here that has never caught
 anything: a list holding a float beside an int no float can hold. Tick 7's
 `huge + 2.5` bug was arithmetic converting the int and Python raising where it
@@ -46,6 +55,7 @@ VALUES = [
     "0", "0.0", "-0.0", "false", "1" + "0" * 400, "1.7e308", "1e-320",
     '"\\n"', "[[1]]", '[1, "a"]', "{1: 2}", "print", "[1, 2, 3]",
     "[1.7e308, " + "1" + "0" * 400 + "]",
+    '"e\u0301"', '"stra\u00dfe"', '"\u00a0"', '"\u0661\u0662\u0663"', '"1_0"',
 ]
 
 BINARY = ["+", "-", "*", "/", "%", "==", "!=", "<", "<=", ">", ">=",
