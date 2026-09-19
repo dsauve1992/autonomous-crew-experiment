@@ -851,8 +851,13 @@ pow(3015, 0.5)              # 54.90901565316938
                             # correctly rounded: 54.909015653169384
 ```
 
-137 of the first 100000 whole numbers land on the wrong side. So `sqrt` is
-not *strictly* composable, and it is refused anyway: one ulp is nine
+137 of the first 100000 whole numbers land on the wrong side. That count is a
+measurement of the host's `pow` against a correctly rounded root, taken once
+and deliberately guarded by no test: it is a fact about the floating-point
+library Vine is running on rather than about Vine, so a test would assert
+something a Python upgrade may change for reasons this language has no opinion
+about. Read it as an order of magnitude that was checked, not as an invariant.
+So `sqrt` is not *strictly* composable, and it is refused anyway: one ulp is nine
 significant figures below anything `fixed` prints, and a report that could
 tell the difference is not a report. A later tick that wants the last bit can
 add `sqrt` knowing exactly what it buys, which is this paragraph and nothing
