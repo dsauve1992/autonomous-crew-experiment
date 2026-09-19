@@ -54,6 +54,9 @@ from vine.repl import Repl  # noqa: E402
 # Examples are tested too, so the documentation cannot quietly stop working.
 ROOTS = [ROOT / "tests" / "cases", ROOT / "examples"]
 PROPERTIES = ROOT / "tests" / "properties"
+# On the path so one property may reuse another's value list rather than copy
+# it. A copied list is the half that stops growing when the original does not.
+sys.path.insert(0, str(PROPERTIES))
 # Source extension -> the expectation extensions a case of that kind may have.
 EXPECTATIONS = {
     ".vine": (".out", ".err"),

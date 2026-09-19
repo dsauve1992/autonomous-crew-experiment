@@ -229,7 +229,11 @@ taken back later:
   `"hi, {name}"` must produce `hi, vine`, not `hi, "vine"`; quoting every
   string hole would need undoing at almost every use. So `"{x}"` and `str(x)`
   can never disagree, and the other conversion stays one call away as
-  `"{repr(x)}"`.
+  `"{repr(x)}"`. That is a rule about the value the hole holds and not about
+  what is inside it: a list in a hole still shows its elements as source, so
+  `"{["a", "b"]}"` is `["a", "b"]` with the quotes. The hole inherits that
+  from `str` along with everything else — see **Inside a container**, which
+  says why the two depths differ.
 
 A hole is an ordinary piece of the program, so a failure inside one is an
 ordinary error, pointing into the string at the part that failed:

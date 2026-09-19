@@ -21,3 +21,11 @@ print("{repr(name)} is not {name}")
 
 let greet = fn(who) { "hello, {who}!" }
 print(["ann", "bo"] |> map(greet) |> join(" "))
+
+# A hole is `str`, and `str` shows a container's elements as source -- see
+# **Inside a container** in docs/spec.md. Without that rule these two lines
+# would print the same thing, and one list holds a comma where the other holds
+# two elements.
+print("{["a, b"]}")
+print("{["a", "b"]}")
+print("{{a: "x"}}")

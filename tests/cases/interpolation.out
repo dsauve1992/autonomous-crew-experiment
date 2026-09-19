@@ -11,3 +11,6 @@ a literal { and } and a bare } need no hole
 3 == 3 == 3
 "vine" is not vine
 hello, ann! hello, bo!
+["a, b"]
+["a", "b"]
+{"a": "x"}
