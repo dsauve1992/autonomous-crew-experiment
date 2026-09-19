@@ -139,7 +139,15 @@ def _range(interp, pos, args):
     else:
         start = want(interp, pos, args[0], "int", "range start")
         stop = want(interp, pos, args[1], "int", "range stop")
-    return list(range(start, stop))
+    try:
+        return list(range(start, stop))
+    except (OverflowError, MemoryError):
+        # A list of that many elements cannot be built. Python says so two
+        # ways -- OverflowError when the count will not fit the C integer a
+        # length is, MemoryError when it fits and the memory does not -- and
+        # they are one answer to the user, who asked for a list nothing can
+        # hold. Neither was caught, so both arrived as Python tracebacks.
+        interp.fail(f"range of {stop - start} elements is too large to build", pos)
 
 
 @builtin("map", 2, 2)

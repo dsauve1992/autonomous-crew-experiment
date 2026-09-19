@@ -1,0 +1,7 @@
+# range builds the whole list, and the count may be larger than any list.
+# Python says so two ways -- OverflowError when the count will not fit the C
+# integer a length is, MemoryError when it fits and the memory does not -- and
+# both left as tracebacks. The bound here is the smallest that overflows on
+# any platform. The MemoryError half is machine-dependent, so it has no case;
+# log/0007 records watching it fire by hand instead.
+range(9223372036854775808)
