@@ -1,0 +1,7 @@
+# Three keys that print as `east 1`, and only two of them are equal. The
+# headline quotes the duplicate with `repr` and so cannot say which two -- and
+# it does not have to. The caret is on the second and the note carries the
+# first, and a position is unambiguous in a way no rendering of a value is.
+# This message is why revealing was not applied to all five messages that
+# quote a value: it needs nothing.
+let m = {"east 1": 1, "east\u{a0}1": 2, "east 1": 3}

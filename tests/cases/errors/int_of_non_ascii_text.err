@@ -1,0 +1,5 @@
+runtime error: cannot convert "café" to an int
+ --> int_of_non_ascii_text.vine:6:4
+  |
+6 | int("café")
+  |    ^

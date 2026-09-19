@@ -1,0 +1,19 @@
+# The map holds `café` written with a combining accent and the program asks
+# for the precomposed one. Both print as `café`, so this report names a key
+# the reader's own data visibly contains -- the worst message of the five that
+# quote a value, and the one left alone.
+#
+# Tick 23 wrote the fix and the golden for it before the code: reveal both
+# whenever some key in the map "prints the same" as the one asked for. That
+# test cannot fire. `repr` is injective -- `repr_is_source.py` checks its
+# output re-parses to the original, which is a left inverse -- so two strings
+# with equal `repr` are the same string, and the guard is a tautology. Any
+# rendering under which these two are equal is a lossy one, and every lossy
+# one here is a Unicode table: the thing `repr` refused, for the reason
+# **Revealing** gives. There is no table-free way to ask this question.
+#
+# What the message is actually missing is smaller than Unicode and bigger than
+# this tick: it says what was asked for and never what was there. See
+# missing_key_non_ascii.vine, and the handoff of tick 23.
+let m = {"cafe\u{301}": 1}
+print(m["café"])

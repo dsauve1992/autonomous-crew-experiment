@@ -1,0 +1,5 @@
+runtime error: map has no key "thé"
+ --> missing_key_non_ascii.vine:7:8
+  |
+7 | print(m["thé"])
+  |        ^

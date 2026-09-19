@@ -1,0 +1,7 @@
+runtime error: this map literal gives the key "east 1" twice
+ --> duplicate_map_key_lookalike.vine:7:41
+  |
+7 | let m = {"east 1": 1, "east\u{a0}1": 2, "east 1": 3}
+  |                                         ^
+  = note: the key is first given at 7:10
+  = help: to give a key a new value, use set(m, k, v)

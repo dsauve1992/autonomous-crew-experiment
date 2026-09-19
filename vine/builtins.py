@@ -120,6 +120,23 @@ NUMBER_RULE = "the digits are 0 to 9, optionally signed, with spaces, tabs or ne
 FINITE_RULE = "every float is finite; the largest is about 1.8e308"
 
 
+def revealed_note(error, value):
+    """Add the escaped form of a string, where `repr` is what reads as right.
+
+    Only on the branch where Python read the text as a number and Vine did
+    not: every character in it was meant as part of one, so the reader is
+    looking at a headline that quotes their value back and looks correct.
+    `repr` and `reveal` differing is exactly the condition under which it
+    looks correct and is not. `int("caf\u00e9")` never reaches here and keeps
+    the legible headline it deserves -- see **Conversions** in docs/spec.md,
+    and `int_of_non_ascii_text.vine` beside the case this note is for.
+    """
+    if to_repr(value) != to_reveal(value):
+        error.note(f"written out in escapes, that string is {to_reveal(value)}")
+    return error
+
+
+
 @builtin("int", 1, 1)
 def _int(interp, pos, args):
     value = args[0]
@@ -147,7 +164,7 @@ def _int(interp, pos, args):
             raise error  # not a number by anyone's reading
         # Python reads it and Vine does not, so every character in it is one
         # somebody meant as part of a number and the headline looks wrong.
-        raise error.help(NUMBER_RULE)
+        raise revealed_note(error, value).help(NUMBER_RULE)
     interp.fail(f"cannot convert {article(kind)} to an int", pos)
 
 
@@ -177,6 +194,10 @@ def _float(interp, pos, args):
             result = float(text)
         except ValueError:
             raise error  # not a number by anyone's reading
+        # Past the ValueError, Python read it and Vine did not -- the same
+        # branch `int` notes, and it reaches "inf" spelled with a trailing
+        # non-breaking space as well as digits that are not 0 to 9.
+        revealed_note(error, value)
         if result != result or result in (INFINITY, -INFINITY):
             raise error.help(FINITE_RULE)  # "inf" and "nan", which Python reads
         raise error.help(NUMBER_RULE)  # a number, spelled a way Vine does not

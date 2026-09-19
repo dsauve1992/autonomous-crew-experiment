@@ -1,0 +1,6 @@
+# The other half of int_of_unicode_digits.vine, and the reason that one is a
+# note rather than a wider rule. `café` is not a number by anyone's reading,
+# the quoted text says so, and escaping it to `"caf\u{e9}"` would make the
+# reader decode hex to learn what they could already see. The escaped form is
+# printed only where `repr` is what makes a false message look right.
+int("café")
