@@ -11,7 +11,7 @@ text was ever right. `spec_examples_run.py` is the one property that reads the
 document, and it compares the **first line** of a report; a note is never on
 the first line.
 
-Four clauses, each broken on its own, on a committed tree.
+Five clauses, each broken on its own, on a committed tree.
 
 1. **Every extra line is labelled `note` or `help`, and nothing else.** This
    is the one the reader parses by eye, and it is the whole of what tells a
@@ -29,7 +29,13 @@ Four clauses, each broken on its own, on a committed tree.
    `{pos}` in the text is a second place to look that is silently dropped.
    Both directions fire -- dropping the `at` argument at `lexer.py`'s codepoint
    note breaks the first, deleting ` at {pos}` from the text breaks the second.
-4. **A help quotes no position.** The structural half of *a help carries no
+4. **No extra line repeats the one above it.** Clause 2 is this one for a
+   report that carries a single note, and it was written when that was every
+   report there was. Tick 29's call chain made a report that carries several,
+   and the first draft of it printed `pong was called at 1:24` three times --
+   each true, each a different call, and the whole suite green. A position
+   the line above already gave is not a second place to look either.
+5. **A help quotes no position.** The structural half of *a help carries no
    position* cannot fail and is not asserted: `help()` has no parameter for
    one. What can fail is the text, so what is checked is the text -- a help
    whose words quote a `line:col` is a fact about this program wearing a
@@ -45,7 +51,9 @@ key, a hole with a format after it, `"{{`, a string Python reads as a number
 and Vine does not, a keyword written where the grid only ever writes values,
 and a call that fails inside a function the program itself wrote.
 `MISTAKES` below is those, hand-written, one line of why each, and with them
-the enumeration reaches all 41.
+the enumeration reaches all 41. Its last entry reaches no new site: it is
+there for a *shape* rather than a site, because clause 4 is about two lines
+and every other program here prints at most one that could repeat.
 
 **What nothing here reaches.** A note pointing into a *different source* than
 the caret renders `name:line:col` rather than `line:col`, and only the REPL
@@ -65,9 +73,9 @@ from vine.errors import VineError
 
 CLAIM = (
     "every extra line under a caret is a note or a help; a note's position is "
-    "never the caret's; a {pos} in the text and a position come together; no "
-    "help quotes a position; and vine/ holds the number of sites this file "
-    "claims to reach"
+    "never the caret's; no extra line repeats the one above it; a {pos} in "
+    "the text and a position come together; no help quotes a position; and "
+    "vine/ holds the number of sites this file claims to reach"
 )
 
 # A position as note_lines() writes one: `3:7`, or `<repl:1>:3:7`.
@@ -112,6 +120,12 @@ MISTAKES = [
     "let c = fn() { b() }\n"
     "let d = fn() { c() }\n"
     "d()",
+    # Mutual recursion, which is the one shape that can make a report repeat
+    # a line: the caret is on one of the two calls, so every frame at that
+    # position is dropped and the other is reached five hundred times. Take
+    # the guard out of `frame()` and clause 4 fails here -- without this
+    # program it passes, and the guard is one nothing has watched fire.
+    "let ping = fn(n) { pong(n) }\nlet pong = fn(n) { ping(n) }\nping(0)",
 ]
 
 
@@ -173,10 +187,14 @@ def check():
             continue
         checked += 1
         rendered = error.render()
+        previous = None
         for line in rendered.splitlines():
             stripped = line.lstrip()
             if not stripped.startswith("= "):
                 continue
+            if stripped == previous:
+                failures.append((source, f"repeats the line above it: {stripped}"))
+            previous = stripped
             label = stripped[2:].split(":", 1)[0]
             if label not in ("note", "help"):
                 failures.append((source, f"extra line labelled {label!r}: {stripped}"))

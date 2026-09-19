@@ -56,7 +56,7 @@ had thirteen bullets -- a count in prose beside a count in code, and only
 one of them run.
 
 The programs are `note_and_help_shape.py`'s -- 75,167 from the type grid and
-fifteen hand-written mistakes -- and they reach every one of the 41 `.note(`
+sixteen hand-written mistakes -- and they reach every one of the 41 `.note(`
 and `.help(` sites in `vine/`. What the grid alone does not reach is in that
 file's docstring. Beside them are the two command lines that carry the
 sixteenth rule, run in-process for their stderr.
