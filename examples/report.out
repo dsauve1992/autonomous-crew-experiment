@@ -2,5 +2,8 @@ revenue by region
 east: 5.00
 north: 14.00
 south: 26.00
-largest single order: nut in south
+largest three orders
+  nut in south: 20.00
+  washer in north: 6.00
+  bracket in south: 6.00
 orders over 5.0: 3

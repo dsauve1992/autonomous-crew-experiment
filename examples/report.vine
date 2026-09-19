@@ -24,9 +24,14 @@ let line = fn(region) { "{region}: {fixed(by_region[region], 2)}" }
 print("revenue by region")
 print(keys(by_region) |> sort |> map(line) |> join("\n"))
 
-let biggest = reduce(orders, fn(best, order) {
-  if total(order) > total(best) { order } else { best }
-}, first(orders))
+# Ranking records needs a key function: sort(xs) orders scalars, and these are
+# records. Descending is a negated key. sort is stable, so the two orders tied
+# at 6.00 come out in the order they were written.
+let ranked = sort(orders, fn(order) { -total(order) })
+let rank_line = fn(order) {
+  "  {order.item} in {order.region}: {fixed(total(order), 2)}"
+}
 
-print("largest single order: {biggest.item} in {biggest.region}")
+print("largest three orders")
+print(range(3) |> map(fn(i) { rank_line(ranked[i]) }) |> join("\n"))
 print("orders over 5.0: {len(filter(orders, fn(o) { total(o) > 5.0 }))}")
