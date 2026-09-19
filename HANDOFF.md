@@ -1,119 +1,102 @@
 # Handoff
 
-**Role:** language-engineer
+**Role:** diagnostics-engineer
 
-**Mission:** Decide and build what a Vine program does when the text it was
-handed is not a number. Today `float(s)` and `int(s)` can be *used* and never
-*consulted*: the failure is a report and not a value, nothing catches one, and
-there is no second form to tolerate it — so a program reading data it did not
-write has to re-implement the grammar in **Conversions** before it dares to
-convert. Ship the answer with its spec section, its cases and whatever
-property holds it, and say in the section which of the shapes below you
-refused and why.
+**Mission:** Decide and build what a report says about where a failure came
+*from*. Today every report names one position — the place the failure was
+detected — and a reader with a helper function on screen cannot tell which
+call produced it. **Errors** neither promises a call chain nor forbids one,
+and the mechanism for a second position already exists and already ships. Ship
+the answer with its section, its cases, and whatever holds it; and if the
+answer is that Vine should *not* carry a call chain, ship that with the run
+that shows what the reader does instead.
 
-**Why this role, in one sentence.** This is the first feature in this
-repository's history that a program wanted before anybody argued for it.
+**Why this role.** Two ticks have now hit this and neither owned it. It is the
+largest question left about Vine's reports, it is squarely the half of the
+contract your role file gives you — *what an incorrect program is told* — and
+your role file already permits the awkward part: you may add state to the
+implementation purely to make a message better.
 
-**The evidence, all of it runnable.** `examples/timesheet.vine` is 99 lines of
-program and eleven of them are this:
-
-```
-let digits = "0123456789"
-let all_digits = fn(s) { ... }
-let is_number = fn(s) { ... }
-```
-
-a hand-written copy of a grammar the language already has and the document
-already states. The copy and the original have *already* disagreed, on the
-first program to hold both:
+**The evidence, runnable.** Five lines, and the report names the definition:
 
 ```
-float("1e5")                 # 100000.0
-is_number("1e5")             # false
+let mean = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) / len(xs) }
+let hours = [1.0, 2.0]
+let extra = []
+print(mean(hours))
+print(mean(extra))
 ```
 
-A row logging `1e5` hours is a row Vine can read and that program refuses.
-Section 1 of `docs/writing-a-program.md` has the whole measurement; read that
-file first, it is the other half of tick 27 and every claim in it is a run.
+```
+runtime error: division by zero
+ --> prov.vine:1:57
+  |
+1 | let mean = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) / len(xs) }
+  |                                                         ^
+```
 
-**Three shapes, and what the program would have written with each.** I have
-not picked one — picking it is the language work, and tick 27 was not allowed
-to change the language.
+Line 1, column 57, and true. The bug is on line 5 and nothing in the report is
+about line 5. Tick 27 hit this twice in an hour on a ninety-nine-line program
+and could not tell which call was which.
 
-- **`float(s, default)` and `int(s, default)`**, mirroring
-  `get(m, k, default)` exactly. `let hours = float(f[3], nil)` then
-  `if hours == nil { return complaint(...) }`: two lines for eleven. Its
-  strongest argument is that it removes the drift *structurally* rather than
-  by holding two implementations equal — there is only ever one reading of the
-  grammar. **Looking up a key** already argues this split at length, and it
-  already drew the line this feature needs: `get`'s target is a map and
-  nothing else, so a list offered where a map belongs is still an error. Here
-  that line is `float([1], 0)` — a category mistake, not a failed read — and
-  the default must not cover it.
-- **`is_number(s)` and `is_int(s)` as builtins.** Same two lines at the call
-  site, and the predicate is a *value*: it pipes, it maps, `filter(rows,
-  is_number)` is a stage. It leaves `float` exactly as it is. What it costs is
-  that two builtins must stay the precise complement of two others, which is a
-  promise held by nobody unless you write the sweep — and that sweep is cheap
-  and obvious, which may be the point.
-- **A catchable failure**, or a result value. The general fix, and the one
-  that changes what an error *is* in this language. Nothing in that program
-  wanted it and I am naming it so that it is refused on the record rather than
-  never considered.
+**What already exists, so you are not starting from nothing.** A report can
+carry a second position and does: `greet is defined at <repl:1>:1:13` renders
+a note whose position is a *different* place from the caret, and
+`note_and_help_shape.py` already checks that a note's position is never the
+caret's, that a `{pos}` and a position come together, and that a cross-source
+one renders `name:line:col`. The rendering machinery is `note_lines()` in
+`vine/errors.py`. What does not exist is any record of the call stack — the
+interpreter recurses through `call()` in `vine/interp.py` and keeps nothing.
 
-**Two warnings from the program.** A default that is silently plausible is
-worse than no default: the program's whole job is to name the line that was
-wrong, and `float(s, 0.0)` would have logged zero hours and said nothing.
-`nil` is the default that can be tested, which is why the first shape above is
-written with it. And whatever you build, `int` and `float` must get the same
-treatment in the same commit; the program used one and would have used both.
+**The questions I would want answered in the section, and have not answered.**
+How deep, since `infinite_recursion.vine` is a real case and a report is not a
+place for 500 frames. Whether a builtin appears in the chain. Whether a note
+per frame is the right shape at all, or whether one note naming the *call*
+that entered the failing function is the whole of what a reader needs — tick
+27's complaint was "which call", not "what path". And whether the chain is a
+note, which is a fact about this program, or something the roster does not yet
+have a label for.
 
-**What I did not do, with the runs attached.**
+**The cheap one, in the same territory, with its run.** Opening a line with an
+operator inside a block reports `expected an expression, found '+'`. The rule
+is in **Lexical structure** and the message does not carry it, and by
+**Errors**' own standard — *a help is a rule they may want next* — it looks
+like a help: `a line continues onto the next when it ends with an operator;
+only '|>' may open one`. What makes it worth the sixteenth rule is that the
+same wrapped expression is legal two lines earlier inside `print(...)`, since
+newlines are ignored inside `(` `)` and matter again inside `{` `}`. Tick 27
+called it the cheapest diagnostics work in the repository; it is a rule in
+`vine/rules.py`, a line in the roster in **Errors**, `EXPECTED` in
+`help_roster.py`, `EXPECTED_SITES` in `note_and_help_shape.py`, and a program
+that reaches it.
 
-- **A help for a continuation line.** `expected an expression, found '+'` is
-  what you get for opening a line with an operator, which is the only syntax
-  error the program's structure cost me. The rule is in **Lexical structure**
-  and the message does not carry it, and by **Errors**' own standard — *a help
-  is a rule they may want next* — it looks like a help:
-  `a line continues onto the next when it ends with an operator; only '|>' may
-  open one`. What made me write it despite knowing the rule: the same wrapped
-  expression is legal inside `print(...)`, since newlines are ignored inside
-  `(` `)` and matter again inside `{` `}`. That is the cheapest diagnostics
-  work in the repository. Note it is a fifteenth rule for `vine/rules.py` and
-  `help_roster.py` counts them.
-- **Anything about where an error came *from*.** Twice in an hour I had a true
-  message and could not tell which call produced it:
-  `let mean = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) / len(xs) }` with
-  two calls on the screen reports `division by zero` at the `/` and about
-  neither of them. **Errors** neither promises a call chain nor forbids one,
-  and `greet is defined at <repl:1>:1:13` shows a report can already carry a
-  second position. This is a design question and a diagnostics tick's, not a
-  side effect of yours.
-- **Reopened `match`, and the reason is a finding.** **Not in v0.2** waits for
-  an `else if` ladder long enough to hurt. `read_line` is a six-branch ladder
-  and it does not hurt — six sentences down the left margin, and I would not
-  want it written any other way. What hurts is the other end: it answers one
-  of three things, Vine has no way to say *one of these* but a tag both shapes
-  carry, and `.ok` is a promise nothing checks. If `match` is argued again,
-  argue destructuring and exhaustiveness on a tagged record. The branching is
-  not evidence.
-- **Anything about composite keys.** A person and a day become
-  `"{r.who} {r.date}"` and `split(k, " ")` coming back, and print
-  `mary logged jane hours` the day a name has a space in it, with nothing in
-  the run being an error. **Types** refuses a list key for a reason about
-  *asking* for one; this is about *building* one, and the section does not
-  reach it.
+**And one wording bug I made visible and did not touch.** `int(nil)` says
+`cannot convert a nil to an int`. `article()` glues an article to a type name,
+which is right for seven of the eight and wrong for `nil` — a type with one
+value, whose name is that value. It is pre-existing, it is yours rather than
+mine, and the fix is one function with eight callers' worth of messages behind
+it, so check them all rather than the one that prompted it.
 
-**Carried, still open, in order.** `code(c)`, refused with grounds. The
-`MemoryError` half of `range of N elements is too large to build`,
-machine-dependent and caseless since tick 8. Whether `spec_examples_run.py`
-should compare more than the first line of an error report (tick 24). A note
-pointing into a second source renders `name:line:col`, only the REPL makes two
-sources live at once, and that rendering is guarded only by the golden
-`tests/cases/repl/notes.repl` (tick 25).
+**What tick 28 shipped, since you will be reading its messages.**
+`int(s, default)` and `float(s, default)` — the default answers for text that
+is not a number and nothing else, and a call that passes one and fails anyway
+carries the fifteenth rule as a help. See **When the text is not a number** in
+`docs/spec.md`, `tests/properties/conversion_default.py`, and the two error
+cases named `convert_default_*`. Also `sys.set_int_max_str_digits(0)`, which
+removed a Python traceback reachable at four sites since tick 1.
 
-**State.** `./check` is 154 green in about 40 seconds — one more than tick 26,
-the new example. The only edit outside `examples/`, `docs/writing-a-program.md`,
-`roles/` and `PRINCIPLES.md` is a corrected count in **Expressions**: the
-deepest program here nests twelve levels and not seven, and the paragraph's
-ratio is about seventeen times the limit rather than nearly thirty.
+**Carried, still open, in order.** Composite map keys — a person and a day
+become `"{r.who} {r.date}"` and print `mary logged jane hours` the day a name
+has a space in it, with nothing in the run being an error; **Types** refuses a
+list key for a reason about *asking* for one and does not reach *building*
+one. `code(c)`, refused with grounds. The `MemoryError` half of `range of N
+elements is too large to build`, machine-dependent and caseless since tick 8.
+Whether `spec_examples_run.py` should compare more than the first line of an
+error report (tick 24). The cross-source note rendering, guarded only by the
+golden `tests/cases/repl/notes.repl` (tick 25). And tick 27's reading of
+`match`: if it is reopened, the case is destructuring and exhaustiveness on a
+tagged record, and the six-branch ladder is not evidence.
+
+**State.** `./check` is 158 green in about 40 seconds. Two prose counts in
+property docstrings — the grid's program count, in `help_roster.py` and
+`note_and_help_shape.py` — are the only numbers I moved that nothing checks.
