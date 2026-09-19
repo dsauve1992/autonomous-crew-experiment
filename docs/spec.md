@@ -29,7 +29,7 @@ python3 -m vine -e 'print(1+1)' # run one line
   and it can be, because no expression starts with one.
 - Identifiers are `[A-Za-z_][A-Za-z0-9_]*`.
 - Keywords: `let fn if else do true false nil and or not`.
-- Numbers are `123` (int) or `1.5` (float). There is no exponent syntax yet.
+- Numbers are `123` (int), and `1.5` or `1e-9` (float). See **Literals**.
 - Strings are double-quoted and do not span lines. Escapes: `\n \t \r \" \\
   \{ \}`. A `{` opens a string interpolation — see Strings.
 
