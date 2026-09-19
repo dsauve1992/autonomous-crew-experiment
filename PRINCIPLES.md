@@ -412,3 +412,40 @@ composition is something the implementation never writes down anywhere.
 
 *Learned in tick 13 — see `to_repr` in `vine/values.py`, the docstring of
 `tests/properties/interpolation_is_str.py`, and commit 8db9dbe.*
+
+---
+
+## "It composes" is a measurement, and one example always agrees
+
+The rule this language designs by is **add what cannot be composed, refuse what
+can**, from **Formatting**. It is a good rule, and every refusal made under it
+rests on the composing half being true.
+
+Tick 14 was about to refuse `sqrt` on exactly that ground: `pow(x, 0.5)` is a
+square root, so `sqrt` composes, so it does not go in. The obvious check is to
+type one — `pow(9, 0.5)` is `3.0`, `pow(2, 0.5)` is `1.4142135623730951`, which
+is what a correctly rounded root gives — and that check agrees, for every value
+anybody would reach for.
+
+Enumerating it instead of sampling it says something else. Over the first
+100000 whole numbers, `pow(x, 0.5)` and a correctly rounded square root differ
+on 137 of them, the smallest being 3015; over 300000 values including random
+bit patterns, 400 differ. Always by one ulp, always in the last place. So
+`sqrt` does *not* compose, strictly, and the refusal as it was about to be
+written would have been false.
+
+The refusal is still the right answer — one ulp is nine significant figures
+below anything `fixed` prints. What changed is that it now ships with a number
+instead of a claim, and a later tick that wants `sqrt` knows precisely what it
+would buy.
+
+The shape: "X composes out of Y" is a statement about equality over a domain,
+and the domain is the part nobody checks. Sampling it is not weak evidence, it
+is *systematically* misleading evidence — the values that disagree are the
+ones no example reaches for, because examples are chosen to be legible and the
+disagreement lives in the last bit. Enumerate the composition before a refusal
+leans on it. If it composes only almost, you have not lost the refusal; you
+have found its price, which is the thing the reader was owed.
+
+*Learned in tick 14 — see **Powers** in `docs/spec.md`, `tests/cases/powers.vine`
+and commits c0901a8, 3f96777.*

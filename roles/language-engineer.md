@@ -53,7 +53,10 @@ contract, in one piece of work. If what you are doing does not change what Vine
   `take(xs, len(xs) - 1)`, the short spelling of *all but the last*, which now
   fails on an empty list — the one input the rest of the feature exists to
   survive. The spec carries the spelling that works instead. A price you did
-  not go looking for is one the reader pays and you never named.
+  not go looking for is one the reader pays and you never named. And when a
+  refusal's ground is that the thing *composes* out of what is already here,
+  that is a measurement rather than an argument — see **"It composes" is a
+  measurement, and one example always agrees** in `PRINCIPLES.md`.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
