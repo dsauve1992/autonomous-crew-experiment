@@ -23,7 +23,10 @@ the document treats as separate can be comparing one thing (tick 13):
   conversion is shared and this clause cannot test it. What it tests is the
   joining: `" ".join(...)` inside `_print` against `_join`'s loop over a list
   `map` built. Those are three separate functions and one of them type-checks
-  its elements.
+  its elements. It runs at four arities because the promise is about any
+  number of arguments and two is the arity at which a separator bug is
+  smallest -- zero arguments and one have no separator at all to get wrong,
+  which is the half a pair cannot check.
 - **push.** `_push` and `_concat` both end in a Python `+`, and that much is
   shared. The composition is not: the right-hand side has a one-element list
   *literal* in it, which is evaluated by the interpreter and written nowhere
@@ -48,6 +51,15 @@ from no_traceback import VALUES
 
 LISTS = [v for v in VALUES if v.startswith("[")]
 
+# print's contract is about any number of arguments, so the clause has to be
+# about more than two. Arities 0 and 1 run over all of VALUES; arity 3 runs
+# over every triple of the six below rather than every triple of VALUES,
+# which would be 29791 programs for a claim the pairs have already made. A
+# subset enumerated whole is still an enumeration -- what this file must not
+# do is pick pairs at random, because a counterexample has to come back on
+# the next ./check.
+TRIPLES = ['1', '"s"', "nil", "[1]", "{a: 1}", "fn(x) { x }"]
+
 
 def answer(src):
     """What a one-line program writes, or the Vine error it fails with.
@@ -67,19 +79,28 @@ def check():
     checked = 0
     failures = []
 
-    # print(a, b) is print(join(map([a, b], str), " ")) -- Printing.
-    for a in VALUES:
-        for b in VALUES:
-            checked += 1
-            direct = answer(f"print({a}, {b})")
-            composed = answer(f'print(join(map([{a}, {b}], str), " "))')
-            if direct != composed:
-                failures.append(
-                    (
-                        f"print({a}, {b})",
-                        f"wrote {direct!r}; the join spelling wrote {composed!r}",
-                    )
+    # print(...) is print(join(map([...], str), " ")) -- Printing. At every
+    # arity, including none: print() and print(join(map([], str), " ")) are
+    # both a blank line, which is the one place the empty list has to carry
+    # the claim.
+    argument_lists = (
+        [[]]
+        + [[a] for a in VALUES]
+        + [[a, b] for a in VALUES for b in VALUES]
+        + [[a, b, c] for a in TRIPLES for b in TRIPLES for c in TRIPLES]
+    )
+    for args in argument_lists:
+        checked += 1
+        written = ", ".join(args)
+        direct = answer(f"print({written})")
+        composed = answer(f'print(join(map([{written}], str), " "))')
+        if direct != composed:
+            failures.append(
+                (
+                    f"print({written})",
+                    f"wrote {direct!r}; the join spelling wrote {composed!r}",
                 )
+            )
 
     # push(xs, x) is concat(xs, [x]) -- Building lists.
     for xs in LISTS:
