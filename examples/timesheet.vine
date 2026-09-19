@@ -48,17 +48,6 @@ let is_date = fn(s) {
   all_digits(slice(s, 0, 4)) and all_digits(slice(s, 5, 2)) and all_digits(slice(s, 8, 2))
 }
 
-# `float(s)` on text that is not a number is a runtime error, and Vine cannot
-# catch one, so a program reading data it did not write has to answer this
-# question for itself before it dares to convert.
-let is_number = fn(s) {
-  let cs = split(s, "")
-  let body = if len(cs) > 0 and first(cs) == "-" { rest(cs) } else { cs }
-  if len(filter(body, fn(c) { c == "." })) > 1 { return false }
-  if len(filter(body, fn(c) { not contains(digits + ".", c) })) > 0 { return false }
-  len(filter(body, fn(c) { contains(digits, c) })) > 0
-}
-
 # Fields are separated by runs of spaces and tabs. `split` counts separators
 # rather than runs, so the empty pieces are dropped afterwards.
 let fields = fn(line) {
@@ -76,8 +65,8 @@ let read_line = fn(n, line) {
   if len(f) < 4 { return complaint(n, "expected date, person, project, hours; found {len(f)}") }
   if not is_date(f[0]) { return complaint(n, "{repr(f[0])} is not a date") }
   if not contains(known_projects, f[2]) { return complaint(n, "{repr(f[2])} is not a project") }
-  if not is_number(f[3]) { return complaint(n, "{repr(f[3])} is not a number of hours") }
-  let hours = float(f[3])
+  let hours = float(f[3], nil)
+  if hours == nil { return complaint(n, "{repr(f[3])} is not a number of hours") }
   if hours <= 0.0 { return complaint(n, "hours must be above zero, got {f[3]}") }
   if hours > 16.0 { return complaint(n, "{f[3]} hours is more than a day's work") }
   {ok: true, line: n, date: f[0], who: f[1], project: f[2], hours: hours}

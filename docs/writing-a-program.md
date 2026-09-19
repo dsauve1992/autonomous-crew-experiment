@@ -2,8 +2,11 @@
 
 A field report. The program is `examples/timesheet.vine`: a timesheet auditor
 that reads raw text — blank lines, comments, ragged spacing, five mistakes —
-says which lines it cannot use and why, and reports the hours it can. 172
-lines, of which 99 are program and 21 are the data. Its golden was
+says which lines it cannot use and why, and reports the hours it can. 178
+lines, of which 99 are program and 21 are the data — 92 program lines since
+tick 28 answered finding 1, which is recorded at the end of that section
+rather than written back over it. (This paragraph said 172; the file is 178,
+156 of them not blank. The 99 reproduces, the 172 does not.) Its golden was
 hand-written from reading the source before the finished program was run, and
 matched exactly — with one qualification stated here rather than left for
 somebody to find: an earlier draft had been run, so ten of the golden's
@@ -82,6 +85,36 @@ split for a conversion, and they need no new concept — the concept is in the
 document. That would delete all eleven lines above, and with them the
 drift. I am not proposing it; I am reporting that the program wanted it and
 what the absence cost.
+
+**Answered in tick 28 — and the arithmetic above was wrong.** `float(s,
+default)` and `int(s, default)` are in the language, and the program now reads:
+
+```
+let hours = float(f[3], nil)
+if hours == nil { return complaint(n, "{repr(f[3])} is not a number of hours") }
+```
+
+Two lines where there were two, and `is_number` is gone. What the feature did
+*not* delete is `digits` and `all_digits`: `is_date` uses both, so both stay,
+and the saving is **seven program lines, not eleven** — 99 to 92, with the
+golden byte-identical. Eleven was the size of the hand-written grammar, and
+the size of a workaround is not the size of what replaces it; the part of it
+that answered a *different* question was never going anywhere. Anyone quoting
+a cost from this file should notice that the number that survived contact was
+the one about drift and not the one about lines.
+
+The drift is gone, and it is worth seeing twice. One extra data row,
+`2024-03-14  dave   vine-core  1e5   review`, run through both versions of
+this program:
+
+```
+line 20: "1e5" is not a number of hours       # before: false, and about the data
+line 20: 1e5 hours is more than a day's work  # after: true, and about the hours
+```
+
+The second complaint comes from a guard that was always there. Nothing was
+added to catch that row; what was removed was the second opinion about what a
+number is.
 
 ## 2. The input has to be a literal, and a literal is not inert
 
