@@ -90,23 +90,53 @@ def from_key(k):
     return k[1]
 
 
+# What `repr` writes in place of a character, and everything not in here is
+# written as itself. The named escapes first, then every C0 and C1 control as
+# a codepoint escape -- `chr(0)` through `chr(0x1f)`, and `chr(0x7f)` through
+# `chr(0x9f)` -- except the three that already have a shorter spelling.
+#
+# That range and no wider, and the reason is the one **Text** gives for `len`
+# counting codepoints: an answer that needs a Unicode table is an answer that
+# changes with the table. Asking `unicodedata` which characters are invisible
+# would escape the non-breaking space too, and would also make `repr(s)` --
+# a value a Vine program can compare and print -- depend on which Unicode
+# release Python was built against. The controls are the largest set the
+# standard has closed forever, so this answer is the same on every machine.
+REPR_ESCAPES = {
+    "\\": "\\\\",
+    '"': '\\"',
+    "{": "\\{",
+    "\n": "\\n",
+    "\t": "\\t",
+    "\r": "\\r",
+}
+REPR_ESCAPES.update(
+    {
+        chr(c): f"\\u{{{c:x}}}"
+        for c in list(range(0x00, 0x20)) + list(range(0x7F, 0xA0))
+        if chr(c) not in REPR_ESCAPES
+    }
+)
+
+
 def to_repr(v):
     """Vine source for a value -- see `repr and str` in docs/spec.md.
 
     Every escape here exists to keep `repr` output readable back in. `{` is on
     the list because interpolation made it structural: without it `repr("\\{")`
     answers `"{"`, which is a string nothing can type. `}` is not, because a
-    lone `}` outside a hole is already literal.
+    lone `}` outside a hole is already literal. The controls are on it so the
+    output is readable at all, which is a separate promise -- see
+    REPR_ESCAPES above, and `repr_is_legible.py` under tests/properties.
+
+    One pass over the characters rather than a chain of replaces. The chain
+    was correct only because the backslash was replaced first; a codepoint
+    escape adds a second constraint from the other end, since the backslash
+    it writes must not then be escaped again. Two ordering constraints on six
+    lines that do not state them is a bug waiting for the next escape.
     """
     if isinstance(v, str):
-        body = (
-            v.replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("{", "\\{")
-            .replace("\n", "\\n")
-            .replace("\t", "\\t")
-            .replace("\r", "\\r")
-        )
+        body = "".join(REPR_ESCAPES.get(ch, ch) for ch in v)
         return f'"{body}"'
     return to_display(v)
 

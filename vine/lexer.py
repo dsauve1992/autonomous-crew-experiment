@@ -37,6 +37,8 @@ OPERATORS = [
 # `\}` is accepted for symmetry: a bare `}` outside a hole is already literal,
 # but someone who escapes the open brace will reach for the close one too, and
 # "unknown escape" is a poor answer to a reasonable guess.
+#
+# `\u{...}` is not in here because it carries an argument; see codepoint().
 ESCAPES = {
     "n": "\n",
     "t": "\t",
@@ -46,6 +48,14 @@ ESCAPES = {
     "{": "{",
     "}": "}",
 }
+
+ESCAPE_HELP = 'the escapes are \\n \\t \\r \\" \\\\ \\{ \\} and \\u{...}'
+
+# What a codepoint escape is made of. Upper and lower case both, because the
+# hex a reader copies out of a character table comes in both.
+HEX = frozenset("0123456789abcdefABCDEF")
+
+CODEPOINT_HELP = "a codepoint is written '\\u{1e}' -- hex digits in braces"
 
 # Which opener a closer is allowed to pop off the bracket stack. Popping on any
 # closer would let `)` end a string interpolation, and the lexer would carry on
@@ -350,15 +360,77 @@ class Lexer:
                 if self.i >= len(self.text):
                     raise self.unterminated_string(quote)
                 esc = self.advance()
-                if esc not in ESCAPES:
+                if esc == "u":
+                    text += self.codepoint(at, quote)
+                elif esc not in ESCAPES:
                     # `at` is the backslash. self.here() would be the character
                     # after the escape, which is not the thing to look at.
                     raise SyntaxError_(
                         f"unknown escape '\\{esc}'", at, self.src
-                    ).help('the escapes are \\n \\t \\r \\" \\\\ \\{ and \\}')
-                text += ESCAPES[esc]
+                    ).help(ESCAPE_HELP)
+                else:
+                    text += ESCAPES[esc]
             else:
                 text += ch
+
+    def codepoint(self, at, quote):
+        """Read the `{...}` of a `\\u{...}` escape and answer its character.
+
+        `at` is the backslash. Which position an error blames differs by which
+        error it is, and the split is the one unterminated_string() makes: a
+        malformed escape blames the character that stopped it and carries a
+        note naming the `\\u` it belongs to, because the reader has to be shown
+        where the parser actually is; a well-formed escape naming a codepoint
+        no string can hold blames the backslash, because there the whole
+        escape is the mistake and no single character of it is.
+
+        There is one limit and not two. Digits are not counted, so
+        `\\u{000041}` and `\\u{41}` are the same `A`; what is checked is the
+        value, which is the thing Unicode actually bounds.
+        """
+        if self.peek() != "{":
+            raise SyntaxError_(
+                "expected '{' after '\\u'", at, self.src
+            ).help(CODEPOINT_HELP)
+        self.advance()
+        digits = ""
+        while self.peek() in HEX:
+            digits += self.advance()
+        if self.peek() != "}":
+            if self.peek() in ("", "\n"):
+                # The string ran out, not merely the escape. That is the
+                # larger fact and it already has a message that blames the
+                # quote the string opened at, which is where to look.
+                raise self.unterminated_string(quote)
+            raise SyntaxError_(
+                "expected '}' to close a codepoint escape", self.here(), self.src
+            ).note("the escape was opened by the '\\u' at {pos}", at).help(
+                CODEPOINT_HELP
+            )
+        self.advance()
+        if not digits:
+            raise SyntaxError_(
+                "a codepoint escape needs at least one hex digit", at, self.src
+            ).help(CODEPOINT_HELP)
+        value = int(digits, 16)
+        if value > 0x10FFFF:
+            raise SyntaxError_(
+                f"codepoint escape '\\u{{{digits}}}' is past the last "
+                "codepoint, '\\u{10ffff}'",
+                at,
+                self.src,
+            )
+        if 0xD800 <= value <= 0xDFFF:
+            raise SyntaxError_(
+                f"codepoint escape '\\u{{{digits}}}' is a surrogate half, "
+                "which is not a character",
+                at,
+                self.src,
+            ).help(
+                "surrogates exist only inside UTF-16; a string holding one "
+                "could not be printed"
+            )
+        return chr(value)
 
     def word(self, pos):
         name = ""

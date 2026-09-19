@@ -1,2 +1,2 @@
-# The escape list is closed: \n \t \r \" \\ and nothing else.
+# The escape list is closed: \n \t \r \" \\ \{ \} \u{...} and nothing else.
 print("a\qb")

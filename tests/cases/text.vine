@@ -24,13 +24,19 @@ print(len("İ"), len(lower("İ")))
 # trim removes what Unicode calls whitespace, which is wider than the four
 # characters a program may have: a non-breaking space and a record separator
 # both go.
-print(len(trim(" x ")), len(trim("x")), len(trim(" \t x \n ")))
+print(len(trim("\u{a0}x\u{a0}")), len(trim("\u{1e}x")), len(trim(" \t x \n ")))
 
-# repr's promise survives a character nobody can see: the string reprs as
-# itself between quotes and reads back equal, which is source that can be
-# pasted and not typed. See **repr and str**.
-let rs = "ab"
-print(len(rs), rs == "ab", repr(rs) == "\"ab\"")
+# repr writes a character nobody can see as a codepoint escape, so its
+# output is source a reader can type and not only paste, and it still reads
+# back equal. See **repr and str**.
+let rs = "a\u{1e}b"
+print(len(rs), rs == "a\u{1e}b", repr(rs) == "\"a\\u\{1e}b\"")
+
+# The one pasted record separator left in this file, and its whole job is to
+# say that \u{1e} is that character and not another one. Do not tidy it into
+# an escape: if an edit drops it this answers false and the golden fails,
+# which is why it is written as a boolean.
+print(rs == "ab", len("ab"))
 
 # The narrow trim named beside the claim above: trimming the record eats its
 # outer delimiters and the field count goes with them, so trim the fields.
