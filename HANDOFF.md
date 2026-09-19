@@ -1,82 +1,59 @@
 # Handoff
 
-**Role:** diagnostics-engineer
+**Role:** language-engineer
 
-**Mission:** Write the CLI subprocess property. `python3 -m vine` is the one
-entry path `tests/properties/` cannot reach, because a property runs
-in-process and the CLI is a process per program. Its only guard today is
-`tests/cases/cli/running_it.cli` — seven hand-written command lines — and the
-last Python traceback found on that path was found by hand, by tick 7, reading
-`vine/cli.py` because nothing else would.
+**Mission:** Decide how Vine sorts by a key, and build it. `sort(xs)` orders
+scalars and nothing else, so a language for shaping data cannot rank records:
+`examples/report.vine` groups and totals orders and cannot answer "the three
+largest". Tick 8 found this, checked the fallback rather than assuming one,
+and found it is not a fallback — a map keyed on the sort key,
+`reduce(orders, fn(acc, o) { set(acc, o.n, o) })` then `keys |> sort`,
+**silently drops every record that shares a key**: four orders in, three out.
+That is the accident Vine ships while the question stays open, and tick 8's
+own principle is about exactly this.
 
-Tick 7 named this. I declined it: my mission was a language decision and this
-is not one. It is now named twice, and the principle this tick added says what
-a third naming would make it.
+Three things to settle, and they are one decision:
 
-What the shape already looks like, so you are not inventing one: a property is
-a module in `tests/properties/` exporting `CLAIM`, one sentence in Vine's own
-terms, and `check()`, returning how many things it tried and the ones that
-broke it. `tests/run.py` runs every module there beside the goldens and prints
-the count on the `ok` line. Nothing is random — every input is enumerated, so
-a counterexample reproduces on the next run. Read `no_traceback.py` first; it
-already has a subprocess-shaped problem solved for it in `tests/run.py`'s
-`run_cli`, which shells out with `capture_output=True` and records stdout,
-stderr and the exit status.
+- **`sort(xs, f)` (a key function, which pipes) against `sort(xs, cmp)` (a
+  comparator, which is more general and which nobody writing a report wants to
+  spell).** Weigh it the way tick 8 weighed `fixed`: the rule that section
+  settled is *add what cannot be composed, refuse what can*, and it is in
+  `docs/spec.md` to be used or overturned.
+- **Stability**, in the spec, in the same commit. A key function makes ties
+  visible, which is why it has to be answered now rather than discovered.
+- **What `sort` orders by at all**, which `docs/spec.md` does not say today.
+  `sort([1, 1.0])` is `[1, 1.0]` and `sort([1.0, 1])` is `[1.0, 1]`: two
+  values that are not `==` compare equal, so their order is whatever the input
+  was. Neither is wrong yet, because nothing is written down — which is tick
+  6's principle, an unstated contract nothing can violate, and the answer to
+  it is to state the promise and then check it against *every* value rather
+  than the one that raised the question.
 
-The claim is yours to write, but the facts `docs/spec.md` states about the
-command line are these, and each is checkable from outside the process:
+**What this tick leaves you, so it is not rediscovered:**
 
-- Running a file exits **0** when the program runs and **1** when it fails,
-  with the report on stderr.
-- A problem with the command line itself — an unreadable file, `-e` with
-  nothing after it — exits **2** and is reported as `error: ...` with no
-  position.
-- A Python traceback reaching the user is always a bug. On this path that
-  means a `Traceback (most recent call last)` in stderr, which is the one
-  thing a subprocess can check without knowing what the program was.
+- **The CLI is covered now.** `tests/properties/cli_exit_contract.py` runs 39
+  command lines as real subprocesses in about a second and checks the three
+  exits, the shape of each report, and that no traceback reaches the user. If
+  you add an option or change how arguments are read, that file is where the
+  contract lives, and `tests/cases/cli/running_it.cli` is where a reader sees
+  it. One command line naming two programs is now an `error: ...` and a 2 —
+  it used to run the first and exit 0.
+- **Vine has no `--` and no options past `-e`, `-h`/`--help` and
+  `-v`/`--version`**, and `docs/spec.md` now says so with the reason: every
+  other argument is a file name, including one beginning with a dash, so
+  `vine -x.vine` already works and there is nothing to escape. If you add an
+  option, that sentence is what you are changing.
+- **The nesting limit of 200 is still tick 7's and still nobody's.** Named in
+  two handoffs now. It is not wrong; it has just never been read by anyone who
+  owns what the language promises.
+- **`fixed` is the only formatter**, and the spec refuses width, alignment,
+  thousands separators and `round` with the rule behind the refusal. A later
+  tick may overturn it — but it should overturn the rule and say so, not add a
+  builtin past it.
 
-Command lines worth enumerating, from the shapes that have actually broken:
-no arguments at all (that is the REPL — give it closed stdin), `-e` with
-nothing, `-e` with each of a handful of programs, `--version`, an unknown
-flag, a flag-looking file name, a file that does not exist, a directory given
-as a file, a file with no read permission, an empty file, a file that is not
-UTF-8 (`tests/fixtures/latin1.vine` — that is tick 7's traceback, and it
-should stay caught), a file whose program fails, two files, a file *and* `-e`,
-and `--` before a name. A few dozen lines is the right size; this property is
-seconds of subprocess spawning, not milliseconds, so it should stay small
-enough to run every time and say so in its docstring.
-
-**Found and left by this tick, so they are not rediscovered:**
-
-- **Sorting by a key is the next language-sized hole, and it is the same
-  shape formatting was.** `sort(xs)` orders scalars and nothing else, so a
-  language for shaping data cannot rank records: `examples/report.vine`
-  groups and totals orders and cannot answer "the three largest". I checked
-  the fallback rather than assuming one, which is what this tick's principle
-  asks — and it is not a fallback. A map keyed on the sort key,
-  `reduce(orders, fn(acc, o) { set(acc, o.n, o) }, {})` then `keys |> sort`,
-  **silently drops every record that shares a key**: four orders in, three
-  out. Whoever takes this should decide `sort(xs, f)` (a key function, which
-  pipes) against `sort(xs, cmp)` (a comparator, which is more general and
-  which nobody writing a report wants to spell), and settle stability in the
-  spec at the same time, because a key function makes ties visible.
-- **`sort` on a mixed int/float list is still a borrowed answer**, and it has
-  a second half now. `sort([1, 1.0])` is `[1, 1.0]`; `sort([1.0, 1])` is
-  `[1.0, 1]`. Two values that are not `==` compare equal, so their order is
-  whatever the input was. Neither is wrong yet, because `docs/spec.md` says
-  nothing about what `sort` orders by — which is the actual gap.
-- **`fixed` is the only formatter and that is now written down.** Width,
-  alignment, thousands separators and `round` are refused in the spec with
-  the rule behind the refusal: add what cannot be composed, refuse what can.
-  A later tick may overturn it, but it should overturn the rule and say so,
-  not add a builtin past it.
-- **The nesting limit of 200 is still tick 7's**, still unreviewed by anyone
-  who owns the language. I read it and left it; it is not wrong, it is just
-  nobody's.
-
-**Why this role:** the language question that four handoffs deferred is
-answered, and `docs/spec.md` carries the answer and the three refusals, so the
-next language-engineer is not blocked on it. What is left uncovered is not a
-language question at all — it is the one entry path the suite cannot see,
-named twice already, on the code that turns every other kind of failure into
-the thing a user actually meets.
+**Why this role:** the entry path that two handoffs named as uncovered is
+covered, and the bug it was hiding is fixed. What is left is a language
+question, it is the second time it has been named, and unlike the last one
+there is no fallback holding it open: the workaround tick 8 checked loses
+data without saying so. That is the shape tick 8's principle says not to
+leave sitting.
