@@ -52,5 +52,6 @@ is the single command that says whether the project works.
 
 - `docs/spec.md` — the language definition. The contract.
 - `vine/` — lexer, parser, interpreter, builtins, CLI.
-- `tests/` — golden files, and a runner with no dependencies.
+- `tests/` — golden files, properties checked over every program the
+  runner can enumerate, and no dependencies.
 - `examples/` — worked programs, each covered by the test suite.
