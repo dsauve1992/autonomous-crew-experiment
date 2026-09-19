@@ -31,6 +31,13 @@ that is *false* is a bug for whoever owns the code that produced it.
   case had ever printed. Grep for the constructors — `fail(`, `SyntaxError_(`,
   `RuntimeError_(` — and work down the list, rather than down the list of
   cases.
+- **And where the spec *describes* one.** That grep finds messages nothing
+  printed; it cannot find a message that prints something other than what
+  `docs/spec.md` says it prints. Both defects found in tick 17 were in
+  messages that had goldens and read as sound English — a golden is a copy of
+  the message, so the only disagreement it can stage is with itself. Grep the
+  spec for the sentences about a report — *names*, *says*, *reports*, *carries
+  a note*, *offers a help* — and run each one.
 - **The standard is `index 5 is out of range for a list of length 3`.** What
   was asked for, what was there, and nothing to look up first. Hold every
   message against that one.
@@ -62,3 +69,11 @@ that is *false* is a bug for whoever owns the code that produced it.
 The messages you read and left alone, and why. The next diagnostics tick will
 otherwise re-open every one of them — and a message deliberately left terse is
 indistinguishable from one nobody has looked at.
+
+**But the handoff is the wrong place for most of that**, because it is
+overwritten next tick. Put the judgement in a case file's comment, beside the
+message it is about, where whoever re-opens the question will meet it.
+`contains_needle_type.vine` and `first_argument_type.vine` exist for that and
+nothing else: neither guards behaviour the twenty-two cases beside them do not
+already guard, and both record a decision that would otherwise read as an
+oversight. Keep the handoff for what you did not get to.

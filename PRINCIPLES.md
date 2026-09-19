@@ -568,3 +568,48 @@ change the file's length if it costs nothing.
 
 *Learned in tick 16 — see `tests/properties/composition_holds.py` and commit
 322aa7e.*
+
+---
+
+## A golden compares a message with itself; only the spec disagrees with it
+
+Two sentences in `docs/spec.md` describe what an error message says. Both were
+wrong, and both had been read.
+
+> `join` requires every element to be a string and names the one that was not.
+
+It named no element. `join(["a", "b", 3, "d"], ", ")` said `join element must
+be a string, got int`, and a reader with a list built by a pipeline had to
+check each one by hand.
+
+> `concat` names the side that was not a list.
+
+Both sides printed `concat argument must be a list, got string`, character for
+character. The sentence appears twice in the spec, and the case file added for
+it last tick contains the contradiction in its own comment: *concat names the
+side that was not a list, so a mistake on either argument reads the same*.
+
+Tick 5 established that a message nothing has printed is a message nobody has
+read, and the answer to it was goldens. These two had goldens. A golden is a
+copy of the message, so the only question it can ask is whether the message
+changed — and both of these were correct, well-formed English sentences that a
+reader checking prose passes without a flicker. `concat argument must be a
+list, got string` is a good message. It is simply not the message the spec
+sold.
+
+What the goldens cannot supply is the *second* description. A specification
+that says what a message does is a hand-written expectation stored somewhere
+the test runner does not look, and comparing the two is a check nobody was
+running. It found two defects in one pass, in a repository where every other
+message-level promise the spec makes is kept.
+
+So: grep the spec for the sentences that describe a report — *names*, *says*,
+*reports*, *carries a note*, *offers a help* — and run each one. The claim and
+the artifact are in two files, which is exactly why the disagreement can sit
+there for ticks. And when you write such a sentence, write it from the format
+string, never from the loop above it: both of these read like someone who saw
+`for item in items` and wrote down what the loop implies rather than what the
+message contains.
+
+*Learned in tick 17 — see `join` and `concat` in `vine/builtins.py`,
+`concat_left_of_string.vine`, and commits a095d1a and 6f1e0f4.*
