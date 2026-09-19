@@ -59,7 +59,7 @@ FRAGMENTS = [
     ".5", "1e", "1e400", "let", "x", "=", "fn", "if", "else", "do", "|>",
     ",", ":", ".", "#c", "\n", "true", "nil", "and", "not", "-", "%",
     '"\\q"', '"{1}"', "2²", "café", "_", "0x1", "01", "1_0", "'",
-    "`", "\t", ";", "@", "$", "?", "!", "&",
+    "`", "\t", ";", "@", "$", "?", "!", "&", "**", "^",
 ]
 
 # Constructs the parser reaches itself through, each written as a function of

@@ -1,0 +1,6 @@
+runtime error: int is too large to convert to a float
+ --> pow_huge_int.vine:4:4
+  |
+4 | pow(huge, 2)
+  |    ^
+  = note: pow converts both of its arguments to a float

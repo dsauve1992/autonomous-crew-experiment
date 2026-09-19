@@ -1,0 +1,5 @@
+runtime error: the result of 'pow' is too large to be a float
+ --> pow_overflow.vine:3:10
+  |
+3 | print(pow(10, 400))
+  |          ^

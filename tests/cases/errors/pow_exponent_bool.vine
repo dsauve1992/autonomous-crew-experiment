@@ -1,0 +1,2 @@
+# A bool is not a number here, which is the line fixed draws too.
+pow(2, true)

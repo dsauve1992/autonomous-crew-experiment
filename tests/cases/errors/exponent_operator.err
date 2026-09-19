@@ -1,0 +1,6 @@
+syntax error: expected an expression, found '*'
+ --> exponent_operator.vine:4:10
+  |
+4 | print(2 ** 3)
+  |          ^
+  = help: there is no exponent operator; x to the power y is pow(x, y)

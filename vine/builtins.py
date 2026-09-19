@@ -1,5 +1,7 @@
 """The standard library. Every builtin receives (interp, pos, args)."""
 
+import math
+
 from .errors import RuntimeError_
 from .values import (
     INFINITY,
@@ -177,6 +179,53 @@ def _fixed(interp, pos, args):
         return ("-" if value < 0 else "") + str(abs(value)) + point
     return format(value, f".{digits}f")
 
+
+
+@builtin("pow", 2, 2)
+def _pow(interp, pos, args):
+    """`pow(x, y)` is x to the power y, and it is always a float.
+
+    Always, because the alternative is a return type decided by the *value*
+    of the exponent rather than its type: `pow(2, n)` would be an int for a
+    positive whole n and a float for -1 or 0.5, and nothing else in Vine
+    does that. `/` settled the same question the same way.
+
+    It goes through math.pow rather than `**` for two reasons the tests
+    below pin. `**` on ints is exact and unbounded, so `pow(10, 1000000000)`
+    is an allocation rather than an answer -- no error, no result, a hang.
+    And `**` returns a complex number for a negative base and a fractional
+    exponent, which is not a Vine value and would reach the user as one.
+    math.pow raises on both, and on overflow, where `**` hands back inf.
+    """
+    base, exponent = args
+    for value, what in ((base, "pow base"), (exponent, "pow exponent")):
+        kind = type_name(value)
+        if kind not in ("int", "float"):
+            interp.fail(f"{what} must be an int or float, got {kind}", pos)
+        if kind == "int":
+            try:
+                float(value)
+            except OverflowError:
+                raise RuntimeError_(
+                    "int is too large to convert to a float", pos, interp.source
+                ).note("pow converts both of its arguments to a float") from None
+    if base == 0 and exponent < 0:
+        # 1 / 0, written the other way round. One fact, one headline -- and
+        # the note, because nobody reading a line with no '/' in it goes
+        # looking for a division.
+        raise RuntimeError_("division by zero", pos, interp.source).note(
+            "a negative power divides by the base, and the base is 0"
+        )
+    try:
+        return math.pow(base, exponent)
+    except ValueError:
+        # The only domain error left: a negative base under a fractional
+        # exponent. There is no real answer, and Vine has no other kind.
+        raise RuntimeError_(
+            "cannot raise a negative number to a fractional power", pos, interp.source
+        ).note("the result would be a complex number") from None
+    except OverflowError:
+        interp.overflowed("pow", pos)
 
 # -- lists ----------------------------------------------------------------
 

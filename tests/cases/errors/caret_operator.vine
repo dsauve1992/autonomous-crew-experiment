@@ -1,0 +1,3 @@
+# The other spelling, which a spreadsheet and every BASIC use. Vine has no
+# '^' at all, so this stops in the lexer and gets the same rule.
+print(2 ^ 3)

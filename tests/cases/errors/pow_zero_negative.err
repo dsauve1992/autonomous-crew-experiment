@@ -1,0 +1,6 @@
+runtime error: division by zero
+ --> pow_zero_negative.vine:4:10
+  |
+4 | print(pow(0, -1))
+  |          ^
+  = note: a negative power divides by the base, and the base is 0

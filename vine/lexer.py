@@ -236,7 +236,12 @@ class Lexer:
                         return
                 out.append(Token("op", op, pos))
                 return
-        raise self.error(f"unexpected character {ch!r}")
+        err = self.error(f"unexpected character {ch!r}")
+        if ch == "^":
+            # The other spelling of the operator Vine does not have. A
+            # spreadsheet writes it this way and so does every BASIC.
+            err.help("there is no exponent operator; x to the power y is pow(x, y)")
+        raise err
 
     def number(self, pos):
         digits = ""

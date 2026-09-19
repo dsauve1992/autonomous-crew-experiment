@@ -1,0 +1,3 @@
+# Vine has no infinities, so a power too large is an error rather than a
+# value -- the answer `*` already gives in overflow.vine.
+print(pow(10, 400))

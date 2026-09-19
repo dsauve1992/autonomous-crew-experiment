@@ -1,0 +1,4 @@
+# The cube root of a negative number is real, and this is not how to ask for
+# it: the exponent is a float, so the answer on offer is a complex number,
+# and Vine has no complex numbers to hand one back as.
+print(pow(-8, 1 / 3))

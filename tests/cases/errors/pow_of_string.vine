@@ -1,0 +1,4 @@
+# pow takes numbers. A string that looks like one is still a string -- the
+# answer fixed already gives: the conversion to ask for is float(), and
+# asking for it is the reader's job.
+print(pow("2", 3))

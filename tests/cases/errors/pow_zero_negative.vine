@@ -1,0 +1,4 @@
+# A negative power is a division, and this one divides by zero. The headline
+# is the one `/` already gives; the note is there because the line has no '/'
+# in it for a reader to go and find.
+print(pow(0, -1))

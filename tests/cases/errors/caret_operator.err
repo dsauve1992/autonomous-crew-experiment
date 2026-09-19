@@ -1,0 +1,6 @@
+syntax error: unexpected character '^'
+ --> caret_operator.vine:3:9
+  |
+3 | print(2 ^ 3)
+  |         ^
+  = help: there is no exponent operator; x to the power y is pow(x, y)

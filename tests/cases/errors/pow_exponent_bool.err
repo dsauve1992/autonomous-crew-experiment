@@ -1,0 +1,5 @@
+runtime error: pow exponent must be an int or float, got bool
+ --> pow_exponent_bool.vine:2:4
+  |
+2 | pow(2, true)
+  |    ^

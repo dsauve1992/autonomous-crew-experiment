@@ -246,6 +246,20 @@ class Parser:
                     return left
                 self.next()
                 self.skip_nl()
+                if op == "*" and self.at("op", "*"):
+                    # `**` is two tokens, so the failure lands on the second
+                    # '*' with a true and useless message. Every reader
+                    # arrives knowing this operator from somewhere; refusing
+                    # it without naming what replaces it is the mistake the
+                    # ':' in a hole already taught -- see Powers in
+                    # docs/spec.md.
+                    raise self.error(
+                        "expected an expression, found "
+                        + self.describe(self.peek())
+                    ).help(
+                        "there is no exponent operator; x to the power y is "
+                        "pow(x, y)"
+                    )
                 if op == "|>":
                     left = self.pipe(left, tok)
                 elif op in ("and", "or"):

@@ -1,0 +1,4 @@
+# `**` is two tokens and the parser stops at the second. The message is true
+# on its own and leaves a reader nothing to act on, so it carries the rule
+# as well -- see Powers in docs/spec.md.
+print(2 ** 3)

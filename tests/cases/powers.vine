@@ -1,0 +1,45 @@
+# `pow(x, y)` is x raised to the power y. See Powers in docs/spec.md for why
+# it is a builtin rather than an operator, and why it is always a float.
+print(pow(2, 10))
+print(pow(2, 0.5))
+print(pow(9, 0.5))
+print(type(pow(2, 10)))
+
+# A negative exponent, and the two ends of the line where a float stops.
+print(pow(2, -1))
+print(pow(10, -400))
+print(pow(10, 308))
+
+# 0 to the 0 is 1. Every language answers this and almost none says so.
+print(pow(0, 0))
+print(pow(0.0, 0))
+print(pow(0, 5))
+
+# A negative base is fine under a whole exponent, whichever type carries it.
+print(pow(-2, 3))
+print(pow(-2, 2))
+print(pow(-2.0, 3.0))
+
+# It is a value like every other builtin: it pipes, and it maps.
+print(4 |> pow(0.5))
+print(map([1, 2, 3], fn(n) { pow(2, n) }))
+
+# The two report figures this exists for. A compound growth rate over three
+# periods, and a standard deviation, which ends in a square root.
+let growth = pow(1440.0 / 1000.0, 1 / 3) - 1
+print(fixed(growth * 100, 2))
+
+let xs = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
+let mean = reduce(xs, fn(a, b) { a + b }, 0.0) / len(xs)
+let spread = map(xs, fn(x) { (x - mean) * (x - mean) })
+let variance = reduce(spread, fn(a, b) { a + b }, 0.0) / len(xs)
+print(fixed(pow(variance, 0.5), 4))
+
+# The price of always-float: an exact whole power is what `*` is for, and a
+# power that went through a float is not `==` to the int beside it.
+print(10 * 10 * 10 == 1000)
+print(pow(10, 3) == 1000)
+
+# And pow(x, 0.5) is a square root within one ulp rather than exactly one.
+# 3015 is the smallest whole number where it lands on the wrong side.
+print(pow(3015, 0.5))
