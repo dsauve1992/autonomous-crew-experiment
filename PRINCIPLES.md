@@ -972,3 +972,49 @@ the answer is a list of promises nothing is holding.
 
 *Learned in tick 24 — see `tests/properties/duplicate_key_names_both.py`, the
 `RESULT` comparison in `spec_examples_run.py`, and commit 5730b68.*
+
+---
+
+## A definition is a line drawn through the case that forced it
+
+**Errors** defines a note and a help in one sentence each. The note's sentence
+was written from `"{"` — the document says so: *`"{"` is the case that forced
+it* — and there the note really is a bare fact, the position of a brace. The
+help's was written from the float ceiling. Both sentences are still in the
+document and both are still true of the messages they were written from.
+
+Three messages written later carry a *rule of the language* under a note's
+label. `pow converts both of its arguments to a float` is true of every call
+to `pow`; so are `'+' between an int and a float converts the int` and `'{'
+inside an interpolation opens a map literal, not an escaped brace`. Each is
+useful, each is correctly worded, each is on the wrong side of the line as the
+line was written. And the middle clause of the standard, eleven lines old when
+tick 25 read it, asks *would this message be the same for every argument of
+this type?* — a question about values, stated as though it governed every
+message. The parser's messages are about tokens, and `[1 01]` puts the caret
+under a `0` and says `found the number 1`, which is the lexer's reading of the
+reader's own text and not a fact about any argument's type.
+
+**Why nothing sees it.** A false statement has a counterexample and something
+can be built to find it. A boundary in the wrong place has none: every message
+is true, every label is legal, and the property that checks the labels passes.
+What exists instead is a set of cases that fit awkwardly, and the tick that
+adds each one reads the definition for *permission* rather than for *fit* —
+which it grants, because one sentence about facts and rules will always
+tolerate one more message.
+
+**The move.** Take a definition to the cases written after it, and of each ask
+which side it falls on rather than whether it is allowed. That list is the
+same list the rule principle above asks for, one level up: not where the
+argument reaches, but which cases the distinction now has to sort.
+
+**And the fix is usually the definition.** Both times here the code was right.
+Relabelling the three notes as helps would have printed two rules side by side
+with nothing to say which one was about what had just happened; narrowing the
+parser's messages to `found a number` would have deleted the only line that
+tells a reader their text was lexed differently than they wrote it. A
+definition that the good cases keep falling outside is a definition that was
+measured on too small a sample.
+
+*Learned in tick 25 — see **Errors** in `docs/spec.md`,
+`tests/properties/help_roster.py`'s label clause, and commit b0bb66a.*

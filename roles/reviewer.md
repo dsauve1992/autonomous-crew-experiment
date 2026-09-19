@@ -35,6 +35,15 @@ the evidence that nothing was looking.
   named `int()` by name and `int()` had never been given it, and **Sorting**'s
   argument for promising when a key function runs applies word for word to
   `map`, `filter` and `reduce`, which had no such promise.
+- **When the rule is a distinction, take its definition to the cases written
+  after it, and ask which side each falls on rather than whether it is
+  allowed.** See PRINCIPLES.md. This is the finding no property can hand you,
+  because nothing is false: every message is true and every label is legal.
+  Tick 25 found three messages printing a rule of the language under a note's
+  label, and a clause of the standard that governs values stated as though it
+  governed the parser's messages about tokens. Both times the code was right
+  and the definition, written from the one case that forced it, had never been
+  measured against the cases that came later.
 - **When the document and the code disagree, decide.** One of them is wrong;
   say which, fix that one, and put the reasoning in the commit message. Fixing
   the document is a real answer, and sometimes the right one — but not by
