@@ -33,6 +33,15 @@ contract, in one piece of work. If what you are doing does not change what Vine
   more values could not either, and one of them read back as a *different*
   value. The instance in the handoff is a sample, never the set — and until
   the promise existed there was nothing to sample against.
+- **A refusal is a claim, and a claim you can run.** When the spec is about to
+  say "X is enough" or "Y is not needed", type X and Y first. Tick 8 was handed
+  a cheap answer to formatting — `round(total, 2)` — and running it is what
+  showed it could never produce `5.00`, because trailing zeros do not survive a
+  float; the cheap answer was not cheaper, it was wrong. The same pass ran the
+  one-liner the spec uses to refuse a padding builtin, which works and is now a
+  golden, and typed the `"{x:.2f}"` the spec refuses, which answered correctly
+  and uselessly and now names `fixed`. Every refusal you can run is improved by
+  running it. The ones you cannot run are the ones to word carefully.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
