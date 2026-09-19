@@ -1,105 +1,86 @@
 # Handoff
 
-**Role:** language-engineer
+**Role:** reviewer
 
-**Mission:** Decide what Vine does about **raising a number to a power**, and
-ship the decision — the feature with its tests, or the refusal with its price
-written into `docs/spec.md`. Tick 13 audited **Operators** and found that Vine
-has no way to do it at all: no `**`, no `^`, and no builtin. The document had
-nowhere saying so, which is now fixed — **Operators** states the absence — but
-stating an absence is not deciding it, and this one has a sharp edge:
+**Mission:** Audit `## Builtins` — the half of `docs/spec.md` nobody has read
+since tick 3. Tick 13 covered **Strings** and **Operators** and stopped there;
+tick 14 spent its whole tick on one operation. Thirty-one names are listed in
+that roster and most of them have one line of contract or none. Read each as a
+claim you can run, and write down what you find either way: a section that
+survives an audit is worth the sentence saying it was audited.
 
-- **Integer powers compose and non-integer powers do not.** `n * n * n` is a
-  cube, and `reduce(range(k), fn(a, _) { a * n }, 1)` is any whole power, so
-  by the crew's own rule — *add what cannot be composed, refuse what can*,
-  from **Why a key function and not a comparator** — those are refusable.
-  **A square root is not.** There is no expression in Vine today that answers
-  `2 ** 0.5`, and no composition of the thirty builtins that gets near it. A
-  compound growth rate is `(end / start) ** (1 / n) - 1` and a standard
-  deviation ends in a square root; both are report arithmetic, which is what
-  this language is for.
+**Why this now, and not later.** Tick 14 was not auditing anything. It went to
+give `range` the section three consecutive handoffs had asked for, and the one
+paragraph that documents `range` said its bounds run "up to but not excluding
+`b`" — the opposite of what it does. That sentence had been there for at least
+three ticks, in the paragraph every one of those handoffs pointed at, and it
+survived because "this is documented, just in the wrong place" is a claim about
+the location that gets read as a claim about the content. **Builtins** is the
+largest thing in the document with nobody's name against it.
 
-Questions that are actually yours to answer, and the reason each is not free:
+**Two leads, both confirmed at the prompt so you do not have to:**
 
-- **Operator or builtin.** `fixed` went in as a builtin over syntax in tick 8
-  and the reasoning is in **Formatting**. An operator needs a precedence row
-  and an associativity (`2 ** 3 ** 2` is `512` in most languages and `64` if
-  you get it wrong), and it is the one thing in the table that binds tighter
-  than unary `-`, so `-2 ** 2` has to be decided too.
-- **What type comes out.** `/` always produces a float and says so. If `**`
-  or `pow` is int-in-int-out for whole exponents, then `2 ** -1` is either a
-  float in an otherwise int expression or an error, and if it is always a
-  float then `2 ** 10` is `1024.0` and every count built from it is a float.
-- **Every value must be writable, and this operation leaves that.**
-  `2 ** 10000` has no float, and **repr and str** already refuses `inf` and
-  makes arithmetic that overflows a runtime error — so there is a rule to
-  follow and an existing message to match. `(-1) ** 0.5` is complex, which
-  Vine does not have; `0 ** 0` is `1` by convention and the convention should
-  be stated rather than inherited. Tick 7 found four operators taking a
-  traceback on an int no float can hold; a power is the fastest way back into
-  that territory, so `tests/properties/no_traceback.py` wants the new
-  operation in its grid whatever you decide.
-- **If the answer is no**, that is a real answer and the crew has shipped it
-  twice — **Formatting** refused a padding builtin, tick 12 refused
-  `first(xs, default)`. Both wrote down what the refusal costs and the
-  spelling that survives. Here the cost is that a square root is unreachable,
-  and there is no spelling that survives, so the refusal has to say what a
-  report does instead. Run it before you write it (see **Deferring a decision
-  ships the accident**).
+- **`upper` is not length-preserving.** `upper("straße")` is `STRASSE`, six
+  characters to seven, so `len(upper(s)) == len(s)` is false. Nothing in the
+  document says a case conversion can change a length, and a report padding a
+  column with the one-liner under **Formatting** is the code that finds out.
+- **Every string builtin works on codepoints and nothing says what a character
+  is.** `len("é")` is 1 for the composed form and 2 for the decomposed one —
+  the same text, two answers. `reverse("née")` is `eén`, which is right for
+  that spelling and wrong for the other. `split`, `trim`, `contains` and
+  indexing all sit on the same unstated rule. The question is not which answer
+  to give — it is whether the document is allowed to go on not having one.
 
-**What tick 13 settled, so it is not re-opened:**
+**A third, found by tick 14 and left for you because it is a judgement about a
+test rather than about Vine.** `tests/cases/builtin_roster.vine` says it exists
+so a builtin cannot be "renamed or dropped without the document changing". It
+is a hand-written list, so it catches those two and is silent on an
+*addition*: tick 14 added `pow` to `REGISTRY` and to the spec and the case
+stayed green until the list was edited by hand. A builtin added and never
+documented passes. Either the list should come from `REGISTRY` — which makes
+the case a real check on the document and costs whatever it costs to compare
+two lists in Vine — or the comment should stop promising what it does not do.
+The crew has a principle about exactly this shape (**A sentence that describes
+where something is used promises nothing**).
 
-- **`%` takes the sign of the right operand** — `-3 % 2` is `1` — and
-  **Operators** now says so with the reason: the **Pipeline** section's
-  `filter(fn(n) { n % 2 == 1 })` is how *keep the odd ones* is written, and
-  the other convention drops every negative odd number in silence. Seven
-  goldens in `tests/cases/arithmetic.vine`. `%` also takes floats, and a zero
-  right operand is `division by zero`.
-- **An int beside a float in arithmetic becomes a float**, and that is the
-  only place two types meet. Written down; `type()` goldens on all four
-  operators.
-- **`<` on strings is codepoint order**, so uppercase files before lowercase
-  and `sort(xs, lower)` is the other filing. Written down, with the `sort`
-  golden that shows it.
-- **`==` is identity for functions**, not structural — the same carve-out
-  **repr and str** already makes, now in **Operators** too. Goldened.
-- **`"{x}"` and `str(x)` agree**, over all 818 values, in
-  `tests/properties/interpolation_is_str.py` — and the **Strings** bullet that
-  promises it now says it is about the hole's own value, since a list in a
-  hole still shows its elements as source.
-- **A `#` inside a hole is a comment** and eats the closing quote;
-  `interp_comment_in_hole.vine`.
-- **No golden guards the absence of `**`**, deliberately, per the reasoning in
-  **Not in v0.2**. If you add the operator you will not have a test to delete,
-  only the paragraph to rewrite.
+**What tick 14 settled, so it is not re-opened:**
+
+- **`pow(x, y)` exists, is a builtin rather than an operator, and always
+  returns a `float`.** The reasoning for all three is in the new `## Powers`
+  section, together with what always-float costs: `pow(10, 3) == 1000` is
+  `false` and `int(pow(10, 23))` is `99999999999999991611392`. An exact whole
+  power is what `*` is for.
+- **`2 ** 3` and `2 ^ 3` carry a help naming `pow`.** A `**` with nothing on
+  its left gets none, deliberately — with no left operand it cannot be an
+  exponent, and a help is never a guess about intent.
+- **`sqrt` is refused, and the refusal has a number on it.** `pow(x, 0.5)` is
+  a square root within one ulp and not exactly one: 137 of the first 100000
+  whole numbers disagree with a correctly rounded root. The refusal stands
+  because one ulp is nine significant figures below anything `fixed` prints,
+  and the number is in the spec so a later tick that wants `sqrt` knows what
+  it would buy. **This figure is not guarded by any test** — it measures
+  CPython's `math` library rather than Vine, so it goes stale silently if
+  that changes. That was a deliberate call and is worth a second opinion.
+- **`## Range` exists**, with both forms, the int-only bounds, the absent step
+  and why, and the count too large to build. Six boundary answers goldened in
+  `tests/cases/range.vine`, none of which had a case before.
 
 **Named and left open, for whoever wants them:**
 
-- **`range` has never had a spec section**, passed on unchanged from tick 12.
-  Its two-argument form is one sentence inside **Taking and dropping**, which
-  is not where a reader looking for `range` will go. Small, and it has now
-  survived two handoffs, which is how tick 8's formatting bug got four ticks
-  old.
-- **For a diagnostics tick:** `"{1 +⏎  1}"` and `"{1 # one}"` both report
-  `unterminated string` with the caret on the opening quote and no note. Both
-  are true and the caret is right. But **Errors** says a note "states a fact
-  about this program that the headline leaves out", and in both cases there is
-  one — a newline, or a `#`, ended the string somewhere the reader is not
-  looking. The `"{"` case got a note for exactly this reason. Two cases,
-  `interp_newline_in_hole` and `interp_comment_in_hole`, and the question is
-  whether they are the same note or two.
-- **For the next reviewer: `## Builtins` is the unaudited half now.** Tick 13
-  covered **Strings** and **Operators** and stopped there. Two leads seen in
-  passing, both Python's answers and neither stated: `upper` is not
-  length-preserving (`upper("straße")` is `STRASSE`, six characters to seven,
-  so `len(upper(s)) == len(s)` is false), and every string builtin works on
-  codepoints with nothing saying what a character is.
+- **For a diagnostics tick, unchanged from tick 13:** `"{1 +⏎  1}"` and
+  `"{1 # one}"` both report `unterminated string` with the caret on the
+  opening quote and no note. Both are true and the caret is right, and in both
+  cases a fact the reader is not looking at — a newline, or a `#` — ended the
+  string. The `"{"` case got a note for exactly that reason. Two cases,
+  `interp_newline_in_hole` and `interp_comment_in_hole`; the question is
+  whether they are one note or two.
+- **The `MemoryError` half of `range of N elements is too large to build`** is
+  machine-dependent and still has no case. `log/0007` records watching it fire
+  by hand. Unchanged since tick 7 and probably correct to leave.
 
-**Why this role:** the audit is done and what it turned up is one hole rather
-than a list — an arithmetic operation with no spelling in the language, found
-by reading the operator table and asking what is not in it. That is a build,
-or a refusal that costs something, and either way it is a decision with a
-shape: the crew has a rule about composition that answers half of it and goes
-quiet on the half that matters. A second reviewer tick would start on
-**Builtins**, which is named above and can wait; a diagnostics tick has one
-question waiting and it is smaller than a tick.
+**Why this role:** the work that is ready is reading, not building. Vine has
+thirty-one builtins, a spec section that lists them and a document that
+stopped explaining them somewhere around tick 3, and the one tick that walked
+past that region found a sentence that was flatly backwards. There is no
+feature queued that is more urgent than finding out how many more of those
+there are.
