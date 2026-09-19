@@ -325,13 +325,13 @@ Structural comparison descends into lists and maps and stops at a function on
 those terms, so `[f] == [f]` is `true`. Map order is not part of `==` — see
 **Map order**.
 
-**There is no exponent operator, and no builtin either.** Neither `**` nor
-`^`: `2 ** 3` is a syntax error at the second `*`, `^` is not a character Vine
-has, and there is no `pow`, so a cube is written `n * n * n`. The `e` in `1e5`
-is part of a float *literal* and not an operator — see **Literals** — which is
-easy to read the other way once a number can carry an exponent. Whether Vine
-should have the operator is open; that it does not have one today is written
-here so nothing else quietly reads as though it does.
+**There is no exponent operator; the power is `pow(x, y)`.** Neither `**` nor
+`^` is in the table, and neither is an oversight — see **Powers** for what a
+row for one would have cost. `2 ** 3` is still a syntax error at the second
+`*` and `^` is still not a character Vine has, but both now carry the rule
+that replaces them, the way a `:` in a hole carries **Formatting**'s. The `e`
+in `1e5` is part of a float *literal* and not an operator — see **Literals** —
+which is easy to read the other way once a number can carry an exponent.
 
 `x.k` is exactly `x["k"]`. Negative indexes count from the end of a list or
 string. Indexing a missing map key is an error; use `get(m, k, default)` to
@@ -425,7 +425,7 @@ Output: `print(...)` `repr(x)`
 
 General: `type(x)` `len(x)` `str(x)` `int(x)` `float(x)`
 
-Numbers: `fixed(x, digits)`
+Numbers: `fixed(x, digits)` `pow(x, y)`
 
 Lists: `range(n)` `range(a, b)` `map(xs, f)` `filter(xs, f)` `reduce(xs, f, init)`
 `push(xs, x)` `concat(a, b)` `first(xs)` `rest(xs)` `take(xs, n)` `drop(xs, n)`
@@ -437,6 +437,132 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 `reverse(s)` `contains(s, sub)`
 
 `push` and `set` return new values; nothing in Vine mutates.
+
+## Powers
+
+`pow(x, y)` is `x` raised to the power `y`. It is the one piece of arithmetic
+Vine spells as a function, and it always hands back a `float`.
+
+```
+pow(2, 10)                  # 1024.0
+pow(2, 0.5)                 # 1.4142135623730951
+pow(2, -1)                  # 0.5
+4 |> pow(0.5)               # 2.0
+```
+
+**Why there is one at all.** Whole powers compose out of `*` and this
+language's rule is **add what cannot be composed, refuse what can** — the one
+**Formatting** settles. `n * n * n` is a cube and
+`reduce(range(k), fn(a, _) { a * n }, 1)` is any whole power, both exact, so
+neither is an argument for anything new. A *fractional* power is a different
+question: before `pow` there was no expression in Vine that answered
+`2 ** 0.5`, and no arrangement of the other builtins that got near one. That
+matters because it is the arithmetic reports are made of — a standard
+deviation ends in a square root, and a compound growth rate is a root of a
+ratio:
+
+```
+let growth = pow(1440.0 / 1000.0, 1 / 3) - 1
+"{fixed(growth * 100, 2)}% a period"        # "12.92% a period"
+```
+
+**Why it is always a float.** The alternative — an int in and an int out for
+whole exponents — decides the result's type from the *value* of the exponent
+rather than its type. `pow(2, n)` would be an int for a positive whole `n`, a
+float for `-1` or `0.5`, and no reader of that line could say which without
+knowing `n`. Nothing else in Vine does that, and `/` already answered the
+same question the same way: it produces a float whether or not the division
+comes out even.
+
+The second reason is that an int power has no ceiling. Ints in Vine are
+unbounded, so `pow(10, 1000000000)` under an int rule is not an answer and
+not an error either — it is an allocation, and the program stops responding.
+Every float power is bounded, and one too large is the error the rest of
+arithmetic already gives.
+
+What that costs is exactness, and the cost is worth seeing:
+
+```
+10 * 10 * 10 == 1000        # true
+pow(10, 3) == 1000          # false, because 1000.0 is not 1000
+int(pow(10, 23))            # 99999999999999991611392
+```
+
+So an exact whole power is what `*` is for, and `pow` is the operation that
+reaches the answers `*` cannot. That division is the same one the composition
+rule already draws, read from the other side.
+
+**Why a builtin and not `**`.** An operator would need a precedence row, and
+that row is the most expensive one in the table. It binds tighter than
+everything else, including unary `-`, so `-2 ** 2` has to be decided and is
+`-4` in most languages and `4` in a few. It is the only right-associative
+operator anyone has, so `2 ** 3 ** 2` is `512` and not `64`. Both are facts a
+reader has to be *told*, and neither buys anything: `pow(x, y)` says which
+argument is which by position, and nests without a rule.
+
+A function also keeps what an operator could not — `pow` is a value. It
+pipes, as above; it maps; a report squaring a column can bind
+`let square = fn(x) { pow(x, 2) }`. This is the trade `fixed` made for the
+same reasons, and **Formatting** has the longer version of it.
+
+Refusing a syntax every reader arrives with is only cheap if the refusal says
+what to write instead, so both spellings do:
+
+```
+syntax error: expected an expression, found '*'
+ --> report.vine:4:10
+  |
+4 | print(2 ** 3)
+  |          ^
+  = help: there is no exponent operator; x to the power y is pow(x, y)
+```
+
+`2 ^ 3` fails in the lexer with `unexpected character '^'` and the same help.
+A `**` with nothing on its left — `f(**opts)`, carried in from another
+language — gets no help, deliberately: with no left operand it cannot be an
+exponent, and a help is offered because it is likely to be the rule wanted,
+never as a guess about what the program meant. See **Errors**.
+
+**The values it has no answer for**, each reusing a message Vine already had:
+
+- **`pow(0, -1)` is `division by zero`.** A negative power divides by the
+  base. The headline is `/`'s because the fact is `/`'s; it carries a note —
+  *a negative power divides by the base, and the base is 0* — because there
+  is no `/` on the line for a reader to go and find.
+- **`pow(-8, 1 / 3)` is `cannot raise a negative number to a fractional
+  power`**, with a note that the result would be a complex number. Vine has
+  none, and every negative base under a fractional exponent has one. A whole
+  exponent is fine: `pow(-2, 3)` is `-8.0`.
+- **`pow(10, 400)` is `the result of 'pow' is too large to be a float`**, the
+  message `*` and `/` already give. Underflow is not symmetric with it:
+  `pow(10, -400)` is `0.0`, because `0.0` is a float and a program can write
+  it down, which is the whole of the rule under **repr and str**.
+- **An argument no float can hold** is `int is too large to convert to a
+  float`, with a note that `pow` converts both of its arguments. Same
+  message as `float()` and as mixing an int with a float in `+`.
+- **A `bool` is not a number here**, as it is not for `fixed`.
+
+`pow(0, 0)` is `1.0`. Every language answers this and almost none writes it
+down; it is a convention rather than a derivation, and it is stated here so
+it is Vine's answer rather than Python's.
+
+**Why no `sqrt`.** `pow(x, 0.5)` is the square root and the rule says refuse
+what composes — but this one composes *almost*, and the gap is worth naming
+rather than leaving for someone to find. A correctly rounded square root and
+`pow(x, 0.5)` are one ulp apart on some values:
+
+```
+pow(3015, 0.5)              # 54.90901565316938
+                            # correctly rounded: 54.909015653169384
+```
+
+137 of the first 100000 whole numbers land on the wrong side. So `sqrt` is
+not *strictly* composable, and it is refused anyway: one ulp is nine
+significant figures below anything `fixed` prints, and a report that could
+tell the difference is not a report. A later tick that wants the last bit can
+add `sqrt` knowing exactly what it buys, which is this paragraph and nothing
+else.
+
 
 ## Taking and dropping
 
