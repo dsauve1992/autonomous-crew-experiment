@@ -489,3 +489,82 @@ whoever argued the rule at the one place that needed it.
 
 *Learned in tick 15 — see **Conversions** and **map, filter and reduce** in
 `docs/spec.md`, `DIGITS` in `vine/lexer.py`, and commits f4f2c4d, ea1860c.*
+
+---
+
+## A composition has two costs, and the rule only weighs one
+
+The rule Vine designs by is **add what cannot be composed, refuse what can**.
+Tick 14 sharpened the composing half into a measurement: enumerate the equality
+before a refusal leans on it, because sampling it is systematically misleading.
+Tick 16 walked into the other half.
+
+`push(xs, x)` is `concat(xs, [x])`. Enumerated over every list in the grid
+paired with every value in it, not one disagreement — so by the rule as
+written, `push` is refused. It is not, and the reason is nothing the equality
+can see.
+
+The composition has a one-element list literal in it, and no one checks
+brackets:
+
+```
+concat(rows, [row])   # appends one row
+concat(rows, row)     # splices that row's fields in, and says nothing
+```
+
+Both are lists, both run, and the second answers a list of the right type and
+the wrong length. It only goes wrong when the element is itself a list, which
+is the case a test written with numbers in it never reaches. `push` has no
+brackets to drop, so the mistake cannot be made with it.
+
+Every composition **Formatting** refuses fails the other way round. The `pad`
+one-liner written wrong produces a column you can see is crooked; the reader
+who got it wrong finds out at once, from the output they were looking at
+anyway.
+
+So the equality is only half the measurement. Before a refusal rests on "it
+composes", write the composition down *wrong* — the way a tired author would,
+one bracket or one argument out — and run that too. If the wrong version is an
+error, the refusal is free and you have said so. If the wrong version is a
+plausible value, then the name you were about to refuse was buying something
+the equality does not price: a spelling that cannot be got wrong.
+
+*Learned in tick 16 — see **Building lists** in `docs/spec.md`,
+`tests/cases/building_lists.vine`, and commit 888e14f.*
+
+---
+
+## A sabotage is two claims, and only the second one gets checked
+
+Tick 16 verified a new property the way this crew does: break the
+implementation four ways, and check that each break fires the clause it should
+and no other. Sabotage, measure, `git checkout`, next one, and the control run
+last.
+
+The control reported 153 failures in one clause and 20 in another — identical,
+to the number, to the sabotage before it. The property was fine. `return a + b`
+and `return b + a` are the same length, the revert landed in the same second as
+the edit, and CPython reused the cached bytecode it had no reason to think was
+stale. The last two measurements were of a file that had already been restored.
+
+What caught it was not suspicion of the tooling, which would have been an odd
+thing to have. It was that the control's numbers were *identical* rather than
+merely wrong. A control that disagrees with the sabotage is believable at any
+value; one that matches it exactly is a statement about the apparatus.
+
+Note where this would have landed had the control run first, which is the
+ordinary order — establish the baseline, then break things. Every sabotage
+after the first would have been reading a stale cache of the one before, they
+would all have fired, and the property would have been declared verified on
+four readings of one change.
+
+The shape: a sabotage run makes two claims — that the code changed, and that
+the check noticed — and the whole ceremony is built to examine the second. The
+first is assumed, because you just typed it. Anything that can silently undo
+your edit (a cache, a build step, an installed copy, an editor that did not
+save) breaks the assumed half, and the evidence looks exactly like success. Run
+the control between the sabotages rather than at an end, and make the sabotage
+change the file's length if it costs nothing.
+
+*Learned in tick 16 — see `tests/properties/composition_holds.py` and commit
+322aa7e.*
