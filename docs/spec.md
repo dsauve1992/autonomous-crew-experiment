@@ -605,8 +605,21 @@ space and the four ASCII information separators — where the lexer, `int` and
 things: source never contains a non-breaking space and scraped data is full of
 them, and `trim` is what a report calls on a column before anything else. The
 cost is that `trim` takes a record separator off data delimited by one, and
-there is no narrower spelling to reach for, because Vine has no `replace`.
-That one is a live question rather than a settled answer.
+the answer is to trim the fields rather than the record:
+
+```
+let row = " a b "
+len(split(row, " "))                  # 4 — two values and the two ends
+len(split(trim(row), " "))            # 2 — trim ate the outer delimiters
+map(split(row, " "), trim)            # ["", "a", "b", ""] — still 4
+```
+
+That holds for any separator, including the ones `trim` eats and a program
+cannot type. The escapes are `\n \t \r \" \\ \{` and `\}`, so a record
+separator reaches a Vine string only by being pasted into a literal — which
+works: the lexer takes the character, a literal holding one between two letters
+is three codepoints long, and `repr` hands it back as itself. What that costs
+is a line of source nobody can read; see **repr and str**.
 
 **`split` and `join` are a pair, and the pair is why the empty cases look
 odd.** `split(s, sep)` answers one more piece than there are separators, so
@@ -625,6 +638,52 @@ because every string holds the empty one. In a list it looks for an element by
 In a map it looks for a *key*, so a needle no key could be — a list, a map, a
 function — is an error rather than `false`: that is a category mistake and not
 a lookup that missed. Absence is what `get(m, k, default)` is for.
+
+### Why there is no `replace`
+
+`replace(s, from, to)` is `join(split(s, from), to)`, and the rule is **add
+what cannot be composed, refuse what can**. A refusal on that ground is a
+measurement, so here is the measurement.
+
+Over every string of up to four characters drawn from `a`, `b` and a record
+separator, paired with every `from` and `to` drawn from seven strings — 5929
+triples — and over 200000 more drawn at random from a pool holding a combining
+acute, a non-breaking space and an astral codepoint, the composition and a
+left-to-right replace disagree on **nothing** with a non-empty `from`. Not
+almost nothing, as `pow(x, 0.5)` and a square root turned out to be under
+**Powers**: nothing.
+
+They disagree on 726 of the grid's triples, and every one of those has an empty
+`from`. `join(split("abc", ""), "-")` is `"a-b-c"`; a `replace` copied from
+another language answers `"-a-b-c-"`, putting the replacement where no needle
+was found, and on `""` answers `"-"` where the composition answers `""`. Both
+readings are defensible and the question is one no program asks, so refusing
+the builtin refuses the question with it — which is the cheaper outcome, since
+**`split` and `join` are a pair** already settled why `split(s, "")` is the
+codepoints and `split("", "")` is `[]`, and a `replace` would have had to
+disagree with one of those or with every other language.
+
+**What the refusal costs.** The composition written wrong mostly answers
+instead of failing:
+
+```
+join(split("a,b", ","), ";")     # "a;b"   — right
+join(split("a,b", ";"), ",")     # "a,b"   — the two strings swapped: the input back
+join(split(",", "a,b"), ";")     # ","     — subject and needle swapped: the needle
+split(join("a,b", ","), ";")     # error: join target must be a list, got string
+```
+
+Two of the three ways to get it wrong produce a plausible value, and by **A
+composition has two costs** that is exactly where a name earns its place: it
+buys a spelling that cannot be got wrong. `replace` does not buy one.
+`replace(s, to, from)` is the same mistake with the two strings adjacent, the
+same type and one comma apart, which is where argument swaps come from in the
+first place; `join(split(...))` at least puts each string next to its own verb.
+`push` went in because it has no brackets to drop. `replace` moves this mistake
+rather than removing it, so the second cost does not pay for it either.
+
+What a program that wants the narrow set should reach for is above: trim the
+fields, not the record.
 
 ## Looking up a key
 
@@ -1210,6 +1269,15 @@ values were in that state, all the same shape — no way to write them down:
   the rule it was half keeping. The cost is that no Vine program can hold a
   float beyond about `1.8e308` even briefly, which is the price of every value
   being writable, and it is small.
+
+**The promise is that the output is a Vine expression, not that a reader can
+type it.** A string holding an invisible character — a record separator, a
+non-breaking space — reprs as itself between quotes, and that really is source:
+paste it back and `==` says `true`. What it is not is legible, and Vine has no
+escape that would make it so, because the escapes are `\n \t \r \" \\ \{` and
+`\}`. Adding one is a change to **Strings**, where the escape list lives, and
+the reason it has not been made here is that it would be a syntax decision
+taken as a side effect of a paragraph about printing.
 
 **Functions are the exception, and the only one.** A closure is its parameters,
 its body *and* the environment it captured; no expression denotes that. One

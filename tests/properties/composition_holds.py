@@ -35,6 +35,16 @@ the document treats as separate can be comparing one thing (tick 13):
   and the half that is not a shared primitive is the disagreement: `concat`
   refuses every pair `+` accepts that is not two lists. The claim is not that
   they agree, it is *where* they agree, so both directions are checked.
+- **replace.** **Text** refuses a `replace` builtin on the ground that
+  `join(split(s, from), to)` already is one. The other three clauses compare
+  two Vine spellings, because each of those sentences is an equality between
+  two of them. This one cannot: the thing the composition is claimed to equal
+  is not in Vine and never will be, so the right-hand side is written below as
+  a scan -- find the needle, emit the prefix and the replacement, advance past
+  it -- and the clause checks the composition against a *definition* rather
+  than against another run. It is also the one clause with a stated exception,
+  an empty `from`, so it checks that too rather than skipping it: the
+  exception being exactly one case is the part of the refusal that could rot.
 """
 
 import io
@@ -43,8 +53,8 @@ from vine import run
 from vine.errors import VineError
 
 CLAIM = (
-    "print's separator, push and concat each answer exactly what docs/spec.md "
-    "says they are the same as, over every value the grid holds"
+    "print's separator, push, concat and the split/join spelling of replace each "
+    "answer exactly what docs/spec.md says they are the same as"
 )
 
 from no_traceback import VALUES
@@ -59,6 +69,46 @@ LISTS = [v for v in VALUES if v.startswith("[")]
 # do is pick pairs at random, because a counterexample has to come back on
 # the next ./check.
 TRIPLES = ['1', '"s"', "nil", "[1]", "{a: 1}", "fn(x) { x }"]
+
+# The replace clause needs strings rather than values, and the characters that
+# matter are a separator that occurs twice running, one that never occurs, and
+# one no program can type. RS is pasted into the Vine source this file builds;
+# it is spelled chr(0x1E) here so a reader of *this* file can see it.
+RS = chr(0x1E)
+TEXT_ALPHABET = ["a", ",", RS]
+TEXTS = [""]
+for _n in (1, 2, 3):
+    _prev = [t for t in TEXTS if len(t) == _n - 1]
+    TEXTS += [t + c for t in _prev for c in TEXT_ALPHABET]
+# An empty needle is the stated exception, not an omission, so it is in here.
+NEEDLES = ["a", ",", RS, "a,", ",,", ""]
+REPLACEMENTS = ["", "x", ",,", RS]
+
+
+def as_source(s):
+    """`s` as a Vine string literal. Only `"` and `\\` need escaping, and the
+    invisible characters need none -- being unable to write them is the point
+    of the paragraph this clause guards."""
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def scan_replace(s, needle, to):
+    """A left-to-right, non-overlapping replace, defined rather than borrowed.
+
+    This is the sentence `join(split(s, from), to)` is claimed to mean. It does
+    not call split, join or str.replace, so a shared bug has nowhere to hide.
+    """
+    out = []
+    i = 0
+    while True:
+        hit = s.find(needle, i)
+        if hit < 0:
+            break
+        out.append(s[i:hit])
+        out.append(to)
+        i = hit + len(needle)
+    out.append(s[i:])
+    return "".join(out)
 
 
 def answer(src):
@@ -140,5 +190,32 @@ def check():
                         f"answered {direct!r} for a pair that is not two lists",
                     )
                 )
+
+    # replace(s, from, to) is join(split(s, from), to) -- Text. For a non-empty
+    # `from` the two are the same function; for an empty one they part, and
+    # that is the stated exception rather than a hole, so it is pinned to the
+    # only other thing it could be: `to` between the codepoints of `s`, which
+    # is what **split and join are a pair** already promises split does.
+    for s in TEXTS:
+        for needle in NEEDLES:
+            for to in REPLACEMENTS:
+                checked += 1
+                call = (
+                    f"print(repr(join(split({as_source(s)}, {as_source(needle)}), "
+                    f"{as_source(to)})))"
+                )
+                composed = answer(call)
+                if needle == "":
+                    expected = to.join(list(s))
+                else:
+                    expected = scan_replace(s, needle, to)
+                wanted = answer(f"print(repr({as_source(expected)}))")
+                if composed != wanted:
+                    failures.append(
+                        (
+                            f"join(split({s!r}, {needle!r}), {to!r})",
+                            f"answered {composed!r}; a scan says {wanted!r}",
+                        )
+                    )
 
     return checked, failures

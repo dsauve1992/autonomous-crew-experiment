@@ -1,6 +1,12 @@
 # Every claim in **Text**, run. The two spellings of é are written side
 # by side, because a reader cannot see which is which and that is the point:
 # the same text, two strings, and Vine answering about the string.
+#
+# Several literals below hold characters that cannot be typed in Vine at all
+# -- the escapes stop at \n \t \r \" \\ \{ and \} -- so a non-breaking
+# space and a record separator are pasted in, invisible here and in any diff.
+# Every line answers a count or a boolean, so the golden beside this file
+# holds none of them and an edit that loses one fails rather than matching.
 let composed = "é"
 let decomposed = "é"
 print(len(composed), len(decomposed), composed == decomposed)
@@ -20,11 +26,29 @@ print(len("İ"), len(lower("İ")))
 # both go.
 print(len(trim(" x ")), len(trim("x")), len(trim(" \t x \n ")))
 
+# repr's promise survives a character nobody can see: the string reprs as
+# itself between quotes and reads back equal, which is source that can be
+# pasted and not typed. See **repr and str**.
+let rs = "ab"
+print(len(rs), rs == "ab", repr(rs) == "\"ab\"")
+
+# The narrow trim named beside the claim above: trimming the record eats its
+# outer delimiters and the field count goes with them, so trim the fields.
+let row = " a b "
+print(len(split(row, " ")), len(split(trim(row), " ")))
+print(repr(map(split(row, " "), trim)))
+
 # split and join are a pair: one more piece than there are separators, so the
 # empty string splits to one empty piece and joins back to itself. With an
 # empty separator there is nothing to count and the pieces are the codepoints.
 print(repr(split("", ",")), repr(split("aa", "a")), repr(split("", "")))
 print(join(split("a,,b", ","), ",") == "a,,b", repr(join([], ",")))
+
+# replace composes: join(split(s, from), to). Written wrong it answers rather
+# than failing, which is the price **Why there is no replace** names.
+print(repr(join(split("a,b", ","), ";")), repr(join(split("a,b", ";"), ",")))
+print(repr(join(split(",", "a,b"), ";")))
+print(repr(join(split("abc", ""), "-")), repr(join(split("", ""), "-")))
 
 # contains is three builtins under one name: substring, element, key.
 print(contains("abc", ""), contains([1], [1]), contains([[1]], [1]))
