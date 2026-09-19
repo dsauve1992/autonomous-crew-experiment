@@ -1,0 +1,43 @@
+# fixed(x, digits): a number written out with exactly that many digits after
+# the point. Money first, which is the case that forced the feature: trailing
+# zeros do not survive a float, so no amount of rounding produces "5.00".
+print(fixed(5.0, 2))
+print(fixed(3 * 0.1, 2))
+print(fixed(1 / 3, 4))
+
+# Zero digits is no point at all, not a trailing one. Ties go to the even
+# digit, and the digits are those of the float that is actually there -- 2.675
+# is a hair under two-and-two-thirds-quarters, so it rounds down.
+print(fixed(2.5, 0))
+print(fixed(3.5, 0))
+print(fixed(0.125, 2))
+print(fixed(0.375, 2))
+print(fixed(2.675, 2))
+
+# An int is written from its own digits and never through a float, so one with
+# more digits than a float can hold keeps all of them.
+print(fixed(12, 2))
+print(fixed(-7, 3))
+print(fixed(12345678901234567890123, 1))
+
+# Never exponent form. This is the only way to write a very large or very
+# small float out in full; str reaches for an exponent at both ends.
+print(str(1e20))
+print(fixed(1e20, 2))
+print(fixed(1e-7, 9))
+
+# Signs survive, including the one on a negative zero.
+print(fixed(-2.345, 2))
+print(fixed(-0.0, 2))
+
+# It is an ordinary function: it pipes like every other, and it goes in a hole
+# because a hole holds any expression.
+print(0.5 |> fixed(3))
+let total = 12.5
+print("total: {fixed(total, 2)}")
+
+# Width and alignment are deliberately not builtins -- unlike rounding, they
+# are a line of ordinary Vine over a string you already have.
+let pad = fn(s, w) { join(map(range(w - len(s)), fn(_) { " " }), "") + s }
+print("east:" + pad(fixed(5.0, 2), 9))
+print("north:" + pad(fixed(14.0, 2), 8))

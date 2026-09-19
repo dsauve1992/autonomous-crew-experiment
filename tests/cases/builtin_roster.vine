@@ -4,6 +4,7 @@
 let listed = [
   print, repr,
   type, len, str, int, float,
+  fixed,
   range, map, filter, reduce, push, concat, first, rest, reverse, sort, contains,
   keys, values, get, set,
   split, join, upper, lower, trim,

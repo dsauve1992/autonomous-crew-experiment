@@ -299,6 +299,8 @@ Output: `print(...)` `repr(x)`
 
 General: `type(x)` `len(x)` `str(x)` `int(x)` `float(x)`
 
+Numbers: `fixed(x, digits)`
+
 Lists: `range(n)` `range(a, b)` `map(xs, f)` `filter(xs, f)` `reduce(xs, f, init)`
 `push(xs, x)` `concat(a, b)` `first(xs)` `rest(xs)` `reverse(xs)` `sort(xs)`
 `contains(xs, x)`
@@ -312,7 +314,10 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 
 ## repr and str
 
-Vine turns a value into text two ways, and what separates them is who reads it.
+Vine turns a value into text two ways, and what separates them is who reads
+it. A number can also be written to a set number of decimal places — see
+**Formatting** at the end of this section — which is a third function and
+not a third conversion.
 
 `str(x)` is for a person, and `"{x}"` is the same conversion (see **Strings**):
 `str("north")` is `north`. `repr(x)` is **Vine source for the value**:
@@ -370,6 +375,99 @@ come out `[a, b]`. The rule is that the outermost value is converted
 for its reader and everything nested inside it is converted as source — which
 is what "how a value looks nested inside another value" had always meant,
 without ever saying what it was for.
+
+### Formatting
+
+`str` and `"{x}"` show a number the way Vine writes it down: the shortest text
+that reads back as the same value. That is the right answer for a value being
+shown on its own and the wrong one for a value in a column. A price is `5.00`
+and never `5.0`, and the shortest text for three tenths is
+`0.30000000000000004`.
+
+`fixed(x, digits)` is how a number is written to a set number of decimal
+places, and it is a builtin rather than syntax:
+
+```
+let total = 3 * 0.1
+"{total}"                   # "0.30000000000000004"
+"{fixed(total, 2)}"         # "0.30"
+fixed(5.0, 2)               # "5.00"
+total |> fixed(2)           # "0.30"
+```
+
+It takes an `int` or a `float` — never a `bool`, which is not a number here —
+and a digit count that is an `int` from 0 to 1074, and it returns a string.
+`fixed(x, 0)` has no point at all rather than a trailing one. The result is
+never in exponent form, so `fixed` is also the way to write a float outside
+about `1e-4` to `1e16` out in full.
+
+Three facts a reader meets in this order:
+
+- **Ties go to the even digit.** `fixed(0.125, 2)` is `0.12` and
+  `fixed(0.375, 2)` is `0.38`. Rounding halves upwards biases a column of
+  totals upwards; this is the rule that does not.
+- **The digits are those of the float that is actually there.**
+  `fixed(2.675, 2)` is `2.67`, because the float written `2.675` is a hair
+  below it. Formatting reports a value, it does not repair one.
+- **An int is written from its own digits, never through a float**, so an int
+  with more digits than a float can hold keeps every one of them instead of
+  rounding at the seventeenth.
+
+The ceiling of 1074 is a fact about floats rather than a number picked for
+comfort. The smallest float Vine has is `5e-324`, which is exactly `2^-1074`,
+and its decimal expansion ends on a `5` at the 1074th place. So every float
+can be written out exactly, and every digit past the ceiling would be a zero.
+
+**Why a builtin and not syntax.** Three other spellings were considered, and
+each is refused for a reason worth keeping:
+
+- **Not a hole grammar** — `"{total:0.2}"`. A hole holds exactly one
+  expression, and **Strings** gives the reason that rule is worth keeping: a
+  hole's expression is lexed in the ordinary token stream, so "any expression"
+  is the *absence* of a restriction. A `:spec` suffix would be a second
+  grammar to lex, position and report errors in, inside a string, where
+  positions are already the hardest thing in the language to get right. It
+  would also be the largest borrowed answer Vine has taken: everyone who types
+  `{x:.2f}` means another language's, and this would not be it.
+- **Not `format(x, "0.2")`.** The same mini-language with the positions taken
+  away. A spec that is a runtime string may have been computed, so an error in
+  one cannot point at the character that is wrong — and a notation you cannot
+  point into is strictly worse than one you can.
+- **Not an operator** — `x % "0.2"`. `%` is modulo. Deciding an operator's
+  meaning from the type of its right operand, in a language where `1 == 1.0`
+  is false, is not a small liberty to take.
+
+A function keeps what none of the three would: `fixed` is a value. It pipes,
+it maps over a list, it passes to `reduce`, and a program formatting a column
+in two places can bind `let money = fn(x) { fixed(x, 2) }` and use that.
+
+**Why this and not more.** Width, alignment and thousands separators are not
+here, and their absence is a decision rather than a deferral. Each of them
+turns a string into another string, and each is a line of ordinary Vine over
+the string `fixed` has already handed you:
+
+```
+let pad = fn(s, w) { join(map(range(w - len(s)), fn(_) { " " }), "") + s }
+"east:" + pad(fixed(5.0, 2), 9)          # "east:     5.00"
+```
+
+Rounding to a number of digits is the one thing that is not composable: to get
+`0.30` out of `0.30000000000000004` you must implement decimal rounding by
+hand, in a language whose case for existing is that shaping data should not
+ask that. So the rule this settles is **add what cannot be composed, refuse
+what can**.
+
+That rule is also why there is no `round(x, digits)`. Rounding is a numeric
+operation and what a column wants is textual: `round(5.0, 2)` is `5.0`, and
+`str` of it is `"5.0"`, so no amount of rounding ever reaches `"5.00"`. A
+rounding builtin was the cheap answer this question was deferred with four
+times, and it does not answer it.
+
+**`fixed` is not a third conversion.** `str` and `repr` convert *any* value,
+and which applies is decided by who reads the result; that pair stays a pair.
+`fixed` takes a number and nothing else, and hands back an ordinary string
+that `repr` then quotes like any other. Nothing above changes what `repr(v)`
+promises.
 
 ## Errors
 

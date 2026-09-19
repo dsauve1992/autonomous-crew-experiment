@@ -129,6 +129,47 @@ def _float(interp, pos, args):
     interp.fail(f"cannot convert {article(kind)} to a float", pos)
 
 
+# -- numbers --------------------------------------------------------------
+
+# The most digits `fixed` will write after the point. 1074 is not a round
+# number and is not meant to be: the smallest float Vine has is 5e-324, which
+# is exactly 2 ** -1074, and its decimal expansion ends at the 1074th place.
+# So every float can be written out exactly, and every digit past the ceiling
+# would be a zero. A ceiling is needed at all because Python's formatter
+# refuses a precision above 2 ** 31 by raising, and below that quietly builds
+# a string of that many characters.
+MAX_DIGITS = 1074
+
+
+@builtin("fixed", 2, 2)
+def _fixed(interp, pos, args):
+    value, digits = args
+    kind = type_name(value)
+    if kind not in ("int", "float"):
+        interp.fail(f"fixed expects an int or float, got {kind}", pos)
+    want(interp, pos, digits, "int", "fixed digits")
+    if not 0 <= digits <= MAX_DIGITS:
+        error = RuntimeError_(
+            f"fixed digits must be between 0 and {MAX_DIGITS}, got {digits}",
+            pos,
+            interp.source,
+        )
+        if digits > MAX_DIGITS:
+            error.help(
+                f"the smallest float is 5e-324, which has {MAX_DIGITS} "
+                "decimal places; nothing has more"
+            )
+        raise error
+    point = "." + "0" * digits if digits else ""
+    if kind == "int":
+        # From the int's own digits, never through a float: an int may have
+        # more digits than a float can hold, and Python's formatter converts
+        # first -- so it raises on the ones that do not fit and rounds away
+        # digits on the ones that only just do.
+        return ("-" if value < 0 else "") + str(abs(value)) + point
+    return format(value, f".{digits}f")
+
+
 # -- lists ----------------------------------------------------------------
 
 

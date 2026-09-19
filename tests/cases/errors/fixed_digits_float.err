@@ -1,0 +1,5 @@
+runtime error: fixed digits must be an int, got float
+ --> fixed_digits_float.vine:3:6
+  |
+3 | fixed(1.0, 2.0)
+  |      ^

@@ -1,0 +1,3 @@
+# A count of digits is an int. 2.0 is a float, and in Vine those are two
+# different types all the way down -- 1 == 1.0 is false.
+fixed(1.0, 2.0)

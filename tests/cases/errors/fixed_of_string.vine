@@ -1,0 +1,3 @@
+# fixed takes a number. A string that looks like one is still a string -- the
+# conversion to ask for is float(), and asking for it is the reader's job.
+print(fixed("5.0", 2))

@@ -1,0 +1,5 @@
+runtime error: fixed expects an int or float, got string
+ --> fixed_of_string.vine:3:12
+  |
+3 | print(fixed("5.0", 2))
+  |            ^

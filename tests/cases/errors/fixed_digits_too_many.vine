@@ -1,0 +1,3 @@
+# The ceiling is not arbitrary: no float has a nonzero digit past its 1074th
+# decimal place, so there is nothing above it left to print.
+fixed(1.0, 2000)

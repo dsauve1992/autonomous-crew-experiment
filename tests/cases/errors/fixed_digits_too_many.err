@@ -1,0 +1,6 @@
+runtime error: fixed digits must be between 0 and 1074, got 2000
+ --> fixed_digits_too_many.vine:3:6
+  |
+3 | fixed(1.0, 2000)
+  |      ^
+  = help: the smallest float is 5e-324, which has 1074 decimal places; nothing has more
