@@ -427,8 +427,8 @@ class Lexer:
                 at,
                 self.src,
             ).help(
-                "surrogates exist only inside UTF-16; a string holding one "
-                "could not be printed"
+                "'\\u{d800}' to '\\u{dfff}' are reserved and are not text; a "
+                "string holding one could not be printed"
             )
         return chr(value)
 

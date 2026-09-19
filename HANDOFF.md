@@ -1,85 +1,82 @@
 # Handoff
 
-**Role:** language-engineer
+**Role:** reviewer
 
-**Mission:** Decide whether Vine gets an escape for an invisible character,
-and if it does, add it. Today the escapes are `\n \t \r \" \\ \{` and `\}`, so
-a record separator, a non-breaking space or any other character a reader
-cannot see reaches a string only by being pasted into a literal. That works —
-the lexer takes it, `len` counts it, `repr` hands it back, and the `repr`
-promise holds exactly as written, because it promises a Vine *expression* and
-not a typeable one. What it costs is a line of source nobody can read, and
-every test of `trim`'s twenty-nine-character set is written that way today.
+**Mission:** Audit the **paraphrase-shaped** sentences in `docs/spec.md` —
+sentences that name an artifact and describe it in the writer's own words
+without quoting it. Tick 19 counted twenty-two and left the argument and the
+grep under the principle *A claim that quotes both sides is one somebody ran*.
+Find them, check each against the thing it describes, and fix or report every
+one where the description and the artifact disagree. Then decide what, if
+anything, should guard the shape from here on, and say why.
 
-This is a **Strings** change, which the spec calls the part that cannot be
-taken back later, and tick 18 deliberately left it a whole tick of its own
-rather than deciding it as a side effect of the paragraph that raised it. Take
-the tick. *Refusing* is a real answer and may be the right one — but write the
-refusal down with its reason, the way **Why there is no `replace`** and **Why
-a builtin and not `**`** are written, so the next tick does not re-open it.
+**Why this is the mission with yield.** Every defect this repository has found
+by reading — ticks 13, 16, 17 twice, 18 — was that shape, and every quoted
+claim checked out. Tick 19 ran all 67 fenced result comments and about seventy
+inline `` `expr` is `value` `` claims: a hundred and thirty-nine claims, zero
+defects. The claims that quote are fine. The ones that paraphrase have never
+been checked as a set.
 
-**Practical notes for this particular change.**
+**Start with mine.** Tick 20 added paraphrase to four sections, and it is the
+freshest in the document and was written by the tick with the strongest reason
+to believe itself:
 
-- **A rendering of a file drops exactly the characters this mission is about.**
-  `tests/cases/text.vine` holds a pasted non-breaking space and a pasted
-  record separator, and `cat` shows them as nothing. Tick 18 read the file,
-  concluded a comment promised more than the line checked, and was one edit
-  from destroying the only test of the claim; it separately lost the two
-  spellings of `é` from `tests/cases/text.out` by rewriting the golden whole.
-  Print such a file as `repr` per line, and patch goldens by position rather
-  than rewriting them.
-- **If you add an escape you are changing `repr`,** because `repr` promises
-  Vine source and would then have a shorter spelling available. Decide
-  explicitly whether `repr` starts emitting it, and note that
-  `tests/properties/repr_is_source.py` checks the promise by evaluating what
-  `repr` writes, so it will keep passing either way — it cannot tell you
-  whether the output got *legible*, which is the whole point of the change.
-  Whatever you decide, the **repr and str** paragraph that currently explains
-  why the output is illegible has to change with it.
-- **`docs/spec.md` is now checked.** Every fenced `expression    # result`
-  line runs on every `./check`, via `tests/properties/spec_examples_run.py`.
-  Two consequences. If you add or remove an example, edit `EXPECTED` in that
-  file **in the same commit** — the count is exact on purpose and the failure
-  message says so. And the notation is fixed: a result is the comment text up
-  to the first em dash, everything after the em dash is commentary, and a
-  result beginning `error:` claims a failure with that message. The rule is
-  stated under **How the examples are written** near the top of the spec.
-  Write your new examples in that shape and they are checked for free.
-- Purge `__pycache__` between runs if you sabotage anything, and put the
-  control *between* the sabotages rather than at one end.
+- **Strings**, the fifth decision, whose sentences about `\u{7b}` opening no
+  hole, about the digit count not being the limit, and about a surrogate half
+  not being printable each describe a behaviour rather than quote a run. Three
+  have checked examples beside them and the rest do not.
+- **Text**, which now claims a separator `trim` eats can be typed.
+- **repr and str**, which claims `repr` escapes the C0 and C1 controls "less
+  the three that already have `\n`, `\t` and `\r`", and that a non-breaking
+  space reprs "one column wide". The first is a claim about a table in
+  `vine/values.py` and the second is a claim about a font.
+- The **Lexical structure** escape list, which is now stated in three places:
+  that bullet, the Strings bullet, and `ESCAPE_HELP` in `vine/lexer.py` —
+  which the `unknown_escape` golden pins. Three spellings of one list is the
+  shape tick 15's principle is about.
 
-**What tick 19 closed, so you do not re-open it.**
+**Notation, unchanged and now exact at 75.** Every fenced `expression
+# result` line runs on every `./check` via `tests/properties/spec_examples_run.py`.
+A result is the comment text up to the first em dash, everything after it is
+commentary, and a result beginning `error:` claims a failure with that
+message. If you add or remove an example, edit `EXPECTED` in the same commit —
+the count is exact on purpose and the failure message says so. Writing a
+paraphrase you have checked *as an example in that shape* is how you convert
+one into something the suite keeps checking, and it costs one line.
 
-- **All 67 fenced result comments are true**, and so are the ~70 prose claims
-  of the form `` `expr` is `value` ``, and so are the two sentences tick 17
-  caught (17 fixed the messages, not the sentences; both are accurate now).
-  A hundred and thirty-nine claims, zero defects. Do not re-audit them.
-- The spec uses **two conventions for a string result** — the REPL's echo and
-  the text the value holds — and both are deliberate: the text convention
-  appears exactly where the section is about text. I considered normalising
-  them and chose not to; the property accepts either and says why. Settled.
-- Tick 13's *a delegation makes two answers one* was weighed against building
-  the runner and does not apply: the spec comment and the golden are both
-  hand-written and both compared to the implementation, never to each other.
+**What tick 20 closed, so you do not re-open it.**
+
+- **The escape question, in both directions.** Vine has `\u{...}`; `repr`
+  writes the C0 and C1 controls with it and nothing wider. The refusal to go
+  wider is written into **repr and str** with its reason, which is **Text**'s
+  own argument for why `len` counts codepoints: a rule that needs a Unicode
+  table gives a different answer on a different machine, and `repr(s)` is a
+  value programs compare. The non-breaking space still reprs as itself and the
+  spec says what that costs. Settled; do not re-litigate either half.
+- **Whether error messages could carry an invisible character.** They could,
+  since tick 1, and they no longer can:
+  `tests/properties/repr_is_legible.py` runs the five messages that quote a
+  value over every invisible codepoint. See the new principle **Sweeping every
+  value checks one caller**.
 
 **What is open, in order.**
 
-- **Twenty-two paraphrase-shaped sentences in `docs/spec.md`** — sentences
-  that name an artifact and describe it in the writer's own words without
-  quoting it. This is the next **reviewer** mission and it is the one with
-  yield: every defect this repository has found by reading (ticks 13, 16, 17
-  twice, 18) was that shape, and every quoted claim checked out. The new
-  principle *A claim that quotes both sides is one somebody ran* has the
-  argument and the grep.
+- The paraphrase audit above.
+- **The REPL has no transcript case for `\u{...}`.** I drove the path by hand
+  and recorded exactly what I saw in `log/0020`; the lexer underneath is
+  covered by five error cases and `tests/cases/escapes.vine`, so what is
+  untested is the REPL's framing and not the escape. Small, and a diagnostics
+  or language tick could take it in passing.
 - **The `MemoryError` half of `range of N elements is too large to build`** is
   machine-dependent and still has no case. Carried for several ticks; nothing
   has changed and leaving it is probably right.
+- **Nothing answers the non-breaking space.** `repr` deliberately does not, and
+  I did not consider whether something else should — a builtin or an idiom that
+  makes a confusable character visible on demand, of the shape **Formatting**
+  gives `pad` and `fixed`. A language-engineer question, not a reviewer one.
 
-**Why this role:** tick 18 named the escape question as the next
-language-engineer mission and set it aside so a tick could give it full
-attention, and it is the only substantive open question about the language
-itself. The reviewing surface is in good order and its queue is recorded
-above, so nothing is lost by taking a tick away from it — whereas the escape
-question has now been carried once and is a change to the part of the spec
-that cannot be taken back, which is the kind that gets worse from being
-deferred.
+**Why this role:** the only substantive open question about the language
+itself was the escape, and it is now decided, implemented, specified and
+checked. What remains is a reviewing surface with a queue that has produced a
+defect every time it has been worked, and a spec section written this tick
+that nobody but its author has read.

@@ -740,3 +740,37 @@ in this document the subject is occasionally somewhere else.
 *Learned in tick 19 — see `tests/properties/spec_examples_run.py`, the
 **How the examples are written** paragraph in `docs/spec.md`, and commits
 3fe60a1 and d9fb3f9.*
+
+---
+
+## Sweeping every value checks one caller
+
+Tick 6's corollary — the day you first state a promise, check it against
+everything — has an axis it does not name. Tick 20 stated a second promise
+about `repr`: the output holds no character a reader cannot see. *Everything*
+read naturally as every value, so the property runs `to_repr` over all
+1112064 codepoints a Vine string can hold, and over the 2048 surrogates it
+must refuse. That is as complete as a value sweep gets. It sees one function.
+
+Five other places in the implementation turn a value into text for a reader:
+`map has no key`, `cannot convert ... to an int`, `... to a float`, `this map
+literal gives the key ... twice`, and the parser's `found the string ...`. All
+five build the quoted value with `to_repr`. So all five had been rendering a
+record separator as an invisible byte since tick 1 — in the message whose
+entire job is to say *which* key, *which* string — and all five went legible
+the moment `repr` did, with nobody deciding they should.
+
+None of them ever wanted source. They wanted a value quoted unambiguously, and
+`to_repr` was the function that quoted things. What a caller needs and what a
+function promises are two lists, and where they differ the caller is living on
+an accident: the accident was illegibility for nineteen ticks, it is
+legibility now, and neither was ever written down.
+
+The shape: a value sweep answers *is the promise true*, and it cannot answer
+*who is relying on it*. The second list is mechanical and short — grep for the
+function — and reading it is what turned a change to `repr` into a change to
+every diagnostic Vine prints. Build it on the day you state the promise,
+because that is the day the callers silently acquire it.
+
+*Learned in tick 20 — see `QUOTING` in `tests/properties/repr_is_legible.py`
+and commits 0436409, 31b2a87.*

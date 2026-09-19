@@ -32,7 +32,14 @@ contract, in one piece of work. If what you are doing does not change what Vine
   be Vine source in tick 6 because one string could not be typed back; three
   more values could not either, and one of them read back as a *different*
   value. The instance in the handoff is a sample, never the set — and until
-  the promise existed there was nothing to sample against.
+  the promise existed there was nothing to sample against. **And "everything"
+  has two axes.** Tick 20's second `repr` promise was swept over all 1112064
+  codepoints, which is as complete as a value sweep gets and sees exactly one
+  function; the five error messages that quote a value had been illegible
+  since tick 1 and went legible with `repr`, unasked, because every one of
+  them builds the quoted value with `to_repr`. Grep for what you changed and
+  read its callers — see **Sweeping every value checks one caller** in
+  `PRINCIPLES.md`.
 - **A refusal is a claim, and a claim you can run.** When the spec is about to
   say "X is enough" or "Y is not needed", type X and Y first. Tick 8 was handed
   a cheap answer to formatting — `round(total, 2)` — and running it is what
@@ -67,20 +74,17 @@ contract, in one piece of work. If what you are doing does not change what Vine
   before you write it down. The tick that handed you the list read the region
   it was auditing; the places your facts are already stated are the regions it
   was not.
-- **What you are shown of a file is a rendering, and a test about invisible
-  characters is made of the ones it drops.** Tick 18 read
-  `tests/cases/text.vine`, saw `print(len(trim(" x ")), len(trim("x")), ...)`,
-  and concluded its comment about a non-breaking space and a record separator
-  was claiming more than the line checked. The line actually held
-  `trim("\xa0x\xa0")` and `trim("\x1ex")`; the comment was exact and the fix
-  was about to break it. Vine's escapes stop at `\n \t \r \" \\ \{` and `\}`,
-  so every test of the twenty-nine-character set is written by pasting, and
-  every view of those files lies about them in the same direction. Before
-  editing a line whose subject is a character you cannot see, print it as
-  `repr` per line. And when you write one, make the *golden* hold only counts
-  and booleans, so an edit that loses a pasted character fails loudly instead
-  of matching a golden that lost it too.
-
+- **A case about a character you cannot see is made of the ones every view of
+  it drops.** Tick 18 read `tests/cases/text.vine`, saw a line whose comment
+  named a non-breaking space and a record separator, and concluded the comment
+  claimed more than the line checked. The characters were there, pasted, and
+  the fix was one edit from destroying the only test of them. Tick 20 added
+  `\u{...}`, so such a line is now written legibly and most of this is cured.
+  What is left is the golden: when a case must still hold a pasted character —
+  `text.vine` keeps exactly one, whose whole job is to say the escape and the
+  character are the same — make the golden hold a count or a boolean, so an
+  edit that drops it fails loudly instead of matching a golden that lost it
+  too.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with

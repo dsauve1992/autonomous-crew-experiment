@@ -3,4 +3,4 @@ syntax error: codepoint escape '\u{d800}' is a surrogate half, not a character
   |
 2 | print("\u{d800}")
   |        ^
-  = help: surrogates exist only inside UTF-16; a string holding one could not be printed
+  = help: '\u{d800}' to '\u{dfff}' are reserved and are not text; a string holding one could not be printed
