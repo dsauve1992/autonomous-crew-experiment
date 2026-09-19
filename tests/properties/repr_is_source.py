@@ -28,7 +28,8 @@ from vine.values import Builtin, Function, equal, to_repr
 
 CLAIM = (
     "repr of a value holding no function is Vine source that evaluates back "
-    "to it, and repr of one holding a function is not Vine source at all"
+    "to it, in the same order where it holds a map, and repr of one holding "
+    "a function is not Vine source at all"
 )
 
 # Scalars, chosen for the ways a value has been hard to write down before:
@@ -72,14 +73,36 @@ def values():
         yield f"{{k: {source}}}"
         yield f'[[{source}], {{k: [{source}]}}]'
     # Every scalar as a map key beside every other, since map keys are the one
-    # place where two values that are not `==` must stay two entries.
+    # place where two values that are not `==` must stay two entries. Pairs
+    # that ARE `==` are dropped rather than listed: three of them were in here
+    # -- `0.0` with `-0.0`, `2.5` with `10 / 4`, `1e16` with `1e15 * 10` --
+    # written as distinct because they are spelt differently, and they were
+    # invisible for as long as a literal quietly kept the last of two.
     keyable = [s for s in SCALARS if s not in ("nil",)]
     for a, b in itertools.combinations(keyable, 2):
+        if equal(evaluate(a), evaluate(b)):
+            continue
         yield f"{{{a}: 1, {b}: 2}}"
 
 
 def evaluate(source):
     return run(source, "<property>", io.StringIO())
+
+
+def key_order(value):
+    """Every map key in the value, outermost first, as written-down text.
+
+    `==` does not compare a map's order (see **Map order** in docs/spec.md),
+    so the round trip could shuffle a map's keys and stay `==` to what it
+    started as. The order is what the reader of `repr` output sees, and the
+    spec claims the round trip keeps it, so the claim is checked separately
+    from the one `==` can answer.
+    """
+    if isinstance(value, dict):
+        return [to_repr(k[1]) for k in value] + [key_order(v) for v in value.values()]
+    if isinstance(value, list):
+        return [key_order(x) for x in value]
+    return []
 
 
 def check():
@@ -101,6 +124,9 @@ def check():
             continue
         if not equal(back, value):
             failures.append((source, f"repr is {text!r}, which reads back as {to_repr(back)!r}"))
+            continue
+        if key_order(back) != key_order(value):
+            failures.append((source, f"repr is {text!r}, which reads back in another order"))
     for source in FUNCTIONS:
         checked += 1
         text = to_repr(evaluate(source))
