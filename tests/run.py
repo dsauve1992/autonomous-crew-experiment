@@ -149,7 +149,7 @@ def report_property(module, checked, broke):
     source you can paste at a prompt."""
     lines = [
         f"      claim: {module.CLAIM}",
-        f"      {len(broke)} of {checked} programs broke it:",
+        f"      {len(broke)} broke it, of {checked} checked:",
     ]
     for source, what in broke[:20]:
         lines.append(f"        {source}")
@@ -219,7 +219,7 @@ def main(argv):
             failures.append((name, report_property(module, checked, broke)))
             print(f"{RED}FAIL{RESET}    {name}")
         else:
-            print(f"{GREEN}ok{RESET}      {name} {DIM}({checked} programs){RESET}")
+            print(f"{GREEN}ok{RESET}      {name} {DIM}({checked} checked){RESET}")
 
     print()
     if failures:
