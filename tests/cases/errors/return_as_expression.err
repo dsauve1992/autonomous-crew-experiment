@@ -1,0 +1,5 @@
+syntax error: expected an expression, found the keyword 'return'
+ --> return_as_expression.vine:6:17
+  |
+6 |   let doubled = return n
+  |                 ^

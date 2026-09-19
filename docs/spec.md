@@ -45,7 +45,7 @@ name. See **Errors** for what each way of ending means.
   is written down the page. `|>` is the only operator that works from the left,
   and it can be, because no expression starts with one.
 - Identifiers are `[A-Za-z_][A-Za-z0-9_]*`.
-- Keywords: `let fn if else do true false nil and or not`.
+- Keywords: `let fn if else do return true false nil and or not`.
 - Numbers are `123` (int), and `1.5` or `1e-9` (float). See **Literals**.
 - Strings are double-quoted and do not span lines. Escapes: `\n \t \r \" \\
   \{ \}` and `\u{...}`. A `{` opens a string interpolation — see Strings.
@@ -391,7 +391,8 @@ fn(a, b) { a + b }
 ```
 
 A function body is a block. A block's value is its last statement's value, or
-`nil` if it is empty or ends in a `let`. There is no `return`.
+`nil` if it is empty or ends in a `let`. A function may also leave early — see
+**Early return**.
 
 `let name = fn(...) {...}` also names the function, which is what appears in
 error messages and when a function is printed.
@@ -408,6 +409,110 @@ if cond { ... } else if cond { ... } else { ... }
 ### Blocks
 
 `do { ... }` is a block used as an expression, for scoping intermediate names.
+
+## Early return
+
+```
+return expr
+return
+```
+
+`return` leaves the enclosing function with that value; a bare `return`
+answers `nil`, which is what a function ending in a `let` already answers.
+Statements after it do not run.
+
+**It is a statement, not an expression.** `let x = return 1` and `f(return 1)`
+are syntax errors, and so is `1 + return 2`. A `return` has no value to give
+the expression around it — it abandons that expression — and a grammar that
+says so costs one rule, where an expression that never yields costs every
+reader a special case to remember. What the refusal reads as is the message
+any keyword in that position gets:
+
+```
+syntax error: expected an expression, found the keyword 'return'
+```
+
+**It is refused outside a function, and refused at parse time.** Whether a
+`return` has a function to leave is a property of where it is written, not of
+what happens when the program runs, so the parser is where it is answered and
+a `return` at the top of a file never runs at all:
+
+```
+syntax error: 'return' outside a function
+  = help: only a function body may return; a block's value is its last statement
+```
+
+That refusal is also what makes the feature safe to implement the way it is:
+`return` is a signal thrown out to the call that will answer with it, and
+because no `return` can exist without a call beneath it, no signal can reach
+a reader as anything but a value.
+
+**A block is not a function.** `do { return x }` inside a function leaves the
+*function*, not the block — the same for a branch of an `if`, which is also a
+block. There is nothing a `return` can leave but a function, so there is
+nothing to be ambiguous about, and `return` inside a `do` at the top level is
+the refusal above.
+
+### Why `return` earns its keyword
+
+`if` is an expression and `else if` chains, so most guards in Vine are already
+flat and `return` buys them nothing. Where it pays is a guard whose binding is
+only *valid* once the guard above it has passed. Hoisting the bindings above
+the chain is the flattening that needs no new syntax, and it works right up
+until it does not:
+
+```
+let head_price = fn(orders) {
+  let first = orders[0]
+  ...
+  if len(orders) == 0 { 0.0 }
+  else if ...
+}
+head_price([])
+```
+
+```
+runtime error: index 0 is out of range for a list of length 0
+```
+
+The empty list is the one input the length check exists to survive, so that
+binding cannot be hoisted, and without `return` those three guards are a
+three-deep nest ending in a branch four levels in. With it they are three
+lines down the left margin:
+
+```
+let head_price = fn(orders) {
+  if len(orders) == 0 { return 0.0 }
+  let first = orders[0]
+  if type(get(first, "unit", nil)) != "float" { return 0.0 }
+  if first.unit < 0.0 { return 0.0 }
+  first.qty * first.unit
+}
+```
+
+Both programs are in `tests/cases/return.vine`, which is also where the
+hoisted one is not, because it does not run.
+
+### What it costs
+
+`return` is a keyword, so it is no longer a name. `let return = 1`,
+`fn(return) {...}`, `o.return` and the bare-identifier map key `{return: 1}`
+are all syntax errors now, each naming the keyword it found. A map key of that
+spelling is still reachable as a string, which is the escape hatch every other
+keyword already has and the first tick to need it:
+
+```
+{"return": 1}                      # {"return": 1}
+let o = {"return": 1}
+o["return"]                        # 1
+```
+
+**A statement after a `return` is not refused.** It is dead, and Vine says
+nothing. The parser could see the trivial case and could not see
+`if c { return 1 } else { return 2 }` followed by a statement, which is dead
+for the same reason and needs flow analysis to know it. Half a rule about
+unreachable code would be worse than none: a reader who learned that Vine
+catches this would be wrong most of the time they relied on it.
 
 ## The REPL
 
@@ -1872,17 +1977,17 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Thirteen rules, and every help is one of them. Twelve live in
+Fourteen rules, and every help is one of them. Thirteen live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
 listed against the section that states it at length, because a help is a
 reminder of this document and never a replacement for it.
 
-The thirteenth is the command line's, and it is elsewhere because a problem
+The fourteenth is the command line's, and it is elsewhere because a problem
 with the command line has no position and so no report to hang a help on —
 `vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
-it. It is a rule offered for the same reason as the other twelve, so it is on
+it. It is a rule offered for the same reason as the other thirteen, so it is on
 the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
@@ -1890,6 +1995,7 @@ the same list.
 - `the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them` — **Conversions**
 - `the smallest float is 5e-324, which has 1074 decimal places; nothing has more` — **Formatting**
 - `there is no exponent operator; x to the power y is pow(x, y)` — **Operators, loosest binding first**
+- `only a function body may return; a block's value is its last statement` — **Early return**
 - `a negative index counts from the end, but a count does not` — **Taking and dropping**
 - `to give a key a new value, use set(m, k, v)` — **Map order**
 - `the escapes are \n \t \r \" \\ \{ \} and \u{...}` — **Lexical structure**
@@ -1907,19 +2013,29 @@ visible in a golden file, because a golden is a copy of the message it checks.
 
 ## Not in v0.2
 
-Deliberately absent, roughly in the order they look worth adding: early
-`return`, a module/import system, a `match` expression, user-defined operators,
-and a bytecode compiler. Anything here is fair game for a later tick — but
-adding one means adding its tests and updating this file in the same commit.
+Deliberately absent, roughly in the order they look worth adding: a
+module/import system, a `match` expression, user-defined operators, and a
+bytecode compiler. Anything here is fair game for a later tick — but adding
+one means adding its tests and updating this file in the same commit.
 
-Audited in tick 7, rechecked in tick 21: all five are absent. `return` and
-`import` are not keywords, so `return 1` and `import "x"` are two statements
-on one line and say so —
-`expected end of line between statements, found the number 1`. `match` is not
-a keyword either, so `match x { 1 => 2 }` fails at `x` for the same reason and
-never reaches the `=>`; tick 7 wrote that it failed *at* the `=>`, which was a
-guess at a parser that stops earlier than it thought. There is no syntax that
-binds an operator, and `vine/interp.py` walks the tree. No case guards any of this, deliberately — a test that a feature is
-missing passes for as long as nobody is working on it, and fails on the branch
-of whoever is, which is the one place the reminder is noise rather than news.
-The paragraph above is the reminder, and it is aimed at the right reader.
+Early `return` was the fifth, at the head of the list, from tick 1 until tick
+26 took it. What took it was not an argument: it was running the flattening
+that would have made it unnecessary and watching it fail on an empty list. See
+**Why `return` earns its keyword**. The other four have now been confirmed
+absent by seven ticks without one of them being argued either way, which is
+what a question looks like once it has stopped being asked. Whoever reopens
+one: the cheapest move is to write the program the feature is for, in the Vine
+there is, and read it.
+
+Audited in tick 7, rechecked in ticks 21 and 26: the remaining four are
+absent. `import` is not a keyword, so `import "x"` is two statements on one
+line and says so —
+`expected end of line between statements, found the string "x"`. `match` is
+not a keyword either, so `match x { 1 => 2 }` fails at `x` for the same reason
+and never reaches the `=>`; tick 7 wrote that it failed *at* the `=>`, which
+was a guess at a parser that stops earlier than it thought. There is no syntax
+that binds an operator, and `vine/interp.py` walks the tree. No case guards
+any of this, deliberately — a test that a feature is missing passes for as
+long as nobody is working on it, and fails on the branch of whoever is, which
+is the one place the reminder is noise rather than news. The paragraph above
+is the reminder, and it is aimed at the right reader.

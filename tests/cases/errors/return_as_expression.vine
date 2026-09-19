@@ -1,0 +1,8 @@
+# `return` is a statement and never an expression: it has no value to give
+# the expression it would sit in. The message is the one any keyword in that
+# position gets, which is the right one -- what is wrong here is that a
+# statement was written where an expression was wanted.
+let f = fn(n) {
+  let doubled = return n
+  doubled
+}

@@ -1,0 +1,64 @@
+# `return` leaves the enclosing function with a value. It is a statement and
+# never an expression, so it stands where a statement may stand and nowhere
+# else.
+
+# What it is for: a chain of guards where each binding is only valid once the
+# guard above it has passed. `orders[0]` cannot be hoisted above the length
+# check, so without `return` these three guards are a three-deep nest.
+let head_price = fn(orders) {
+  if len(orders) == 0 { return 0.0 }
+  let first = orders[0]
+  if type(get(first, "unit", nil)) != "float" { return 0.0 }
+  if first.unit < 0.0 { return 0.0 }
+  first.qty * first.unit
+}
+print(head_price([]))
+print(head_price([{qty: 2}]))
+print(head_price([{qty: 2, unit: -1.0}]))
+print(head_price([{qty: 2, unit: 0.25}]))
+
+# A bare `return` answers nil -- the value a function ending in a `let`
+# already answers.
+let nothing = fn() { return }
+print(nothing())
+print(type(nothing()))
+
+# A block is not a function. A `return` inside `do` leaves the function that
+# contains the block, not the block.
+let through_block = fn() {
+  do { return "from the block" }
+  "not reached"
+}
+print(through_block())
+
+# Statements after a `return` do not run. Nothing refuses to parse them.
+let early = fn() {
+  return "first"
+  print("not printed")
+  "last"
+}
+print(early())
+
+# The innermost function is the one that is left.
+let outer = fn() {
+  let inner = fn() { return "inner" }
+  return "outer got {inner()}"
+}
+print(outer())
+
+# A function handed to a builtin is still a function and returns from itself.
+print(map([1, 2, 3], fn(n) {
+  if n == 2 { return 0 }
+  n * 10
+}))
+
+# A `return` in the last statement is the value the block already had.
+let plain = fn(n) { return n + 1 }
+print(plain(41))
+
+# Recursion, with the base case as a guard rather than an `else`.
+let fact = fn(n) {
+  if n <= 1 { return 1 }
+  n * fact(n - 1)
+}
+print(fact(6))

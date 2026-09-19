@@ -2,9 +2,9 @@
 
 A help is a rule of the language -- `docs/spec.md` says so and uses the split
 to keep a guess from being printed in the voice of a fact -- so the set of
-them is finite, and **The rules a report may offer** writes it out. Thirteen.
+them is finite, and **The rules a report may offer** writes it out. Fourteen.
 
-Twelve come from a report. The thirteenth is `vine/cli.py`'s, and finding it
+Thirteen come from a report. The fourteenth is `vine/cli.py`'s, and finding it
 is why this property runs the command line as well: a problem with the command
 line has no position and so no `VineError`, so that file writes the
 ` = help: ` prefix out as text. It was held by one golden, and the comment
@@ -18,7 +18,7 @@ Both directions, and the second is the one that needed a machine.
   document does not contain. Nothing could catch it: a help was pinned only by
   the golden of whichever message happened to carry it, and a golden is a copy
   of the message it checks. Tick 24 added the float ceiling to four messages;
-  had it invented a thirteenth rule instead, twelve goldens would have been
+  had it invented a fourteenth rule instead, twelve goldens would have been
   amended and nothing would have asked whether the rule was written down.
 - A rule **listed and printed by nothing** is a message deleted or reworded
   with the document left behind -- the direction `roster_names_every_builtin`
@@ -37,26 +37,29 @@ A third clause, about the labels: **no rule in the roster is printed as a
 note.** The split is what tells a reader whether a line is about their program
 or about the language, and **Errors** draws it at *this failure* against *next
 time* -- a note may state the rule that caused the failure, and three do. What
-it may never be is one of these twelve, because every one of them would be as
+it may never be is one of these fourteen, because every one of them would be as
 true had the reader made no mistake at all. That is the half of the split a
 label check can reach, and nothing else in the suite reaches any of it.
 
 A fourth clause, about the document rather than the language: **every rule is
 listed against a section that exists.** Each bullet ends in a bold heading
 name, and the reference is only worth writing if it stays true; a section
-renamed leaves twelve pointers that read like an answer and are not one. It is
+renamed leaves fourteen pointers that read like an answer and are not one. It is
 checked separately from the two above and breaks on its own.
 
 The count is exact, for the reason spec_examples_run.py gives: a property that
 reads a document has one clause more than it looks, and it is how much it
-read. Twelve bullets, and a roster reworded so the parse finds eleven fails
-here rather than quietly checking a shorter list.
+read. Fourteen bullets, and a roster reworded so the parse finds thirteen
+fails here rather than quietly checking a shorter list. It read `Twelve`
+from tick 24 until tick 26, while `EXPECTED` said thirteen and the roster
+had thirteen bullets -- a count in prose beside a count in code, and only
+one of them run.
 
 The programs are `note_and_help_shape.py`'s -- 74,330 from the type grid and
-thirteen hand-written mistakes -- and they reach every one of the 36 `.note(`
+fourteen hand-written mistakes -- and they reach every one of the 37 `.note(`
 and `.help(` sites in `vine/`. What the grid alone does not reach is in that
 file's docstring. Beside them are the two command lines that carry the
-thirteenth rule, run in-process for their stderr.
+fourteenth rule, run in-process for their stderr.
 """
 
 import contextlib
@@ -77,7 +80,7 @@ SPEC = pathlib.Path(__file__).resolve().parent.parent.parent / "docs" / "spec.md
 HEADING = "### The rules a report may offer"
 
 # How many rules there are. Exact on purpose -- see the docstring.
-EXPECTED = 13
+EXPECTED = 14
 
 # A roster line: the rule in backticks, then the section that states it, bold.
 ENTRY = re.compile(r"^- `(.+)` — \*\*(.+)\*\*$")

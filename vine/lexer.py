@@ -13,7 +13,10 @@ from .rules import (
 )
 from .values import INFINITY
 
-KEYWORDS = {"let", "fn", "if", "else", "do", "true", "false", "nil", "and", "or", "not"}
+KEYWORDS = {
+    "let", "fn", "if", "else", "do", "return",
+    "true", "false", "nil", "and", "or", "not",
+}
 
 # Longest first, so that '==' wins over '=' and '|>' over '|'.
 OPERATORS = [

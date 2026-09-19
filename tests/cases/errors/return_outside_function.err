@@ -1,0 +1,6 @@
+syntax error: 'return' outside a function
+ --> return_outside_function.vine:6:1
+  |
+6 | return total
+  | ^
+  = help: only a function body may return; a block's value is its last statement

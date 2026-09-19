@@ -4,7 +4,7 @@ import sys
 
 from .errors import SyntaxError_
 from .lexer import OPENER, Lexer
-from .rules import BRACE_RULE, EXPONENT_RULE, HOLE_RULE
+from .rules import BRACE_RULE, EXPONENT_RULE, HOLE_RULE, RETURN_RULE
 from .nodes import (
     Binary,
     Block,
@@ -18,6 +18,7 @@ from .nodes import (
     Literal,
     Logical,
     MapLit,
+    Return,
     StrLit,
     Unary,
 )
@@ -84,6 +85,11 @@ class Parser:
         self.i = 0
         # How many expressions are open above this point. See MAX_NESTING.
         self.depth = 0
+        # How many function bodies are open above this point. `return` is a
+        # statement only inside one, and the parser is where that is known:
+        # whether a `return` has a function to leave does not depend on
+        # anything that happens when the program runs.
+        self.fn_depth = 0
 
     # -- token helpers ----------------------------------------------------
 
@@ -232,7 +238,17 @@ class Parser:
     def statement(self):
         if self.at("kw", "let"):
             return self.let_stmt()
+        if self.at("kw", "return"):
+            return self.return_stmt()
         return self.expression()
+
+    def return_stmt(self):
+        tok = self.next()
+        if self.fn_depth == 0:
+            raise self.error("'return' outside a function", tok).help(RETURN_RULE)
+        if self.at("nl") or self.at("eof") or self.at("op", "}"):
+            return Return(tok.pos, None)
+        return Return(tok.pos, self.expression())
 
     def let_stmt(self):
         pos = self.next().pos
@@ -476,7 +492,12 @@ class Parser:
             if p in seen:
                 raise self.error(f"duplicate parameter '{p}'")
             seen.add(p)
-        return FnLit(pos, params, self.block())
+        self.fn_depth += 1
+        try:
+            body = self.block()
+        finally:
+            self.fn_depth -= 1
+        return FnLit(pos, params, body)
 
     def if_expr(self):
         pos = self.expect("kw", "if").pos

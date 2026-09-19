@@ -98,3 +98,15 @@ class Block(Node):
 class Let(Node):
     name: str
     value: Node
+
+
+@dataclass
+class Return(Node):
+    """An early exit from the enclosing function. A statement, never an
+    expression: it has no value to give the expression it sits in, and the
+    grammar saying so is cheaper than every reader learning it.
+
+    `value` is None for a bare `return`, which is `return nil`.
+    """
+
+    value: Optional[Node] = None

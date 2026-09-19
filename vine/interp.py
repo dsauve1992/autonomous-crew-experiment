@@ -14,6 +14,7 @@ from .nodes import (
     Literal,
     Logical,
     MapLit,
+    Return,
     StrLit,
     Unary,
 )
@@ -36,6 +37,23 @@ MAX_DEPTH = 500
 # long before MAX_DEPTH does -- and a RecursionError is a Python traceback, not
 # a Vine error. Raise the ceiling high enough that our own guard wins.
 PY_FRAMES_PER_CALL = 12
+
+
+class ReturnSignal(Exception):
+    """A `return` on its way out to the call that will answer with it.
+
+    Not a VineError and never rendered: it is control flow, not a failure.
+    Nothing outside this module catches it and nothing needs to, because the
+    parser refuses a `return` that has no function to leave -- so every
+    signal raised has a `call()` below it that will take it. That refusal is
+    what makes this exception unable to reach a user.
+    """
+
+    __slots__ = ("value",)
+
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
 
 
 class Env:
@@ -223,6 +241,15 @@ class Interpreter:
         env.define(node.name, self.eval(node.value, env))
         return None
 
+    def eval_return(self, node, env):
+        """Abandon the rest of the function and answer with this value.
+
+        A bare `return` has no expression and answers `nil`, which is the
+        value a function ending in a `let` already has.
+        """
+        value = None if node.value is None else self.eval(node.value, env)
+        raise ReturnSignal(value)
+
     def eval_fn(self, node, env):
         return Function(node.params, node.body, env, node.name, node.pos)
 
@@ -373,6 +400,8 @@ class Interpreter:
                 )
             try:
                 return self.eval_stmts(callee.body, env)
+            except ReturnSignal as signal:
+                return signal.value
             finally:
                 self.depth -= 1
         self.fail(f"cannot call {type_name(callee)}", pos)
@@ -420,6 +449,7 @@ Interpreter.DISPATCH = {
     MapLit: Interpreter.eval_map,
     Block: Interpreter.eval_block,
     Let: Interpreter.eval_let,
+    Return: Interpreter.eval_return,
     FnLit: Interpreter.eval_fn,
     If: Interpreter.eval_if,
     Logical: Interpreter.eval_logical,

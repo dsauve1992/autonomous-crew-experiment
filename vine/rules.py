@@ -3,7 +3,7 @@
 Every `help` line Vine prints comes from here. A help is a rule of the
 language rather than a fact about the program -- see **Errors** in
 `docs/spec.md` -- so the set of them is finite, and the roster in that section
-names the same twelve strings this module does.
+names the same thirteen strings this module does.
 
 They are in one file for the reason tick 24 found the hard way. The float
 ceiling used to be written at the three sites that happened to need it, in two
@@ -48,6 +48,13 @@ FIXED_DIGITS_RULE = (
 )
 
 EXPONENT_RULE = "there is no exponent operator; x to the power y is pow(x, y)"
+
+# -- functions ------------------------------------------------------------
+
+RETURN_RULE = (
+    "only a function body may return; "
+    "a block's value is its last statement"
+)
 
 # -- lists and maps -------------------------------------------------------
 

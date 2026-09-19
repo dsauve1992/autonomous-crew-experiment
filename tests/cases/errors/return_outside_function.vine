@@ -1,0 +1,6 @@
+# `return` is a statement of a function body. At the top level of a file there
+# is no call for it to answer, so it is refused where it is written rather
+# than when it runs -- whether a `return` has a function to leave does not
+# depend on anything that happens at run time.
+let total = 1 + 1
+return total
