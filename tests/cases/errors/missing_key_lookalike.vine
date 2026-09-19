@@ -12,8 +12,11 @@
 # one here is a Unicode table: the thing `repr` refused, for the reason
 # **Revealing** gives. There is no table-free way to ask this question.
 #
-# What the message is actually missing is smaller than Unicode and bigger than
-# this tick: it says what was asked for and never what was there. See
-# missing_key_non_ascii.vine, and the handoff of tick 23.
+# What the message was actually missing is smaller than Unicode and bigger than
+# that tick: it said what was asked for and never what was there. Tick 24 added
+# the second clause, and the headline below now says the map holds exactly one
+# key -- which does not resolve the look-alike and does narrow it, because a
+# reader told there is one key knows the one they can see is the one that is
+# not `café`. The Unicode half is still refused, for the reason above.
 let m = {"cafe\u{301}": 1}
 print(m["café"])

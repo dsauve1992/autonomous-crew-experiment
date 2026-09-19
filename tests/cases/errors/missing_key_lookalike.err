@@ -1,5 +1,5 @@
 runtime error: a map of 1 key has no key "café"
-  --> missing_key_lookalike.vine:19:8
+  --> missing_key_lookalike.vine:22:8
    |
-19 | print(m["café"])
+22 | print(m["café"])
    |        ^

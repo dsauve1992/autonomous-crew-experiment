@@ -1,6 +1,6 @@
 # A map whose keys are French, missing a French key: the report is the
-# headline and no more, and a reader of this program reads `"thé"` rather than
-# `"th\u{e9}"`. This message is what revealing every quoted value would cost,
+# headline and no more -- no note, no help -- and a reader of this program
+# reads `"thé"` rather than `"th\u{e9}"`. This message is what revealing every quoted value would cost,
 # and it is beside missing_key_lookalike.vine because the two together are the
 # whole argument: nothing here can tell them apart without a Unicode table.
 let m = {"café": 1, "chocolat": 2}
