@@ -99,10 +99,16 @@ Calls nested more than 500 deep are reported as runaway recursion.
 ### Literals
 
 ```
-1    2.5    "text"    true    false    nil
+1    2.5    1e-9    "text"    true    false    nil
 [1, 2, 3]
 {name: "vine", "other key": 2}
 ```
+
+A number with a `.` or an `e` is a float; `1e5` is `100000.0` and not `100000`.
+The exponent takes an optional sign, and `e` begins one only when a digit
+follows it, so `1e` is the number `1` and the name `e`. A literal with no float
+to be — `1e400` — is a syntax error rather than an infinity, for the reason
+given under **repr and str**.
 
 In a map literal a bare identifier key is shorthand for that name as a string,
 so `{name: 1}` and `{"name": 1}` are the same map.

@@ -1,0 +1,17 @@
+# An exponent makes a number a float, as everywhere else that has them -- and,
+# since tick 6, as `repr` needs. Python prints 1e+16 for a float that big, and
+# a repr nothing can type back is the defect this syntax was added to close.
+print(1e5)
+print(2.5e3)
+print(1E4)
+print(1e-3)
+print(1e+2)
+print(type(1e5))
+
+# The two forms repr reaches for, and the arithmetic that gets there.
+print(1e16)
+print(0.0000001 / 10000.0)
+
+# `e` begins an exponent only when a digit, or a signed digit, follows it.
+let e5 = 3
+print(e5)

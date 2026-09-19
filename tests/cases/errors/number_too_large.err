@@ -1,0 +1,6 @@
+syntax error: number too large to be a float
+ --> number_too_large.vine:3:7
+  |
+3 | print(1e400)
+  |       ^
+  = help: the largest float is about 1.8e308

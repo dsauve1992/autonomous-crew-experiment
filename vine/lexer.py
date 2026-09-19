@@ -56,6 +56,9 @@ OPENER = {")": "(", "]": "[", "}": "{"}
 # would silently widen both: `café` would lex as an identifier, and `2²` would
 # lex as a number and then crash int() with a Python traceback.
 DIGITS = frozenset("0123456789")
+
+# Named so the too-large-literal guard reads as a fact about floats.
+INFINITY = float("inf")
 IDENT_START = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
 IDENT_REST = IDENT_START | DIGITS
 
@@ -241,12 +244,38 @@ class Lexer:
         digits = ""
         while self.peek() in DIGITS:
             digits += self.advance()
+        is_float = False
         if self.peek() == "." and self.peek(1) in DIGITS:
+            is_float = True
             digits += self.advance()
             while self.peek() in DIGITS:
                 digits += self.advance()
-            return Token("num", float(digits), pos)
-        return Token("num", int(digits), pos)
+        if self.peek() in ("e", "E") and self.exponent_follows():
+            is_float = True
+            digits += self.advance()
+            if self.peek() in ("+", "-"):
+                digits += self.advance()
+            while self.peek() in DIGITS:
+                digits += self.advance()
+        if not is_float:
+            return Token("num", int(digits), pos)
+        value = float(digits)
+        if value in (INFINITY, -INFINITY):
+            raise SyntaxError_(
+                "number too large to be a float", pos, self.src
+            ).help("the largest float is about 1.8e308")
+        return Token("num", value, pos)
+
+    def exponent_follows(self):
+        """Whether the `e` at the cursor begins an exponent rather than a name.
+
+        `1e5` is a float; `1.and` already lexes as `1` then a name, and `1e`
+        must keep doing the same. The guard is the same shape as the one on
+        `.`: look past the marker for what the syntax requires.
+        """
+        if self.peek(1) in DIGITS:
+            return True
+        return self.peek(1) in ("+", "-") and self.peek(2) in DIGITS
 
     def chunk(self, quote, out, after):
         """Read literal text up to the next hole or the closing quote.
