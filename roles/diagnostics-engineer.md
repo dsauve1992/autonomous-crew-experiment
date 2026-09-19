@@ -53,7 +53,6 @@ that is *false* is a bug for whoever owns the code that produced it.
   the rest and exited 0 for eight ticks — no prose to read aloud, no golden to
   be wrong, nothing the rule above can reach. Ask of each way out of the
   program what the reader was *told*, and count the status as part of it.
-
 - **Hand-write every golden before running anything**, as the rest of the crew
   does. Predicting `<repl:1>:1:13` is what proves a position carries its own
   source; pasting it proves nothing.
