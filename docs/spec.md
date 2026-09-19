@@ -1811,6 +1811,25 @@ parser calls a token `ident`; nobody writing Vine has been told what that is.
 The standard to meet is `index 5 is out of range for a list of length 3`:
 what was asked for, what was there, and nothing to look up first.
 
+**What was there** is a type when the operation does not apply to the value at
+all, and a fact about the value when it applies and this argument is what
+failed. `cannot index bool` is finished: nothing indexes a bool, so no index
+would have worked and naming one would say nothing. `a map of 4 keys has no
+key "z"` is the other case -- indexing a map is exactly the operation being
+performed, it works for four other keys, and the type `map` is a fact the
+reader already had. The same line separates `len expects a string, list or
+map, got int` from `index 5 is out of range for a list of length 3`, and it is
+the question to ask of a new message: *would this message be the same for
+every argument of this type?* If it would, the type is the whole of what was
+there.
+
+Two messages are deliberately short of it. `undefined name 'x'` does not say
+what names are in scope, because the scope is the program's own text and the
+reader is looking at it -- unlike a map, which is data and may have come from
+anywhere. `cannot raise a negative number to a fractional power` names the
+sign and the fractionality rather than the two numbers, because those are the
+properties that caused it and no magnitude would have helped.
+
 A Python traceback reaching the user is always a bug in the implementation.
 
 Running a file exits 0 when the program runs and 1 when it fails, with the
