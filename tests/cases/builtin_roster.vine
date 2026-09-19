@@ -1,6 +1,14 @@
-# Every name the Builtins section of docs/spec.md lists, named once. If one is
-# renamed or dropped without the document changing, this case fails first --
-# and fails with the missing name in the message.
+# Every name the Builtins section of docs/spec.md lists, bound and holding a
+# function. That is all this case checks, and it is checked by naming each one
+# as a *value* rather than calling it: a builtin can be in REGISTRY and never
+# reach the environment, and this is what would notice.
+#
+# It does not check that the roster is complete. It cannot: it is a
+# hand-written list, so it is silent on a builtin added and never documented --
+# tick 14 added `pow` and this case stayed green until the list was edited by
+# hand. That direction is
+# `tests/properties/roster_names_every_builtin.py`, which reads the roster out
+# of the document instead of copying it here.
 let listed = [
   print, repr,
   type, len, str, int, float,
