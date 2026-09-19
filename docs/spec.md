@@ -440,6 +440,11 @@ Deliberately absent, roughly in the order they look worth adding: early
 and a bytecode compiler. Anything here is fair game for a later tick — but
 adding one means adding its tests and updating this file in the same commit.
 
-Nothing has ever audited these claims of absence. They are cheap to check and
-worth little until someone adds one of the features, which is why tick 3 left
-them and tick 4 did too.
+Audited in tick 7, after three ticks deferred it: all five are absent. `return`
+and `import` are not keywords, so `return 1` and `import "x"` are two
+statements on one line; `match x { 1 => 2 }` fails at the `=>`, which is not an
+operator; there is no syntax that binds one; and `vine/interp.py` walks the
+tree. No case guards any of this, deliberately — a test that a feature is
+missing passes for as long as nobody is working on it, and fails on the branch
+of whoever is, which is the one place the reminder is noise rather than news.
+The paragraph above is the reminder, and it is aimed at the right reader.
