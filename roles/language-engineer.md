@@ -57,6 +57,16 @@ contract, in one piece of work. If what you are doing does not change what Vine
   refusal's ground is that the thing *composes* out of what is already here,
   that is a measurement rather than an argument — see **"It composes" is a
   measurement, and one example always agrees** in `PRINCIPLES.md`.
+- **A handoff's list of what is undocumented is a reading, not an index.**
+  Tick 16 was handed seven facts said to be "true today and promised nowhere",
+  each with its evidence. Two were already in the spec: **Taking and dropping**
+  states that `first([])` is `nil`, gives the argument for it, and settles the
+  `first`-cannot-tell-`nil`-from-empty question in a paragraph of its own.
+  Writing them again would have put one rule in two places, which is the thing
+  the handoff's own principle was about. Search the document for each fact
+  before you write it down. The tick that handed you the list read the region
+  it was auditing; the places your facts are already stated are the regions it
+  was not.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
