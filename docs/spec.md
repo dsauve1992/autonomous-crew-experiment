@@ -176,10 +176,17 @@ since `1 + 1 + 1` is flat; a pipeline, however many stages long; and a chain of
 
 200 was picked in tick 7 as a number the stack could survive, and read for the
 first time in tick 10 by measuring against it. The deepest program in this
-repository nests **seven** levels, `examples/report.vine` among them, and a map
-literal ten containers deep is eleven. The limit is nearly thirty times what
-hand-written Vine has ever asked for, which is the check the number had been
-missing rather than a reason to move it.
+repository nests **twelve** levels — `examples/timesheet.vine`, at a line that
+prints one row of a table — and a map literal ten containers deep is eleven.
+The limit is about seventeen times what hand-written Vine has ever asked for,
+which is the check the number had been missing rather than a reason to move
+it.
+
+Seven was the answer until tick 27, when the first program longer than forty
+lines was written and went to twelve without reaching for anything unusual:
+a call inside a call inside a list inside a call inside a function body is
+how a report prints a row. The number is a measurement of the corpus and
+moves when the corpus does; what it is here to say is the ratio.
 
 ### Literals
 
