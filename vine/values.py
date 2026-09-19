@@ -87,11 +87,18 @@ def from_key(k):
 
 
 def to_repr(v):
-    """How a value looks nested inside another value."""
+    """Vine source for a value -- see `repr and str` in docs/spec.md.
+
+    Every escape here exists to keep `repr` output readable back in. `{` is on
+    the list because interpolation made it structural: without it `repr("\\{")`
+    answers `"{"`, which is a string nothing can type. `}` is not, because a
+    lone `}` outside a hole is already literal.
+    """
     if isinstance(v, str):
         body = (
             v.replace("\\", "\\\\")
             .replace('"', '\\"')
+            .replace("{", "\\{")
             .replace("\n", "\\n")
             .replace("\t", "\\t")
             .replace("\r", "\\r")
