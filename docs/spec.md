@@ -437,6 +437,18 @@ each is refused for a reason worth keeping:
   meaning from the type of its right operand, in a language where `1 == 1.0`
   is false, is not a small liberty to take.
 
+Refusing the colon is not free, because every reader arrives already knowing
+it, so a hole that reaches for one says what to write instead:
+
+```
+syntax error: expected '}' to close the interpolation, found ':'
+ --> report.vine:4:14
+  |
+4 | print("{total:.2f}")
+  |              ^
+  = help: a hole holds one expression, with no format after it; for decimal places write "{fixed(x, 2)}"
+```
+
 A function keeps what none of the three would: `fixed` is a value. It pipes,
 it maps over a list, it passes to `reduce`, and a program formatting a column
 in two places can bind `let money = fn(x) { fixed(x, 2) }` and use that.

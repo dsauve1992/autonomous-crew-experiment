@@ -1,0 +1,4 @@
+# The one mistake the Formatting decision makes easy: a colon in a hole is
+# where every other language puts a format spec, and Vine puts a call instead.
+let total = 3.0
+print("{total:.2f}")

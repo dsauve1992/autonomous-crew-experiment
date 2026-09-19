@@ -316,10 +316,21 @@ class Parser:
         while not self.at("iend"):
             parts.append(self.expression())
             if not self.at("ichunk"):
-                raise self.error(
+                err = self.error(
                     "expected '}' to close the interpolation, found "
                     + self.describe(self.peek())
                 )
+                if self.at("op", ":"):
+                    # Almost every other language with interpolation puts a
+                    # format spec after a colon here, and Vine deliberately
+                    # does not -- see Formatting in docs/spec.md. Refusing a
+                    # syntax everyone arrives with is cheap; refusing it
+                    # without naming what replaces it is not.
+                    err.help(
+                        "a hole holds one expression, with no format after "
+                        'it; for decimal places write "{fixed(x, 2)}"'
+                    )
+                raise err
             chunk = self.next()
             if chunk.value:
                 parts.append(Literal(chunk.pos, chunk.value))

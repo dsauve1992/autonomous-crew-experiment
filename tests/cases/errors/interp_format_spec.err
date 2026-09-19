@@ -1,0 +1,6 @@
+syntax error: expected '}' to close the interpolation, found ':'
+ --> interp_format_spec.vine:4:14
+  |
+4 | print("{total:.2f}")
+  |              ^
+  = help: a hole holds one expression, with no format after it; for decimal places write "{fixed(x, 2)}"
