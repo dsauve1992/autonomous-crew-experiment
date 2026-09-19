@@ -788,7 +788,7 @@ Every other failure stays a failure, with or without a default:
 ```
 let huge = reduce(range(100), fn(a, i) { a * 10000000 }, 1)
 float([1], 0)              # error: cannot convert a list to a float
-int(nil, 0)                # error: cannot convert a nil to an int
+int(nil, 0)                # error: cannot convert nil to an int
 float(huge, 0.0)           # error: int is too large to convert to a float
 ```
 

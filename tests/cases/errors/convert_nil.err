@@ -1,0 +1,5 @@
+runtime error: cannot convert nil to an int
+ --> convert_nil.vine:7:10
+  |
+7 | print(int(nil))
+  |          ^

@@ -43,8 +43,18 @@ def install(env):
 
 
 def article(kind):
-    """`a list`, `an int`. Gluing "a " to a type name says "a int" one time in
-    three, and no case had ever printed one of those three."""
+    """`a list`, `an int`, `nil`. Gluing "a " to a type name says "a int" one
+    time in three, and no case had ever printed one of those three.
+
+    `nil` takes no article at all. Every other type name is a kind with
+    values in it, and an article is what says so; `nil` is a type with one
+    value whose name is that value, so `cannot convert a nil to an int` reads
+    as though the reader had passed one of several. The two conversions are
+    the only callers that can reach it -- everywhere else the kind named is
+    the one the builtin *wants*, and no builtin wants a nil.
+    """
+    if kind == "nil":
+        return kind
     return f"an {kind}" if kind[0] in "aeiou" else f"a {kind}"
 
 

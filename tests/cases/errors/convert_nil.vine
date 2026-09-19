@@ -1,0 +1,7 @@
+# `nil` takes no article. Every other type name a message glues one to is a
+# kind with values in it -- `a list`, `an int` -- and the article is what
+# says so. nil is a type with one value whose name is that value, so
+# `cannot convert a nil to an int` reads as though the reader had passed one
+# of several. This case is here so that `article()` growing its rule back is
+# a failure and not a tidy-up.
+print(int(nil))
