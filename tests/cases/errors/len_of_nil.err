@@ -1,0 +1,5 @@
+runtime error: len expects a string, list or map, got nil
+ --> len_of_nil.vine:4:10
+  |
+4 | print(len(first([])))
+  |          ^

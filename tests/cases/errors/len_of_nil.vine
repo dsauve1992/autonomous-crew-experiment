@@ -1,0 +1,4 @@
+# len refuses nil, which is what an empty list answers -- see **len and
+# reverse**. 0 is the only candidate and it is the wrong one: it would let a
+# program that has already lost the value it is counting carry on.
+print(len(first([])))

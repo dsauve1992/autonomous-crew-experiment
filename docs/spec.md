@@ -449,13 +449,11 @@ is its line of this roster has not been decided; it has been implemented, and
 the first program that asks it a question the roster does not answer will get
 whatever the implementation happens to do.
 
-Two are still in that state, and naming them is cheaper than leaving a reader
-to work out which: `len(x)` and `reverse(x)`. Each is mentioned in passing —
-**Text** says both count codepoints in a string, and **Looking up a key** says
-`len(m)` is the number of entries — and neither has been asked what it means
-for the types it also accepts, or why it refuses the ones it refuses.
-`type(x)` has no section either and does not need one; **Types** lists the
-eight names it can answer, which is the whole of it.
+None are still in that state. The last two, `len(x)` and `reverse(x)`, are
+**len and reverse**, which was written by asking them what they mean for every
+type they accept and why they refuse the rest. `type(x)` has no section either
+and does not need one; **Types** lists the eight names it can answer, which is
+the whole of it.
 
 ## Printing
 
@@ -684,6 +682,58 @@ rather than removing it, so the second cost does not pay for it either.
 
 What a program that wants the narrow set should reach for is above: trim the
 fields, not the record.
+
+## len and reverse
+
+Both take one argument, and both are about the shape of a value rather than
+what is in it, so what they accept is most of what they mean.
+
+`len(x)` is how many things `x` holds: codepoints in a string (**Text**),
+elements in a list, entries in a map (**Looking up a key**).
+
+`reverse(x)` hands back a list or a string with the same things in the
+opposite order. It goes one level deep — the elements are not themselves
+reversed — and it is its own inverse:
+
+```
+reverse([[1, 2], [3, 4]])          # [[3, 4], [1, 2]]
+reverse(reverse(xs)) == xs         # true, for every list and every string
+reverse([])                        # [], and reverse("") is ""
+```
+
+On a string that is codepoints, which **Text** settles once for everything
+that walks one, including the consequence: a combining accent comes back on
+whatever letter now precedes it.
+
+**Both refuse every other type, and `nil` is the one worth a reason.**
+`len(nil)` would have to be `0` — there is no other candidate — and `0` is the
+wrong thing to hand back, because **Taking and dropping** makes `nil` what an
+empty list answers. `len(first(rows))` on an empty `rows` is a program that
+has already lost the value it is counting, and `0` is an answer it can carry
+on from. The error stops it and names the type. Bools, numbers and functions
+hold nothing under any reading and are refused for the ordinary reason.
+
+**`reverse` refuses a map, although a map has an order.** By **Map order** the
+call means something: the keys are in the order they first appeared. By the
+same section `==` does not compare that order, so the map it answered would be
+`==` to the map it was handed:
+
+```
+let m = {a: 1, b: 2}
+let r = reduce(reverse(keys(m)), fn(acc, k) { set(acc, k, get(m, k)) }, {})
+m == r                             # true
+keys(m) == keys(r)                 # false
+repr(r)                            # {"b": 2, "a": 1}
+```
+
+A builtin whose result is always `==` to its argument is not a transformation.
+The only thing it could change is how the map prints, and **Map order**
+declines to make `repr` canonical for the reason it declines to sort: the
+order is the one thing somebody wrote. What a program wants when it reaches
+for this is an order to walk in, and an order is a list — `reverse(keys(m))`
+is `["b", "a"]`. The three lines above are what putting one back into a map
+costs, and that price is the point: it is paid by the program that really did
+want the map re-ordered, and not by `==`.
 
 ## Looking up a key
 

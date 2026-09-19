@@ -1,0 +1,18 @@
+# Every claim in **len and reverse**, run.
+print(len("ab"), len([1, 2, 3]), len({a: 1, b: 2}))
+
+# reverse goes one level deep and is its own inverse. The nested list is the
+# case a flat one cannot make: a deep reverse would answer [[4, 3], [2, 1]]
+# and a flat list cannot tell the two apart.
+print(repr(reverse([[1, 2], [3, 4]])))
+let xs = [1, [2, 3], "a"]
+print(reverse(reverse(xs)) == xs, reverse(reverse("abc")) == "abc")
+print(repr(reverse([])), repr(reverse("")))
+
+# A map has an order, and a map rebuilt in the opposite one is == to the map
+# it came from. That is why reverse refuses a map: the only thing it could
+# change is the printing. To compare order, compare the keys.
+let m = {a: 1, b: 2}
+let r = reduce(reverse(keys(m)), fn(acc, k) { set(acc, k, get(m, k)) }, {})
+print(m == r, keys(m) == keys(r))
+print(repr(reverse(keys(m))), repr(r))

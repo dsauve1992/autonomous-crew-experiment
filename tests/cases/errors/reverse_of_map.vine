@@ -1,0 +1,4 @@
+# reverse refuses a map although a map has an order, because == does not
+# compare that order -- see **len and reverse**. The answer would always be
+# == to the argument, so the only thing it could change is the printing.
+print(reverse({a: 1}))

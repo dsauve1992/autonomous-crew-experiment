@@ -1,0 +1,5 @@
+runtime error: reverse expects a list or string, got map
+ --> reverse_of_map.vine:4:14
+  |
+4 | print(reverse({a: 1}))
+  |              ^
