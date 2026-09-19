@@ -50,11 +50,59 @@ is `false`. `type(x)` returns the type name as a string.
 
 Map keys may be strings, numbers or booleans, and two keys are the same key on
 the same type-strict terms: `{1: "a", 1.0: "b", true: "c"}` has three entries.
-Maps preserve insertion order. Anything else offered as a key is an error
+A map's keys are in an order — see **Map order** below. Anything else offered as a key is an error
 wherever a key is expected — in a literal, in `set`, in `get`, in `contains`
 and in `m[k]` — rather than a lookup that quietly misses, because a list can
 never be a key and asking is a different mistake from asking for one that is
 absent. `get(m, k, default)` is for absence.
+
+### Map order
+
+A map's keys are in an order, and it is **the order in which they first
+appeared**. Every place a map is read out — `keys`, `values`, `repr` and
+`str` — presents that order, and `values(m)` lines up with `keys(m)` element
+for element.
+
+*First* appeared is the whole rule, and it is what decides the two cases where
+one key is given twice.
+
+**`set(m, k, v)` on a key the map already has keeps that key's place** and
+changes only its value; on a key it does not have, the key goes last. This is
+what makes the order worth having. A map accumulated with `set` — the way
+`examples/report.vine` builds `by_region` — then comes out in the order the
+data first mentioned each key. Were an update to move its key to the end, the
+order of the rows would instead record which row happened to be processed
+last, which is a fact about the loop and not about the data.
+
+**A map literal that gives one key twice is an error.** It is the same
+collapse tick 3 removed from `{1: "a", 1.0: "b", true: "c"}` — a three-entry
+literal that answered `{1: "c"}` — with the type-strict half fixed and the
+half where two keys really are one key left behind. A literal is not an
+update: both values are written at once, by one author, and taking the last
+throws away the other silently. Nor is the duplicate always visible, because
+a parenthesised expression is a key too:
+
+```
+let region = "north"
+{(region): 1, north: 2}    # error: this map literal gives the key "north" twice
+```
+
+The caret is on the second appearance and a note points at the first. To give
+a key a new value, use `set`.
+
+**Order is determinism, not identity.** `==` does not compare it:
+`{a: 1, b: 2} == {b: 2, a: 1}` is `true`, because the two maps hold the same
+keys and the same value under each. What the order buys is that a map is read
+out the same way every time, so a program that prints one has a single
+possible output. The order is not part of what the map *is*, and two
+consequences follow that are worth stating rather than discovering:
+
+- **Two maps that are `==` can print differently.** `repr` remains Vine source
+  for the value (see **repr and str**) — reading `repr(m)` back gives a map
+  `==` to `m`, and in fact one in the same order — but it is not *canonical*.
+  There is no promise that equal values have equal `repr`, and sorting a map's
+  keys in `repr` to manufacture one would discard the only order anyone wrote.
+- **To compare order, compare the keys:** `keys(a) == keys(b)`.
 
 ## Truthiness
 
@@ -492,6 +540,10 @@ str(xs)      # ["a", "b"]
 "{xs}"       # ["a", "b"]
 xs[0]        # a
 ```
+
+A container's elements come out in the container's own order: a list's, and
+for a map the one under **Map order**. Printing is a reading of the value and
+does not get to choose an order of its own.
 
 So one call to `str` uses both conversions, at different depths. That reads as
 an inconsistency and is not. `str` of a string is its text, because the reader

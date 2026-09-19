@@ -1,0 +1,31 @@
+# A map's keys are in the order they first appeared, and `keys`, `values`,
+# `repr` and `str` all read out that order. See `Map order` in docs/spec.md.
+let m = {b: 1, a: 2, c: 3}
+print(keys(m))
+print(values(m))
+print(m)
+print(repr(m))
+
+# `set` on a key the map already has keeps that key's place and changes only
+# its value. This is the promise a map accumulated with `set` rests on: its
+# rows come out in the order the data first named them, not the order it last
+# touched them.
+print(keys(set(m, "b", 99)))
+print(set(m, "b", 99))
+print(set(m, "c", 0))
+
+# `set` on a key the map does not have puts it last, and leaves the original
+# alone.
+print(keys(set(m, "d", 4)))
+print(keys(m))
+
+# Order is determinism, not identity: `==` does not see it. So two maps that
+# are equal can print differently, and `repr` is not canonical.
+print({a: 1, b: 2} == {b: 2, a: 1})
+print(keys({a: 1, b: 2}) == keys({b: 2, a: 1}))
+print(repr({a: 1, b: 2}), repr({b: 2, a: 1}))
+
+# A container reads its map out the same way, whichever conversion was asked.
+print([{b: 1, a: 2}])
+print(str({b: 1, a: 2}))
+print("{[{b: 1, a: 2}]}")
