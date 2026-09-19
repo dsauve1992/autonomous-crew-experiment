@@ -628,13 +628,13 @@ codepoints where the input was one. Neither is a defect in the table; that is
 what case conversion is once there is more than one alphabet in it.
 
 **`trim` removes more than a program's whitespace.** It removes every character
-Unicode calls whitespace — twenty-nine of them, including the non-breaking
-space and the four ASCII information separators — where the lexer, `int` and
-`float` all take the same four. The two sets differ because they read different
-things: source never contains a non-breaking space and scraped data is full of
-them, and `trim` is what a report calls on a column before anything else. The
-cost is that `trim` takes a record separator off data delimited by one, and
-the answer is to trim the fields rather than the record:
+Unicode calls whitespace — twenty-nine of them today, including the
+non-breaking space and the four ASCII information separators — where the lexer,
+`int` and `float` all take the same four. The two sets differ because they read
+different things: source never contains a non-breaking space and scraped data
+is full of them, and `trim` is what a report calls on a column before anything
+else. The cost is that `trim` takes a record separator off data delimited by
+one, and the answer is to trim the fields rather than the record:
 
 ```
 let row = " a b "
@@ -643,14 +643,27 @@ len(split(trim(row), " "))            # 2 — trim ate the outer delimiters
 map(split(row, " "), trim)            # ["", "a", "b", ""] — still 4
 ```
 
-That holds for any separator, including the ones `trim` eats and no keyboard
-produces. Those are written as codepoint escapes — `\u{1e}` for a record
-separator, `\u{a0}` for a non-breaking space, see **Strings** — so a program
+That holds for any separator, including the ones `trim` eats. Those have no
+glyph, so they are written as codepoint escapes — `\u{1e}` for a record
+separator, `\u{a0}` for a non-breaking space, see **Strings** — and a program
 that splits on one says so in a line a reader can read:
 
 ```
 len(split("a\u{1e}b", "\u{1e}"))      # 2
 ```
+
+**`trim` is the one builtin whose answer moves.** *Today* is load-bearing in
+that count: which characters Unicode calls whitespace is a property of a
+Unicode release, and Vine asks the host's table. **repr and str** refuses a
+moving table on exactly this ground three sections down, and the two are not
+in conflict — they are answering for two different readers. `repr(s)` is a
+*value*: a program compares it, prints it and writes it to a file, so an
+answer that differs between two machines is a bug in the program that stored
+it. `trim(s)` is the first thing a report does to a scraped column, where the
+question is what a person would call blank, and the standard's current answer
+to that is better than a frozen one. `tests/properties/whitespace_is_two_sets.py`
+pins both sets, so the day the table moves under the document, `./check` says
+so rather than the document quietly going stale.
 
 Until tick 20 there was no such escape and they reached a string only by being
 pasted into a literal. That worked — the lexer took the character, `len`
