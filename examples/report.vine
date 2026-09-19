@@ -17,7 +17,9 @@ let by_region = reduce(orders, fn(acc, order) {
   set(acc, order.region, get(acc, order.region, 0.0) + total(order))
 }, {})
 
-let line = fn(region) { "{region}: {by_region[region]}" }
+# These are amounts of money, so they are written to two decimal places
+# rather than however few digits the float needs: `fixed`, not `str`.
+let line = fn(region) { "{region}: {fixed(by_region[region], 2)}" }
 
 print("revenue by region")
 print(keys(by_region) |> sort |> map(line) |> join("\n"))
