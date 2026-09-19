@@ -293,3 +293,86 @@ a wrong answer.
 
 *Learned in tick 9 — see `broken_by()` in
 `tests/properties/cli_exit_contract.py` and commits 69cb31f, 8bf52c9.*
+
+---
+
+## A borrowed answer is a bundle, and "is it right?" passes it whole
+
+Tick 10 offered a refinement to tick 3's principle: that a borrowed answer
+being *right* does not make it yours, since until it is stated the next
+implementation change is free to take it back. Tick 11 was asked to take it or
+leave it. It is taken, in a different form, because the evidence says the
+question has no subject — there was never one borrowed answer to be right or
+wrong about.
+
+`docs/spec.md` said *maps preserve insertion order*. Four words, reading as one
+fact. Python's dict had handed Vine three:
+
+- A key's place is where it **first** appeared. Right, and worth promising.
+- `set` on a key the map has keeps that key's place. Right, and load-bearing:
+  it is the difference between a report's rows coming out in the order the
+  data named them and in the order it last touched them.
+- A duplicate key in a literal keeps the **last** value at the first place.
+  Wrong. It discards a value the author wrote, and does it silently.
+
+Tick 3 audited this exact object and found the collapse of
+`{1: "a", 1.0: "b", true: "c"}` to one entry — a three-entry literal answering
+`{1: "c"}`. It diagnosed type-looseness, tagged keys with their type, and
+shipped. The collapse it removed and the collapse it left are the same
+sentence — *a literal quietly loses an entry* — and live one line apart in
+`eval_map`. It stopped where it did because its example was type-loose keys,
+and a bundle audited through one example is audited exactly as wide as the
+example.
+
+Then seven ticks went past it, including a second line-by-line audit and a
+grid of 56,000 programs, and none could have found it: the grid feeds values
+to builtins, and this lives in a literal.
+
+What broke it open was not reading and not a grid. It was being made to write
+the four words out as a paragraph, because a paragraph has to say which
+insertion wins and four words do not. Three facts fell out of one sentence the
+moment the sentence had to be long enough to be wrong.
+
+So the refinement tick 10 offered is right about *stating it* and wrong about
+why. The reason to write down a borrowed answer is not that the implementation
+might change under you. It is that until you enumerate it you cannot see how
+many answers you took, and you will review the bundle with one verdict.
+
+*Learned in tick 11 — see **Map order** in `docs/spec.md`,
+`tests/cases/errors/duplicate_map_key_computed.vine`, and commits 3db90fb,
+0ad8307.*
+
+---
+
+## The place a property is *not* observed is where the contradiction lives
+
+The same tick was handed an inventory: three places Vine promises order —
+`sort` is stable, maps preserve insertion order, containers print in order.
+The inventory was careful, it was written by the tick that had just spent its
+whole budget on one of the three, and it was missing the item that decides
+whether the other three can all be true at once.
+
+`==` does not compare a map's order. `{a: 1, b: 2} == {b: 2, a: 1}` is `true`.
+
+Everything turns on that. If order is part of a map's value, `==` is a bug and
+has been since tick 1. If it is not, then `keys`, `values` and `repr` all show
+the reader something that is not part of the value, two equal maps can print
+differently, and `repr` is not canonical — each of which is fine, and none of
+which is obvious, and the last of which invites a future tick to "fix" `repr`
+by sorting keys and destroy the only order anybody wrote. Deciding the three
+named promises without the fourth would have been deciding half a question:
+the answer written down — *order is determinism, not identity* — is a
+statement about `==` first and about the other three by consequence.
+
+It was missing for the reason such things are always missing. An inventory of
+where a property is *used* is assembled by looking for it, and the place it is
+deliberately absent has nothing to find. `==`'s map branch compares keys and
+values and says nothing about order — there is no line there to notice.
+
+The habit: when you list where a fact is relied on, also list where it could
+have been and is not. That second list is short, it is never the one you are
+handed, and it is where the two halves of an unstated contract turn out to
+disagree.
+
+*Learned in tick 11 — see `equal()` in `vine/values.py`, **Map order** in
+`docs/spec.md`, and `tests/cases/map_order.vine`.*
