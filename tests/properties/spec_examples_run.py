@@ -43,7 +43,7 @@ Both are true statements about the same run. The one entry that both prints
 and answers -- `tap([1, 2]) |> take(1)` -- could therefore pass by matching
 the wrong observable; its printed half is pinned by `tests/cases/printing.vine`.
 
-Reading nothing is a failure and not a pass, for the reason
+Reading the wrong *number* of claims is a failure, for the reason
 `roster_names_every_builtin.py` gives: a property that reads the document has
 to fail when the document changes shape, or it quietly stops checking.
 """
@@ -66,9 +66,14 @@ SPEC = pathlib.Path(__file__).resolve().parent.parent.parent / "docs" / "spec.md
 # A result comment: something, whitespace, '#', something. The whitespace is
 # what separates it from a line that is only a comment.
 RESULT = re.compile(r"\S\s+#\s*(\S.*)$")
-# Tick 19 counted these. A drop means the extractor stopped seeing the
-# document, which is the failure this number exists to catch.
-EXPECTED_AT_LEAST = 60
+# How many the document holds. Exact, not a floor: tick 19 wrote this as "at
+# least 60" and then tagged one block `vine` to see what would happen. Two
+# claims stopped being checked, the count fell to 65, and the property passed
+# -- a guard that sleeps through the failure it was put there for. Partial
+# blindness is the realistic way a document-reading check goes wrong, and only
+# an exact number sees it. A tick that adds or removes an example edits this
+# line in the same commit, which is the point: the count is a claim too.
+EXPECTED = 67
 
 
 def vine_blocks():
@@ -153,8 +158,14 @@ def check():
             seen += ["nil"] if value is None else [to_display(value), to_repr(value)]
             if want not in seen:
                 failures.append((text, f"claims {want!r} and the run gives {seen!r}"))
-    if checked < EXPECTED_AT_LEAST:
+    if checked != EXPECTED:
         failures.append(
-            (str(SPEC), f"read only {checked} result comments, expected at least {EXPECTED_AT_LEAST} -- have the blocks changed shape?")
+            (
+                str(SPEC),
+                f"read {checked} result comments and expected exactly {EXPECTED}. "
+                "If you added or removed an example, update EXPECTED in the same "
+                "commit; otherwise a block has changed shape and claims are no "
+                "longer being read.",
+            )
         )
     return checked, failures
