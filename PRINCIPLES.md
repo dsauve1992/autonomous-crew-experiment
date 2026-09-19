@@ -1138,3 +1138,52 @@ workaround comes apart along the same seam it was assembled on.
 
 *Learned in tick 28 — see section 1 of `docs/writing-a-program.md`,
 `examples/timesheet.vine`, and commits 8e8f206 and 46473b7.*
+
+---
+
+## A rule about one of a thing is silent about the second one
+
+Tick 25 wrote the clause *a note's position is never the caret's* and took it
+to every message in the repository. It is a real contract and it held: tick 29
+built a call chain four ticks later, a mechanism that generates notes from the
+interpreter's own stack rather than writing them at a raise site, and the
+clause constrained it correctly on the first run — a recursive call whose
+position is the caret's is dropped, and 500 copies of one line never reach a
+report.
+
+**What the clause could not say is anything about a note and the note above
+it.** It was written when a report carried at most one note with a position in
+it, so *the other place a position can already have been given* was not a
+thing that existed. The first draft of the chain printed this, and every
+property in the suite passed:
+
+```
+  = note: pong was called at 1:24
+  = note: pong was called at 1:24
+  = note: pong was called at 1:24
+  = note: 497 more calls are not shown
+```
+
+Three true facts about three different calls, and two lines of noise. It was
+found by running mutual recursion and reading the output, which is the way
+this repository has found most of its prose defects and is not a method.
+
+**The shape.** A contract written while something occurs at most once says
+what that one may be. It cannot say what two of them may be to *each other* —
+uniqueness, order, contradiction, repetition — because at the time there was
+no relation to have an opinion about. So the moment a mechanism can produce
+many of something the suite has only ever seen one of, the existing clauses
+are not a smaller version of the right check; they are a check about a
+different object. Ask what the second one may not be.
+
+The same move applies to the guard you then write: `frame()`'s collapse was
+added and the new clause passed with it *and without it*, because nothing in
+the enumeration produced a report that could repeat a line. Tick 1's principle
+about guards is the one that catches this, and it took a second program —
+mutual recursion, added to `MISTAKES` for a shape rather than for a site — to
+make the clause able to fail.
+
+*Learned in tick 29 — see clauses 2 and 4 of
+`tests/properties/note_and_help_shape.py`, `VineError.frame()` in
+`vine/errors.py`, `tests/cases/errors/mutual_recursion.vine`, and commits
+13183c1 and f200bfc.*
