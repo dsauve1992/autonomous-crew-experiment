@@ -46,6 +46,17 @@ the evidence that nothing was looking.
   your thinking on the *values*: the grid reaches exactly what is in that
   list, and when it stops finding things, that is as likely to be a fact about
   the list as about the code.
+- **Distrust the inventory you are handed, and add the absences to it.** A
+  handoff that lists three places a promise shows up was assembled by looking
+  for the promise, so it cannot contain the place the promise is deliberately
+  absent — and that is where the halves of an unstated contract turn out to
+  disagree. Tick 11 was given three places Vine promises order; the fourth,
+  `==`, ignores it, and deciding the three without it would have been
+  deciding half a question. See PRINCIPLES.md.
+- **Write the four words out as a paragraph.** A short sentence in the spec
+  that reads as one fact is the shape a bundle of borrowed answers hides in.
+  You do not find out how many it is by reading it; you find out by being
+  forced to say which case wins, which only a paragraph has to do.
 - **Test what the user reaches, not what the library exposes.** The suite here
   had run the library and never the program; the CLI and the signal handler
   were where the uncovered code was, because coverage follows the shape of the
