@@ -790,6 +790,92 @@ touched the third.
 All three take the list first, so all three pipe — see **Pipeline** — and none
 of them changes `xs`.
 
+## Building lists
+
+`push(xs, x)` is `xs` with one more element on the end. `concat(a, b)` is two
+lists joined. Both answer a new list and neither touches what it was handed.
+
+```
+push([1, 2], 3)        # [1, 2, 3]
+concat([1, 2], [3])    # [1, 2, 3]
+push([1], [2, 3])      # [1, [2, 3]]
+concat([1], [2, 3])    # [1, 2, 3]
+```
+
+The last two lines are what this section is about. Both builtins compose out
+of something the language already has, so by **add what cannot be composed,
+refuse what can** — the rule **Formatting** settles — neither of them should
+be here. Both are, and the two reasons are different ones.
+
+**`concat(a, b)` is `a + b`, and it is here because `+` is not a value.**
+Over every pair of lists in the value list of
+`tests/properties/no_traceback.py` the two never disagree; over every pair of
+*values* they disagree on 925 of 961, because `+` also adds two numbers and
+joins two strings, while `concat` refuses both and names the side that was not
+a list. So `concat` is one third of `+` with the other two thirds taken away,
+and that earns a name only because Vine has no way to hand an operator to a
+function:
+
+```
+reduce([[1, 2], [3], []], concat, [])    # [1, 2, 3]
+```
+
+Nothing spells that with a `+` in it without wrapping the operator in a
+function first. **Formatting** already made this argument once, about `fixed`
+— *a function keeps what none of the three would: it is a value, it pipes, it
+maps over a list, it passes to `reduce`* — and the argument reaches every
+builtin whose whole body is one operator.
+
+**`push(xs, x)` is `concat(xs, [x])`, and it is here because the brackets are
+invisible when they are wrong.** Over 310 pairs of list and value the two
+never disagree, so this one composes exactly, and the rule as written refuses
+it. The exception is not about what the composition answers; it is about what
+the composition costs to write. It has a one-element list literal in it, and
+dropping those brackets is not an error:
+
+```
+let rows = [["north", 1]]
+let row = ["south", 2]
+concat(rows, [row])    # [["north", 1], ["south", 2]]   -- two rows
+concat(rows, row)      # [["north", 1], "south", 2]     -- one row and two strings
+push(rows, row)        # [["north", 1], ["south", 2]]   -- two rows
+```
+
+The middle line is wrong, it is what an author who means *append this row*
+types, and nothing anywhere reports it. It goes wrong only when the element is
+itself a list, which is precisely the case a test written with numbers in it
+never reaches. `push` has no brackets to drop.
+
+So the exception is narrow enough to state: **a composition may still be worth
+a name when getting it wrong is silent.** Every composition **Formatting**
+refuses — width, alignment, thousands separators — fails loudly and visibly
+when it is written wrong, because it produces a column you can see is crooked.
+This one produces a list that is the right type, the right shape and the wrong
+length.
+
+`push` is also the shape a fold wants, which `concat` is not: `reduce` calls
+its function with the accumulator and then one element, and that is `push`'s
+signature exactly.
+
+```
+let dedupe = fn(xs) {
+  reduce(xs, fn(acc, x) { if contains(acc, x) { acc } else { push(acc, x) } }, [])
+}
+dedupe([1, 2, 1, 3, 2])    # [1, 2, 3]
+```
+
+**Both are list-only.** `push("ab", "c")` is an error and not `"abc"`; two
+strings join with `+`, and there is no element of a string for `push` to add
+one to — see **Text** for why a string is not a list of characters in Vine.
+`concat` names the side that was not a list, so `concat([1], "a")` says
+`concat argument must be a list, got string`. `push` names its first argument
+only, because its second is deliberately any value at all: `push(xs, nil)` and
+`push(xs, [1])` are both ordinary.
+
+This is the same shape as **Taking and dropping**, where `first` and `rest`
+stay beside the `take` and `drop` that generalise them. A special case that
+reads as itself is kept; a special case that only saves typing is not.
+
 ## Taking and dropping
 
 `take(xs, n)` is the first `n` elements of a list and `drop(xs, n)` is the

@@ -1,0 +1,3 @@
+# concat names the side that was not a list, so a mistake on either argument
+# reads the same.
+concat([1], "a")

@@ -1,0 +1,5 @@
+runtime error: concat argument must be a list, got string
+ --> concat_of_string.vine:3:7
+  |
+3 | concat([1], "a")
+  |       ^

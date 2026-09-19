@@ -1,0 +1,33 @@
+# push adds one element; concat joins two lists. Both answer new lists.
+let xs = [1, 2]
+print(push(xs, 3), concat(xs, [3]))
+print(xs)
+
+# The pair a reader has to be able to tell apart: an element that is a list.
+print(push([1], [2, 3]))
+print(concat([1], [2, 3]))
+
+# concat is the list third of +, which is why it never disagrees with it...
+print(concat([1], [2]) == [1] + [2])
+print(concat([], []) == [] + [])
+# ...and why it exists anyway: + is not a value and concat is.
+print(reduce([[1, 2], [3], []], concat, []))
+
+# push is concat with a one-element literal, and the literal is the point.
+# The middle line is what appending a row looks like with the brackets
+# dropped, and it is not an error.
+let rows = [["north", 1]]
+let row = ["south", 2]
+print(concat(rows, [row]))
+print(concat(rows, row))
+print(push(rows, row))
+
+# push is the shape reduce calls with: accumulator first, then one element.
+let dedupe = fn(ys) {
+  reduce(ys, fn(acc, x) { if contains(acc, x) { acc } else { push(acc, x) } }, [])
+}
+print(dedupe([1, 2, 1, 3, 2]))
+print(reduce([1, 2, 3], push, []))
+
+# push's second argument is any value at all.
+print(push([], nil), push([], [1]), push([], fn(x) { x }))

@@ -1,0 +1,3 @@
+# push and concat are list-only. Two strings join with +, and a string has no
+# element for push to add one to.
+push("ab", "c")

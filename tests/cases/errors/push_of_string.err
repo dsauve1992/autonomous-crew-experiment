@@ -1,0 +1,5 @@
+runtime error: push target must be a list, got string
+ --> push_of_string.vine:3:5
+  |
+3 | push("ab", "c")
+  |     ^
