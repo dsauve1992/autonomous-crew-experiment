@@ -55,6 +55,7 @@ error object, which the REPL catches and does not hand back.
 """
 
 import io
+import pathlib
 import re
 
 import no_traceback
@@ -63,12 +64,25 @@ from vine.errors import VineError
 
 CLAIM = (
     "every extra line under a caret is a note or a help; a note's position is "
-    "never the caret's; a {pos} in the text and a position come together; and "
-    "no help quotes a position"
+    "never the caret's; a {pos} in the text and a position come together; no "
+    "help quotes a position; and vine/ holds the number of sites this file "
+    "claims to reach"
 )
 
 # A position as note_lines() writes one: `3:7`, or `<repl:1>:3:7`.
 POSITION = re.compile(r"\d+:\d+")
+
+# Where the sites are, and how many the paragraph above claims to reach. The
+# count is checked because the claim is *all* of them: a 38th site added with
+# this file left alone would leave a docstring saying the enumeration is
+# exhaustive when it no longer is, and nothing else in the suite reads either
+# number. Tick 26 wrote this after walking its own change against the suite
+# and finding the count of the moment -- 36 -- held by nobody. If you add a
+# site, add the program that reaches it and move this number in the same
+# commit; if the program is genuinely impossible, say so beside the number.
+SITES = re.compile(r"\.note\(|\.help\(")
+EXPECTED_SITES = 37
+VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.
 MISTAKES = [
@@ -125,9 +139,26 @@ def same_place(pos, error):
     ) == (caret.line, caret.col)
 
 
+def sites():
+    """How many `.note(`/`.help(` calls `vine/` holds."""
+    return sum(
+        len(SITES.findall(path.read_text(encoding="utf-8")))
+        for path in sorted(VINE.glob("*.py"))
+    )
+
+
 def check():
     checked = 0
     failures = []
+    found = sites()
+    checked += 1
+    if found != EXPECTED_SITES:
+        failures.append((
+            "vine/*.py",
+            f"holds {found} note and help sites, not {EXPECTED_SITES} -- the "
+            "docstring here claims the enumeration reaches every one, so a "
+            "site added needs a program that reaches it",
+        ))
     for source, error in reports():
         if not error.notes:
             continue
