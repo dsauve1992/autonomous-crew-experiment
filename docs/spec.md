@@ -596,6 +596,26 @@ else would read carries the rule as a help, because every character of
 `"1_000"` was meant as part of a number and the headline on its own reads like
 a mistake.
 
+That second kind also carries the value **written out in escapes**, when
+writing it out shows anything the quoted text did not:
+
+```
+runtime error: cannot convert "١٢٣" to an int
+ --> report.vine:3:11
+  |
+3 | print(int(row))
+  |          ^
+  = note: written out in escapes, that string is "\u{661}\u{662}\u{663}"
+  = help: the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them
+```
+
+Those are digits, and they are not the digits `int` reads. Without the note
+the headline quotes the value back and *looks right*, which is the one way a
+true message can leave a reader with nowhere to go. `int("café")` gets
+neither line: it is refused before that branch, and a reader who can already
+see the value has nothing to gain from `"caf\u{e9}"`. `int("1_000")` gets the
+help and not the note, because writing it out shows the same five characters.
+
 ## Text
 
 A Vine string is a sequence of **codepoints**, and every builtin that measures,
@@ -1564,12 +1584,11 @@ back the character that could not be seen in the first place.
 map(split("east\u{a0}1", ""), len)      # [1, 1, 1, 1, 1, 1]
 ```
 
-`int` of one is not a way round it either. It fails, and its message quotes
-the value with `repr`, so the message whose whole job is to say *which* value
-was refused shows a space and reads as though a space were not a number. That
-message is not written out here, and the reason it is not is the subject of
-this section: the only honest way to print it is to paste the character into
-this document, where no reader would see it.
+`int` of one is not a way round it either: it fails, and the failure is a
+report rather than a value, so nothing in the program can read it. That
+report does now write the string out in escapes -- **Conversions** has it --
+which is this section's rule applied where a reader meets it rather than
+where a program can use it.
 
 What is left is `<`, which does order strings by codepoint, so a program can
 compare a character against a literal it has already typed. That makes the
@@ -1752,6 +1771,17 @@ cause, and labelling the two differently is what keeps a message from
 guessing. `"{"` is the case that forced it — a string really did open at that
 quote and never close, so the caret belongs there, and everything the reader
 is missing is a fact about a different character.
+
+A report quotes a value the way `repr` writes it, which is the form a reader
+of the program recognises: `map has no key "thé"` and not a row of
+escapes. Where that form is what makes a true message look wrong, the report
+adds the value **written out in escapes** as a note -- see **Conversions**,
+which is the only place the language can tell the two apart without
+consulting a Unicode table. Everywhere else the reader has something better
+than a rendering: a second position. The caret is on the token whose *kind*
+the parser is objecting to, and a duplicate map key is reported with the
+position of the first one, so neither message has to say which of two
+look-alike values it means.
 
 Messages are written in Vine's words and never the implementation's. The
 parser calls a token `ident`; nobody writing Vine has been told what that is.

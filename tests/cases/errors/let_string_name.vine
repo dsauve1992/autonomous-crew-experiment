@@ -1,4 +1,9 @@
 # A string token was described with Python's repr, which prints 'a' -- exactly
 # how this parser prints the identifier the line is missing. A message that
 # calls a string an identifier is worse than one that says nothing.
+#
+# The fourth of the five messages that render a value for a reader, and the
+# second left un-revealed: what is wrong is the token's *kind*, and a string
+# is not a name whatever it holds. The caret is on it, so `found the string
+# "cafe\u{301}"` would be an escape offered for a fact nobody disputed.
 let "a" = 1
