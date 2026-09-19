@@ -20,6 +20,10 @@ USAGE = """usage: vine [options] [file]
 # and invisible: a reader who mistypes a flag is told the file system is
 # missing something. It goes in a help, because a rule of the language is what
 # a help is for, and the headline above it stays a fact.
+#
+# The `` = help: `` prefix is spelt out here rather than rendered: these errors
+# have no position and so no VineError to hang notes on. If `note_lines()` in
+# errors.py ever changes shape, this line has to follow it.
 OPTIONS_RULE = (
     " = help: vine's options are -e, -h/--help and -v/--version; "
     "any other argument is a file name\n"
