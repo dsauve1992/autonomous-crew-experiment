@@ -4,7 +4,13 @@ import sys
 
 from .errors import SyntaxError_
 from .lexer import OPENER, Lexer
-from .rules import BRACE_RULE, EXPONENT_RULE, HOLE_RULE, RETURN_RULE
+from .rules import (
+    BRACE_RULE,
+    CONTINUATION_RULE,
+    EXPONENT_RULE,
+    HOLE_RULE,
+    RETURN_RULE,
+)
 from .nodes import (
     Binary,
     Block,
@@ -90,6 +96,10 @@ class Parser:
         # whether a `return` has a function to leave does not depend on
         # anything that happens when the program runs.
         self.fn_depth = 0
+        # Where the statement being parsed began. A line that opens with
+        # an infix operator is a mistake with a rule behind it, and this
+        # is what tells that line from the `+` in `1 + + 2`. See prefix().
+        self.stmt_start = None
 
     # -- token helpers ----------------------------------------------------
 
@@ -216,6 +226,7 @@ class Parser:
         stmts = []
         self.skip_nl()
         while not self.at_terminator(terminators):
+            self.stmt_start = self.i
             stmts.append(self.statement())
             if self.at_terminator(terminators):
                 break
@@ -347,7 +358,26 @@ class Parser:
                 return self.list_lit()
             if tok.value == "{":
                 return self.map_lit()
-        raise self.error(f"expected an expression, found {self.describe(tok)}")
+        err = self.error(f"expected an expression, found {self.describe(tok)}")
+        if tok.kind in ("op", "kw") and tok.value in INFIX and self.opens_a_line():
+            err.help(CONTINUATION_RULE)
+        raise err
+
+    def opens_a_line(self):
+        """Whether the token here is the first of a statement on its own line.
+
+        The lexer emits `nl` only where a newline separates statements: never
+        inside `(` `)` or `[` `]`, where an expression may wrap, and never
+        before a `|>`, which continues the line above it. So a newline
+        immediately before the first token of a statement is exactly the
+        reader who tried to continue a line from the left -- and the same
+        wrapped expression two lines earlier, inside `print(...)`, is legal.
+        """
+        return (
+            self.i == self.stmt_start
+            and self.i > 0
+            and self.toks[self.i - 1].kind == "nl"
+        )
 
     def interp_str(self):
         """An interpolated string: `istr`, then hole/`ichunk` pairs, then `iend`.

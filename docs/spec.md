@@ -2167,17 +2167,17 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Fifteen rules, and every help is one of them. Fourteen live in
+Sixteen rules, and every help is one of them. Fifteen live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
 listed against the section that states it at length, because a help is a
 reminder of this document and never a replacement for it.
 
-The fifteenth is the command line's, and it is elsewhere because a problem
+The sixteenth is the command line's, and it is elsewhere because a problem
 with the command line has no position and so no report to hang a help on —
 `vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
-it. It is a rule offered for the same reason as the other fourteen, so it is on
+it. It is a rule offered for the same reason as the other fifteen, so it is on
 the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
@@ -2186,6 +2186,7 @@ the same list.
 - `a default answers for text that is not a number, and for nothing else` — **Conversions**
 - `the smallest float is 5e-324, which has 1074 decimal places; nothing has more` — **Formatting**
 - `there is no exponent operator; x to the power y is pow(x, y)` — **Operators, loosest binding first**
+- `a line ending in an operator continues onto the next; only '|>' continues from the left` — **Lexical structure**
 - `only a function body may return; a block's value is its last statement` — **Early return**
 - `a negative index counts from the end, but a count does not` — **Taking and dropping**
 - `to give a key a new value, use set(m, k, v)` — **Map order**

@@ -1,0 +1,13 @@
+# A line opening with an operator, and the rule the message does not carry.
+# The same wrapped expression is legal two lines above, inside `print(...)`,
+# where newlines are ignored; inside `{` `}` they separate statements again,
+# so the `+` on line 10 begins one. `1 + + 2` gets the same message and no
+# help: the rule is about a line, and that `+` does not begin one.
+let total = fn(a, b) {
+  print(a
+    + b)
+  let sum = a
+  + b
+  sum
+}
+print(total(1, 2))

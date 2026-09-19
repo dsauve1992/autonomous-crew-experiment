@@ -1,0 +1,6 @@
+syntax error: expected an expression, found '+'
+  --> line_opens_with_operator.vine:10:3
+   |
+10 |   + b
+   |   ^
+   = help: a line ending in an operator continues onto the next; only '|>' continues from the left

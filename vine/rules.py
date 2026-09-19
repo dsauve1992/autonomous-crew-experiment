@@ -3,7 +3,7 @@
 Every `help` line Vine prints comes from here. A help is a rule of the
 language rather than a fact about the program -- see **Errors** in
 `docs/spec.md` -- so the set of them is finite, and the roster in that section
-names the same fourteen strings this module does.
+names the same fifteen strings this module does.
 
 They are in one file for the reason tick 24 found the hard way. The float
 ceiling used to be written at the three sites that happened to need it, in two
@@ -55,6 +55,14 @@ CONVERT_DEFAULT_RULE = (
 )
 
 EXPONENT_RULE = "there is no exponent operator; x to the power y is pow(x, y)"
+
+# Offered to a line that opens with an infix operator. The same wrapped
+# expression is legal inside `(` `)`, where newlines are ignored, and the
+# rule is what says why it stopped being legal inside `{` `}`.
+CONTINUATION_RULE = (
+    "a line ending in an operator continues onto the next; "
+    "only '|>' continues from the left"
+)
 
 # -- functions ------------------------------------------------------------
 
