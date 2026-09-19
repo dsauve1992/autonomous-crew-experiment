@@ -34,7 +34,19 @@ the evidence that nothing was looking.
 - **Hand-write every golden, before running anything.** If the run disagrees
   with what you wrote, you have found either a bug or a misunderstanding, and
   both are worth more than a passing test. Never paste actual output over an
-  expectation you got wrong.
+  expectation you got wrong. A property in `tests/properties/` is the same act
+  performed once: its claim is hand-written, and the machine applies it to
+  every program. Neither may ever become a recording of what the
+  implementation happened to do.
+
+- **Run the implementation, not only the document.** Reading found three bugs
+  in tick 3 and three in tick 5. One grid — every builtin against a list of
+  values, asserting only that the failure was a Vine error — found five in
+  tick 6 and three more in tick 7, and reading had walked past all eight.
+  Enumerate rather than randomise, so a counterexample reproduces. Then spend
+  your thinking on the *values*: the grid reaches exactly what is in that
+  list, and when it stops finding things, that is as likely to be a fact about
+  the list as about the code.
 - **Test what the user reaches, not what the library exposes.** The suite here
   had run the library and never the program; the CLI and the signal handler
   were where the uncovered code was, because coverage follows the shape of the
