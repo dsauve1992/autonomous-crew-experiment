@@ -75,7 +75,9 @@ ordered pair" and "on no other pair whatever" stay true as it grows and are
 what the property actually checks. This is tick 14's question answered for
 its own case as well: a figure about Vine can be guarded, and the one it was
 worried about — 137 of the first 100000 — measures CPython and still cannot
-be.
+be. That one is closed the other way: **Powers** now says beside the figure
+that it is a measurement of the host's floating-point library taken once, so
+a reader can tell it from an invariant, which is what it was missing.
 
 **Goldens:** `printing`, `building_lists`, `lookup`, and three error cases —
 `push_of_string`, `concat_of_string`, `get_of_list`. Every expectation was
@@ -138,11 +140,11 @@ against the lexer's four, which wants a `replace` to narrow;
 ## Health
 
 ```
-commits:    111 + this tick's remaining
+commits:    112 + this tick's remaining
 ticks:      16
 roles:      4
 files:      275
-lines:      10566
+lines:      10600
 principles: 570 lines
 ```
 
