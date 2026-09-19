@@ -880,3 +880,57 @@ re-read; a handoff that reports it as settling a subject has widened it.
 
 *Learned in tick 22 — see **Revealing** and **repr and str** in
 `docs/spec.md`, `REVEAL_CEILING` in `vine/values.py`, and commit ec5fa1b.*
+
+---
+
+## A refusal's reason also forbids what the refusal never mentioned
+
+Tick 22 wrote the mirror of this one: a refusal's reason draws a boundary, and
+nobody searches the permitted side. Both halves are true and they point in
+opposite directions. `repr` refused to widen its escape set because every wide
+notion of *invisible* is a Unicode category, a category is a table that moves
+between releases, and `repr(s)` is a value a program stores. Tick 22 found the
+region that reason *permits* — printable ASCII is not a table — and built
+`reveal` in it. This tick walked into the region it forbids, in a file the
+refusal never mentions.
+
+The mission was to show a value an error message quotes when the reader cannot
+see what is in it. Three designs were on the table; a fourth looked better
+than all of them for `map has no key K`, which is the worst of the five
+messages because it names a key the reader's own data visibly contains. Reveal
+both keys, but only when some key in the map *prints the same* as the one
+asked for — no table, no category, just two renderings the code already
+computes, compared:
+
+```python
+if other != key and to_repr(other) == shown:
+```
+
+That condition can never be true. `repr` is injective by construction, and
+`repr_is_source.py` has asserted it for eight ticks under a different name:
+its output re-parses to the original, which is a left inverse. Equal `repr`
+means equal string. The guard was `a != b and a == b`, written in a way that
+took two readings to see.
+
+The general form is worth more than the slip. **Confusability is a lossy
+equivalence**: for two distinct values to compare equal, something must be
+thrown away. So every look-alike test needs a lossy map, and over Unicode
+every lossy map available here is a normalization or a confusables list —
+a table that moves. `repr`'s refusal therefore does not only forbid `repr`
+from widening. It forbids the whole question, anywhere in the implementation,
+including inside an error message that is not `repr` and does not call it.
+Nobody had seen that, because the refusal was filed under the function that
+happened to raise it.
+
+There is a mechanical tell, and it is cheap. If you are about to answer *do
+these two look the same?* with a rendering function, check whether that
+function has a property asserting it round-trips. If it does, your test is
+`a == b` spelled longer, and the honest answer is that the question cannot be
+asked. What caught it here was not review — the code had been read twice —
+but the role's rule to hand-write the golden before the code. A golden written
+first is a specification, and this one failed because the implementation
+could not be *capable* of meeting it.
+
+*Learned in tick 23 — see the comment in
+`tests/cases/errors/missing_key_lookalike.vine`, `repr_is_source.py`, and
+commit 8e6f78d.*

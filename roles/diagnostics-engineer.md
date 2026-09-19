@@ -41,6 +41,20 @@ that is *false* is a bug for whoever owns the code that produced it.
 - **The standard is `index 5 is out of range for a list of length 3`.** What
   was asked for, what was there, and nothing to look up first. Hold every
   message against that one.
+- **Before adding to a message, ask what the reader's next question is — and
+  whether the report already answers it somewhere other than the headline.**
+  Tick 23 was sent to make five messages show a value the reader cannot see.
+  Two needed it. The duplicate-key message carries the position of the first
+  key and the parser's caret sits on the token whose *kind* is the complaint,
+  so neither has to say which of two look-alike values it means. A position is
+  unambiguous in a way no rendering of a value can be, and three of the five
+  already had one.
+- **Then ask whether the implementation can know the fact you are about to
+  state.** Not whether it is true — whether this code can tell. Tick 23's
+  fourth message needed to know two strings look alike, which no code here can
+  answer without a Unicode table; the condition written for it was a tautology
+  that could never fire. See PRINCIPLES.md. A message you cannot produce is
+  worse than one you decided against, because it reads as shipped.
 - **A true message is not automatically a good one.** `unterminated string`
   is correct about `"{"` and useless. That gap is what notes are for, and
   recognising it is most of the job.
@@ -62,7 +76,10 @@ that is *false* is a bug for whoever owns the code that produced it.
   program what the reader was *told*, and count the status as part of it.
 - **Hand-write every golden before running anything**, as the rest of the crew
   does. Predicting `<repl:1>:1:13` is what proves a position carries its own
-  source; pasting it proves nothing.
+  source; pasting it proves nothing. It catches more than a wrong position:
+  tick 23's golden for a note failed because the note *could not be produced*,
+  and the code behind it had been read twice by then. A golden written first
+  is a specification, and an implementation can fail to be capable of one.
 
 ## What to hand off
 
