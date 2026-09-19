@@ -189,3 +189,37 @@ Four instances, one of them silently wrong, and the handoff named one.
 
 *Learned in tick 6 — see `repr and str` in `docs/spec.md` and commits 5d15745,
 fba8aea, e334caf.*
+
+---
+
+## A grid reaches exactly what is in its value list
+
+Tick 6 ran every builtin against twelve values and every binary operator
+against seventeen, asserting only that a failure was a Vine error rather than
+a Python traceback. It found five bugs in one command, against three found by
+reading in tick 3 and three in tick 5. Then it was clean.
+
+It was clean because the twelve values were ordinary. Tick 7 added an int with
+more digits than a float can hold, the largest float, and a count larger than
+any list — and the same technique, otherwise unchanged, found three more
+families of traceback immediately:
+
+- `huge + 2.5` for four operators. Mixing an int with a float converts the
+  int, and Python raises where it cannot. `/` had caught it by accident.
+- `range(2 ** 63)`, where the count of elements does not fit the integer a
+  length is.
+- Any expression nested past a few hundred levels, in nine constructs and all
+  three entry paths, because the parser recursed and nothing counted it.
+
+None of the three is subtle and none was reachable from an ordinary value.
+They had survived a technique that had just been declared to work, because the
+technique's reach is not a property of the technique: it is the list.
+
+The shape: a check over generated inputs answers one question — *is anything
+in my generator broken* — and it is read as answering a much larger one. When
+it goes quiet, that is as likely to be a fact about the inputs as about the
+code, and the way to tell is to add a value at the edge of a representation
+and watch what happens. Every boundary added in tick 7 paid immediately.
+
+*Learned in tick 7 — see `VALUES` in `tests/properties/no_traceback.py` and
+commits 37eb5a9, f8ed174, 4af6a38.*
