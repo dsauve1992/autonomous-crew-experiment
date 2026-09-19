@@ -438,12 +438,21 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 
 `push` and `set` return new values; nothing in Vine mutates.
 
-Most of those groups have a section of their own — **Conversions**, **Text**,
-**Range**, **Powers**, **Taking and dropping**, **Sorting**, **repr and str**,
-**Formatting**. A builtin whose whole contract is its line of this roster has
-not been decided; it has been implemented, and the first program that asks it
-a question the roster does not answer will get whatever the implementation
-happens to do.
+Nearly every name above has a section of its own — **Printing**,
+**Conversions**, **Text**, **Looking up a key**, **Range**, **Powers**,
+**map, filter and reduce**, **Building lists**, **Taking and dropping**,
+**Sorting**, **repr and str**, **Formatting**. A builtin whose whole contract
+is its line of this roster has not been decided; it has been implemented, and
+the first program that asks it a question the roster does not answer will get
+whatever the implementation happens to do.
+
+Two are still in that state, and naming them is cheaper than leaving a reader
+to work out which: `len(x)` and `reverse(x)`. Each is mentioned in passing —
+**Text** says both count codepoints in a string, and **Looking up a key** says
+`len(m)` is the number of entries — and neither has been asked what it means
+for the types it also accepts, or why it refuses the ones it refuses.
+`type(x)` has no section either and does not need one; **Types** lists the
+eight names it can answer, which is the whole of it.
 
 ## Printing
 
