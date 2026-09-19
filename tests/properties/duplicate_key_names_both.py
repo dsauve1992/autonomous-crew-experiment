@@ -35,6 +35,11 @@ them: `-0.0 == 0.0` is `true` in Vine, so they are one key, and the headline
 says `0.0` while the note points at a line reading `-0.0`. The message is
 unreadable without the position, and the reason has nothing to do with the
 tables **Revealing** refuses.
+
+Every clause was broken on its own, on a committed tree. Deleting the note
+breaks ten; pointing the note at the caret's own position breaks the same ten;
+putting the caret on the first appearance rather than the second breaks them
+again. The second half has its own sabotages, listed beside DISTINCT.
 """
 
 import io
@@ -64,13 +69,16 @@ DUPLICATES = [
     ("0.0", 3, "-0.0", 7),
 ]
 
-# Pairs that read as one key and are two. See the docstring.
+# Pairs that read as one key and are two. Each was sabotaged into a duplicate
+# to check it guards something: `1`/`1.0` and `1`/`true` fall to dropping the
+# type tag from `to_key`, the two strings to normalising with NFKC, and
+# `"1"`/`1` to keying on `to_display`. `a`/`b` is the control -- two keys
+# nothing sane collapses -- and is here to say so out loud.
 DISTINCT = [
     ('"east 1"', '"east\\u{a0}1"'),
     ("1", "1.0"),
     ("1", "true"),
     ('"1"', "1"),
-    ("0.0", "1.0"),
     ("a", "b"),
 ]
 
