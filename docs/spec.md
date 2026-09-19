@@ -468,14 +468,15 @@ Lists: `range(n)` `range(a, b)` `map(xs, f)` `filter(xs, f)` `reduce(xs, f, init
 Maps: `keys(m)` `values(m)` `get(m, k)` `get(m, k, default)` `set(m, k, v)`
 
 Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
-`reverse(s)` `contains(s, sub)`
+`reverse(s)` `contains(s, sub)` `reveal(s)`
 
 `push` and `set` return new values; nothing in Vine mutates.
 
 Nearly every name above has a section of its own — **Printing**,
 **Conversions**, **Text**, **Looking up a key**, **Range**, **Powers**,
 **map, filter and reduce**, **Building lists**, **Taking and dropping**,
-**Sorting**, **repr and str**, **Formatting**. A builtin whose whole contract
+**Sorting**, **repr and str**, **Revealing**, **Formatting**. A builtin whose
+whole contract
 is its line of this roster has not been decided; it has been implemented, and
 the first program that asks it a question the roster does not answer will get
 whatever the implementation happens to do.
@@ -1338,9 +1339,10 @@ test for, because the output looks sorted.
 ## repr and str
 
 Vine turns a value into text two ways, and what separates them is who reads
-it. A number can also be written to a set number of decimal places — see
-**Formatting** at the end of this section — which is a third function and
-not a third conversion.
+it. Two more functions sit at the end of this section and neither is a third
+conversion: a number can be written to a set number of decimal places, see
+**Formatting**, and a string can be written with every character in it
+visible, see **Revealing**.
 
 `str(x)` is for a person, and `"{x}"` is the same conversion (see **Strings**):
 `str("north")` is `north`. `repr(x)` is **Vine source for the value**:
@@ -1406,8 +1408,9 @@ repr("\u{200b}") == repr("")          # false — though the two print alike
 That is the cost, it is real, and it is smaller than an answer that differs
 between two machines running the same program. What `repr` promises is the
 controls, which is a promise it can keep the same way twice; it does not
-promise that every character in its output can be seen, and a program that
-needs that guarantee cannot get it from `repr`.
+promise that every character in its output can be seen. A program that needs
+that guarantee asks `reveal` for it instead — see **Revealing** below, which
+is the same string with a wider escape set and is not the same value.
 
 The first promise held through all of this and was never the whole of it: for
 as long as `repr` of a record separator answered a line with one sitting inside
@@ -1456,6 +1459,127 @@ come out `[a, b]`. The rule is that the outermost value is converted
 for its reader and everything nested inside it is converted as source — which
 is what "how a value looks nested inside another value" had always meant,
 without ever saying what it was for.
+
+### Revealing
+
+The paragraph above says where `repr` stops. `reveal(s)` is where it does not:
+
+```
+let scraped = "east\u{a0}1"
+let typed = "east 1"
+scraped == typed                        # false
+len(scraped) == len(typed)              # true
+len(repr(scraped)) == len(repr(typed))  # true — and the two lines look alike too
+reveal(scraped)                         # "east\u{a0}1"
+reveal(typed)                           # "east 1"
+```
+
+That is the whole of what it is for. A scrape produces two rows a reader
+cannot tell apart and `==` says are different; `len` agrees they are the same
+length, `repr` writes two lines of the same width, and before `reveal` nothing
+in the language said which character was the difference.
+
+**It is `repr` plus one rule: a codepoint above U+007E is written as an escape
+too.** `repr` already escapes everything below U+0020 and U+007F through
+U+009F, so what `reveal` leaves as itself is exactly printable ASCII. Below
+that ceiling the two are one function:
+
+```
+reveal("a\tb") == repr("a\tb")          # true
+```
+
+**Why it may be wider than `repr` when `repr` refused to be.** What `repr`
+refused is a *table*. Every wide notion of *invisible* is a Unicode category,
+a category is a property of a Unicode release, and `repr(s)` is a value a
+program compares, prints and writes to a file, so an answer that moves under
+it is a bug in the program that stored it. The ceiling here is not a category.
+Printable ASCII is a range, it was frozen before Unicode existed, and no
+release can move it — so `reveal` keeps the property the refusal was
+protecting while being as wide as the complaint requires. **Text** draws the
+same line between `repr` and `trim` from the other end.
+
+**The quotes are part of the answer and not decoration.** A trailing space is
+as invisible as a zero-width one, and no escape set that leaves printable
+ASCII alone can show it. What shows it is the closing quote:
+
+```
+reveal("east ")                         # "east " — the quote is what shows the space
+reveal("east")                          # "east"
+```
+
+**What it costs is every character above ASCII, including the ones nobody was
+confused by.** An accented word and a zero-width space come out the same way:
+
+```
+reveal("caf\u{e9}")                     # "caf\u{e9}"
+reveal("\u{200b}")                      # "\u{200b}"
+len(repr("\u{200b}"))                   # 3 — quote, a zero-width space, quote
+len(reveal("\u{200b}"))                 # 10
+```
+
+So `reveal` is not the everyday way to show a string and `repr` is not a
+degraded one. This is **Formatting**'s shape: `str` writes a number the way
+Vine writes it down and `fixed` the way a column needs it, and neither is the
+general case of the other. Here the two readers are the one who wants to read
+the text and the one who wants to know what is in it.
+
+**A string and nothing else**, the way `fixed` takes a number and nothing
+else. `str` and `repr` convert *any* value and which applies is decided by who
+reads the result; `reveal` is not a third member of that pair, because the
+question it answers is one only a string raises. A column is a list of
+strings and maps — joined rather than printed as a list, since a list reprs
+its elements and would escape every backslash a second time:
+
+```
+let rows = ["east\u{a0}1", "east 1"]
+join(map(rows, reveal), " ")            # "east\u{a0}1" "east 1"
+reveal(rows)                            # error: reveal argument must be a string, got list
+```
+
+#### Why a builtin and not a composition
+
+**add what cannot be composed, refuse what can**, so here is the measurement.
+`split(s, "")` already reaches the codepoints, and that is as far as Vine
+goes: no builtin turns a character into anything that identifies it. `len` of
+one is 1 whatever it is, `int` of one is an error, and `str` and `repr` hand
+back the character that could not be seen in the first place.
+
+```
+map(split("east\u{a0}1", ""), len)      # [1, 1, 1, 1, 1, 1]
+```
+
+`int` of one is not a way round it either. It fails, and its message quotes
+the value with `repr`, so the message whose whole job is to say *which* value
+was refused shows a space and reads as though a space were not a number. That
+message is not written out here, and the reason it is not is the subject of
+this section: the only honest way to print it is to paste the character into
+this document, where no reader would see it.
+
+What is left is `<`, which does order strings by codepoint, so a program can
+compare a character against a literal it has already typed. That makes the
+composition a hand-written list of suspects, and it answers only for the
+characters on the list:
+
+```
+let suspect = split("east\u{a0}1", "")[4]
+contains("\u{a0}\u{200b}\u{feff}", suspect)   # true — because a0 is on the list
+```
+
+A list of suspects is a guess, and the value of an answer here is that it is
+not one. Nothing composes to the character that was *not* thought of, because
+`\u{...}` is lexical — its digits are source, so no expression builds a
+character from a number that was computed.
+
+**Why not a codepoint number**, which is the other shape this could have had.
+`code(c)` answering `160` would identify the character too, and would compose
+further: arithmetic, ranges, sorting by codepoint. It is refused for now, on
+two grounds and not on principle. It answers in decimal where every other
+mention of a codepoint in this language — the escape, this section, the error
+messages — is in hex, so a reader would convert by hand at the one moment they
+are already confused. And the composition that gets from a list of numbers
+back to something to *read* is the one Vine cannot write, since a character
+cannot be built from a computed number. `reveal` is the debugging view; `code`
+would be the arithmetic, and no program here has yet asked for arithmetic.
 
 ### Formatting
 
