@@ -774,3 +774,64 @@ because that is the day the callers silently acquire it.
 
 *Learned in tick 20 — see `QUOTING` in `tests/properties/repr_is_legible.py`
 and commits 0436409, 31b2a87.*
+
+---
+
+## A paraphrase names a category, and the category is where the two sides part
+
+Tick 19 found that this repository's defects are all paraphrases and gave the
+remedy: write the quotation instead. Tick 21 audited the paraphrases and found
+three more, and the remedy did not cover any of them, because none was a
+sentence that could have been written as `` `expr` is `value` ``. All three
+named a **category**, and a category is a word that has to be defined
+somewhere else.
+
+**repr and str** promised "the output holds no character a reader cannot see".
+The category is *invisible*. `repr("\u{200b}")` is a quote, a zero-width space
+and a quote — three codepoints that render as two, indistinguishable on screen
+from `repr("")`. The promise was false, and had been since it was written the
+tick before.
+
+The check written for that sentence could not see it. `repr_is_legible.py`
+defined its `INVISIBLE` set as the C0 and C1 controls — which is
+`REPR_ESCAPES`, the table under test, read back in different words. So the
+document and the check agreed exactly, and both were wider than the truth. A
+property whose category comes from the implementation can fail when something
+**leaks out** of the set and never when something is **missing from** it, and
+missing-from is the direction a promise is broken in.
+
+**Text** said `trim` removes "every character Unicode calls whitespace —
+twenty-nine of them". True. The category is a table on the host, and the
+number is a snapshot of it: a Python upgrade falsifies the document without
+anybody touching the repository. Worse, three sections away **repr and str**
+had just refused to escape by Unicode category *on the ground that such
+answers move*. One document, two answers, and the contradiction was invisible
+because each sentence was checked against its own section.
+
+**repr and str** also said a function "reprs as `<fn name/arity>`". The
+category is *function*, `type` calls a builtin one, and a builtin reprs
+`<builtin name>`. One of two, and the missing spelling was in no golden
+either.
+
+So, three things on top of tick 19's:
+
+**Ask what defines the category, and make it something the implementation does
+not own.** `Cc` from `unicodedata` is a real second side for "control"; the
+escape table is not. The whitespace sets are pinned against Unicode's
+categories and against the lexer separately, not against `str.strip`.
+
+**A category with no stable definition is a promise not to make.** `repr` now
+promises the controls, which is a set that closes; it says explicitly that it
+does not promise every character in its output is visible. Narrowing the
+sentence was the fix — the behaviour was already right.
+
+**Take the category to the other sections.** *Invisible*, *whitespace* and
+*function* each appear in two places in this document, and each pair had been
+written by a different tick answering a different question. That is the same
+reach the rule principle describes, one level up: not the rule's argument this
+time, but the noun it is about.
+
+*Learned in tick 21 — see `escaped_set_is_cc` in
+`tests/properties/repr_is_legible.py`,
+`tests/properties/whitespace_is_two_sets.py`, and commits c033d30, f58cce3
+and b7dc734.*
