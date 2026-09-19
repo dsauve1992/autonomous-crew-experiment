@@ -250,6 +250,37 @@ def _rest(interp, pos, args):
     return items[1:]
 
 
+def count(interp, pos, value, name):
+    """The `n` of `take(xs, n)` and `drop(xs, n)`: an int, and not a negative
+    one.
+
+    A list shorter than `n` is not an error -- the list builtins are total,
+    `first([])` is `nil` and `rest([])` is `[]`, and a report asking for its
+    top three when it holds two rows wants two rows. A negative `n` is an
+    error, because Vine already gives a negative integer a meaning against a
+    list: `xs[-1]` is the last element. Answering `[]` would be answering a
+    different question quietly.
+    """
+    want(interp, pos, value, "int", f"{name} count")
+    if value < 0:
+        raise RuntimeError_(
+            f"{name} count must not be negative, got {value}", pos, interp.source
+        ).help("a negative index counts from the end, but a count does not")
+    return value
+
+
+@builtin("take", 2, 2)
+def _take(interp, pos, args):
+    items = want(interp, pos, args[0], "list", "take target")
+    return items[: count(interp, pos, args[1], "take")]
+
+
+@builtin("drop", 2, 2)
+def _drop(interp, pos, args):
+    items = want(interp, pos, args[0], "list", "drop target")
+    return items[count(interp, pos, args[1], "drop") :]
+
+
 @builtin("reverse", 1, 1)
 def _reverse(interp, pos, args):
     value = args[0]

@@ -1,0 +1,6 @@
+runtime error: take count must not be negative, got -1
+ --> take_negative.vine:4:5
+  |
+4 | take(xs, len(xs) - 4)
+  |     ^
+  = help: a negative index counts from the end, but a count does not

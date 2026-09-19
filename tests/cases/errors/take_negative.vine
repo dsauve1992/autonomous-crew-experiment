@@ -1,0 +1,4 @@
+# A count is not an index, and the negative need not be visible: this one is
+# arithmetic that went one past the end of the list it was measuring.
+let xs = [1, 2, 3]
+take(xs, len(xs) - 4)

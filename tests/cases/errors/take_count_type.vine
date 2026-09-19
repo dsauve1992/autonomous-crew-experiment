@@ -1,0 +1,2 @@
+# 2.0 is a float. A count of elements is a whole number of them.
+take([1, 2, 3], 2.0)

@@ -1,0 +1,33 @@
+# take and drop generalise first and rest: drop(xs, 1) is rest(xs), and
+# take(xs, 1) is first(xs) in a list.
+let xs = [1, 2, 3, 4]
+print(take(xs, 2), drop(xs, 2))
+print(take(xs, 0), drop(xs, 0))
+print(take(xs, 1), [first(xs)])
+print(drop(xs, 1), rest(xs))
+
+# Total in the short direction. Asking for more than there is answers what
+# there is, the way first([]) answers nil rather than failing.
+print(take(xs, 99), drop(xs, 99))
+print(take([], 3), drop([], 3))
+
+# The two halves are the whole list, at every count either accepts.
+print(concat(take(xs, 3), drop(xs, 3)))
+print(concat(take(xs, 0), drop(xs, 0)))
+print(concat(take(xs, 9), drop(xs, 9)))
+print(xs)
+
+# take(xs, 1) tells an empty list from a list holding nil. first cannot.
+print(take([], 1), take([nil], 1))
+print(first([]), first([nil]))
+
+# All but the last, spelt so that an empty list survives it. take(xs, len(xs)
+# - 1) is the shorter spelling and it asks for -1 elements of [].
+print(reverse(drop(reverse(xs), 1)))
+print(reverse(drop(reverse([]), 1)))
+
+# Elements are chosen, never touched.
+print(take([[1], {a: 2}, nil], 2))
+
+# take is list-only; a string is taken apart and put back together.
+print(take(split("hello", ""), 2) |> join(""))

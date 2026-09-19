@@ -1,0 +1,6 @@
+runtime error: drop count must not be negative, got -1
+ --> drop_negative.vine:2:5
+  |
+2 | drop([1, 2, 3], -1)
+  |     ^
+  = help: a negative index counts from the end, but a count does not

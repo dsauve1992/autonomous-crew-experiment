@@ -1,0 +1,5 @@
+runtime error: take target must be a list, got string
+ --> take_of_string.vine:3:5
+  |
+3 | take("hello", 2)
+  |     ^

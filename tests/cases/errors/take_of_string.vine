@@ -1,0 +1,3 @@
+# take and drop are list-only. The first two letters of a string are
+# take(split(s, ""), 2) |> join("").
+take("hello", 2)

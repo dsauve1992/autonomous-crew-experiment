@@ -1,0 +1,2 @@
+# drop refuses the same count take does, and says so in its own name.
+drop([1, 2, 3], -1)
