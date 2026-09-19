@@ -53,3 +53,15 @@ $ vine -e 'print(1)' tests/fixtures/greet.vine
 --- stderr
 error: vine runs one program at a time, but 2 were given: -e and 'tests/fixtures/greet.vine'
 exit 2
+
+$ vine --nope
+--- stderr
+error: cannot read --nope: No such file or directory
+ = help: vine's options are -e, -h/--help and -v/--version; any other argument is a file name
+exit 2
+
+$ vine -- tests/fixtures/greet.vine
+--- stderr
+error: vine runs one program at a time, but 2 were given: '--' and 'tests/fixtures/greet.vine'
+ = help: vine's options are -e, -h/--help and -v/--version; any other argument is a file name
+exit 2

@@ -15,3 +15,9 @@ tests/fixtures/latin1.vine
 # a file beside -e.
 tests/fixtures/greet.vine tests/fixtures/broken.vine
 -e 'print(1)' tests/fixtures/greet.vine
+
+# An argument that looks like an option and is not one. Vine has none past -e,
+# -h and --version, so both of these are file names -- which the headline is
+# true about and silent on, and which is what the help says.
+--nope
+-- tests/fixtures/greet.vine

@@ -14,6 +14,23 @@ USAGE = """usage: vine [options] [file]
 """
 
 
+# Vine has no option past the three above, so an argument beginning with a
+# dash is a file name like any other -- which is why `vine -x.vine` runs a
+# file called -x.vine, and why vine needs no `--` to let it. The rule is true
+# and invisible: a reader who mistypes a flag is told the file system is
+# missing something. It goes in a help, because a rule of the language is what
+# a help is for, and the headline above it stays a fact.
+OPTIONS_RULE = (
+    " = help: vine's options are -e, -h/--help and -v/--version; "
+    "any other argument is a file name\n"
+)
+
+
+def option_rule(names):
+    """The rule above, when something here could be mistaken for an option."""
+    return OPTIONS_RULE if any(name.startswith("-") for name in names) else ""
+
+
 def listing(programs):
     """Name each program a command line asked for, as the reader wrote it.
 
@@ -56,6 +73,7 @@ def main(argv):
         sys.stderr.write(
             f"error: vine runs one program at a time, but {len(programs)} "
             f"were given: {listing(programs)}\n"
+            + option_rule([argument for _, argument in programs])
         )
         return 2
 
@@ -68,7 +86,9 @@ def main(argv):
             with open(name, encoding="utf-8") as handle:
                 text = handle.read()
         except OSError as exc:
-            sys.stderr.write(f"error: cannot read {name}: {exc.strerror}\n")
+            sys.stderr.write(
+                f"error: cannot read {name}: {exc.strerror}\n" + option_rule([name])
+            )
             return 2
         except UnicodeDecodeError as exc:
             # Vine source is UTF-8. A file that is not -- a binary, or a

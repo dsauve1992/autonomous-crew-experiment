@@ -18,8 +18,11 @@ python3 -m vine --version       # print the version
 ./check                         # run the test suite
 ```
 
-One program per command line. See **Errors** for what each way of ending
-means.
+One program per command line. And `-e`, `-h`/`--help` and `-v`/`--version` are
+every option vine has, so any other argument is a file name — including one
+beginning with a dash. That is why there is no `--` separator: `vine -x.vine`
+already runs a file called `-x.vine`, and a `--` would itself be read as a file
+name. See **Errors** for what each way of ending means.
 
 ## Lexical structure
 
