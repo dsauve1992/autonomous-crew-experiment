@@ -95,6 +95,27 @@ class Interpreter:
     def overflowed(self, op, pos):
         self.fail(f"the result of '{op}' is too large to be a float", pos)
 
+    def widen(self, left, right, op, pos):
+        """Check the int in a mixed int/float operation has a float to be.
+
+        An operator with an int on one side and a float on the other converts
+        the int, and an int may have more digits than a float can hold.
+        Python does that conversion silently and raises OverflowError where it
+        cannot, which left through '+', '-', '*' and '%' as a traceback. Only
+        '/' caught it, and only because int / int raises there too. `float()`
+        already refuses this int by name; an operator performing the same
+        conversion owes the same answer.
+        """
+        if type_name(left) == type_name(right):
+            return
+        integer = left if type_name(left) == "int" else right
+        try:
+            float(integer)
+        except OverflowError:
+            raise RuntimeError_(
+                "int is too large to convert to a float", pos, self.source
+            ).note(f"'{op}' between an int and a float converts the int") from None
+
     def finite(self, value, op, pos):
         """An arithmetic result, if Vine has one for it.
 
@@ -217,11 +238,13 @@ class Interpreter:
             if lt == "list" and rt == "list":
                 return left + right
             if lt in numeric and rt in numeric:
+                self.widen(left, right, op, node.pos)
                 return self.finite(left + right, op, node.pos)
             self.fail(f"cannot add {lt} and {rt}", node.pos)
         if op in ("-", "*", "/", "%"):
             if lt not in numeric or rt not in numeric:
                 self.fail(f"cannot apply '{op}' to {lt} and {rt}", node.pos)
+            self.widen(left, right, op, node.pos)
             if op == "-":
                 return self.finite(left - right, op, node.pos)
             if op == "*":

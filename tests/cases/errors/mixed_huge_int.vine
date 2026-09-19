@@ -1,0 +1,6 @@
+# Mixing an int with a float converts the int, and an int may have more digits
+# than a float can hold. Python converts silently and raises where it cannot,
+# so '+', '-', '*' and '%' all left as tracebacks; '/' was the one that caught
+# it. The int here is the one float_of_huge_int.vine refuses by name.
+let huge = reduce(range(400), fn(a, b) { a * 10 }, 1)
+huge + 2.5

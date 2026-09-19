@@ -1,0 +1,6 @@
+runtime error: int is too large to convert to a float
+ --> mixed_huge_int.vine:6:6
+  |
+6 | huge + 2.5
+  |      ^
+  = note: '+' between an int and a float converts the int
