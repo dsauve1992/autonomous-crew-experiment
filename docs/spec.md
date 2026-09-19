@@ -438,6 +438,38 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 
 `push` and `set` return new values; nothing in Vine mutates.
 
+## Range
+
+`range(n)` is the integers from 0 up to but not including `n`, and
+`range(a, b)` is the integers from `a` up to but not including `b`.
+
+```
+range(4)        # [0, 1, 2, 3]
+range(2, 5)     # [2, 3, 4]
+range(-2, 2)    # [-2, -1, 0, 1]
+range(0)        # []
+```
+
+Both bounds are ints and nothing else: `range("10")` is
+`range bound must be an int, got string`, and a float is refused the same way
+rather than truncated, because `range(2.5)` has more than one reading and
+none of them is obviously the one meant.
+
+**There is no step**, by the rule under **Formatting** — counting by twos is
+`map(range(n), fn(i) { i * 2 })` and every other stride is the same line, so
+a third argument would add nothing that is not already a composition.
+
+**A bound below the start is `[]`**, not an error: `range(-1)` and
+`range(5, 2)` are both empty. That is the opposite of the answer `take` gives
+a negative count, and the reason the two differ is under **Taking and
+dropping**, where the pair is argued as a pair.
+
+`range` is the only builtin that makes a list out of nothing, so it is the
+only one that can be asked for a list nothing could hold:
+`range(9223372036854775808)` is
+`range of 9223372036854775808 elements is too large to build`. The failure is
+the count, not the memory of the machine that ran it.
+
 ## Powers
 
 `pow(x, y)` is `x` raised to the power `y`. It is the one piece of arithmetic
@@ -616,7 +648,8 @@ saying they had been misread.
 **`range` is a different question and gets a different answer.** `range(-1)`
 is `[]`, and so is `range(5, 2)`. That is not an inconsistency with the rule
 above: `range(a, b)` takes *bounds*, and it is the integers from `a` up to but
-not excluding `b`, of which there are none when `b` is not above `a`. A bound
+not including `b` — see **Range** — of which there are none when `b` is not
+above `a`. A bound
 below the start has one reading; a count below zero has two. The spec leans on
 this already — the padding one-liner under **Formatting** asks for
 `range(w - len(s))` spaces, and is a pad rather than an error on a string

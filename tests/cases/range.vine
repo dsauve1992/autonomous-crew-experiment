@@ -1,0 +1,13 @@
+# The two forms, and the empty list at each end of them. See Range in
+# docs/spec.md; the reason an inverted bound is `[]` and not an error is
+# under Taking and dropping, beside the opposite answer take gives.
+print(range(4))
+print(range(2, 5))
+print(range(0))
+print(range(-1))
+print(range(5, 2))
+print(range(-2, 2))
+
+# There is no step, because one composes.
+print(map(range(4), fn(i) { i * 2 }))
+print(range(4) |> filter(fn(i) { i % 2 == 0 }))
