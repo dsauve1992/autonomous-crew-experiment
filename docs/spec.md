@@ -8,9 +8,18 @@ data. Everything is an expression; there are no statements except `let`. There
 is no mutation and no loop construct: you transform data by passing it through
 functions, usually with the pipeline operator.
 
+**How the examples are written.** An untagged code block is Vine, and its
+lines are entries at a prompt: a `let` binds for the lines below it. A line
+written `expression    # result` claims that the expression answers exactly
+that result, and everything after an em dash in the comment is commentary
+about it. A result beginning `error:` claims the expression fails with that
+message. `tests/properties/spec_examples_run.py` runs every such line on every
+`./check`, so a claim made in that shape is checked and a claim made in prose
+is not.
+
 ## Running it
 
-```
+```sh
 python3 -m vine                 # open an interactive session
 python3 -m vine script.vine     # run a file
 python3 -m vine -e 'print(1+1)' # run one line
@@ -518,7 +527,7 @@ let tap = fn(xs) {
   print(xs)
   xs
 }
-tap([1, 2]) |> take(1)      # prints [1, 2], answers [1]
+tap([1, 2]) |> take(1)      # [1] — after printing [1, 2]
 ```
 
 Answering the first argument instead would read well in exactly that pipeline
@@ -665,9 +674,9 @@ disagree with one of those or with every other language.
 instead of failing:
 
 ```
-join(split("a,b", ","), ";")     # "a;b"   — right
-join(split("a,b", ";"), ",")     # "a,b"   — the two strings swapped: the input back
-join(split(",", "a,b"), ";")     # ","     — subject and needle swapped: the needle
+join(split("a,b", ","), ";")     # "a;b" — right
+join(split("a,b", ";"), ",")     # "a,b" — the two strings swapped: the input back
+join(split(",", "a,b"), ";")     # "," — subject and needle swapped: the needle
 split(join("a,b", ","), ";")     # error: join target must be a list, got string
 ```
 
@@ -697,8 +706,8 @@ reversed — and it is its own inverse:
 
 ```
 reverse([[1, 2], [3, 4]])          # [[3, 4], [1, 2]]
-reverse(reverse(xs)) == xs         # true, for every list and every string
-reverse([])                        # [], and reverse("") is ""
+reverse(reverse([1, 2])) == [1, 2]  # true — and so for every list and string
+reverse([])                        # [] — and reverse("") is ""
 ```
 
 On a string that is codepoints, which **Text** settles once for everything
@@ -773,8 +782,8 @@ here the removal is real, because the default is reached only when the key is
 
 ```
 let m = {a: nil}
-get(m, "a", 0)     # nil  -- the key is there, and holds nil
-get(m, "z", 0)     # 0    -- the key is not there
+get(m, "a", 0)     # nil — the key is there, and holds nil
+get(m, "z", 0)     # 0 — the key is not there
 contains(m, "a")   # true
 ```
 
@@ -891,7 +900,7 @@ What that costs is exactness, and the cost is worth seeing:
 
 ```
 10 * 10 * 10 == 1000        # true
-pow(10, 3) == 1000          # false, because 1000.0 is not 1000
+pow(10, 3) == 1000          # false — because 1000.0 is not 1000
 int(pow(10, 23))            # 99999999999999991611392
 ```
 
@@ -1042,9 +1051,9 @@ a one-element list literal in it, and dropping those brackets is not an error:
 ```
 let rows = [["north", 1]]
 let row = ["south", 2]
-concat(rows, [row])    # [["north", 1], ["south", 2]]   two rows
-concat(rows, row)      # [["north", 1], "south", 2]     a row and two strings
-push(rows, row)        # [["north", 1], ["south", 2]]   two rows
+concat(rows, [row])    # [["north", 1], ["south", 2]] — two rows
+concat(rows, row)      # [["north", 1], "south", 2] — a row and two strings
+push(rows, row)        # [["north", 1], ["south", 2]] — two rows
 ```
 
 The middle line is wrong, it is what an author who means *append this row*
