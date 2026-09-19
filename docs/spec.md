@@ -457,10 +457,9 @@ eight names it can answer, which is the whole of it.
 ## Printing
 
 `print(...)` writes to standard output and answers `nil`. It is the only
-builtin that does anything other than compute a value, and it is the one thing
-in this language that composes out of nothing else: no other expression in Vine
-writes. Everything *around* the writing does compose, and that is the rest of
-this section.
+builtin that does anything other than compute a value, and the one builtin no
+composition can replace: no other expression in Vine writes. Everything
+*around* the writing does compose, and that is the rest of this section.
 
 It takes **any number of arguments, including none** — the only builtin with no
 upper bound on its arity. Each is converted with `str`, the results are joined
@@ -480,8 +479,8 @@ for one.
 same output as `print(join(map([a, b], str), " "))` — checked over every
 ordered pair of the value list in `tests/properties/no_traceback.py` by
 `tests/properties/composition_holds.py`, with no disagreement. So the space is
-a convenience and nothing else, and a reader who wants another
-separator writes the composition out:
+a convenience and nothing else, and a reader who wants another separator
+writes the composition out:
 
 ```
 print(join(["north", "south"], ", "))      # north, south
@@ -492,7 +491,7 @@ It is a space rather than a comma because a comma is a **format**, and
 **Formatting** keeps formats out of the thing that shows a value: a separator
 between two columns is the same kind of decision as a decimal place, and
 `fixed` is where that decision is made. One space is the only choice that is
-not a format — it is what separating two things at all costs.
+not a format — it is the least that separating two things at all can cost.
 
 **It shows a value the way `str` does, not the way `repr` does.**
 `print("a")` writes `a` with no quotes and `print(["a"])` writes `["a"]` with
@@ -503,11 +502,11 @@ structure.
 **`print` never fails.** `str` converts every value and never fails — see
 **Conversions** — so there is no value `print` refuses. That is a consequence
 rather than a measurement: nothing enumerates it, and
-`tests/cases/printing.vine` prints one value of every type. That is what makes
-it the call you can drop into the middle of a program
-to see what is flowing through it, and it is why **map, filter and reduce** and
-**Sorting** promise *when* a function runs: a function handed to `map` may
-print, and a promise about printing is worth nothing if printing can fail.
+`tests/cases/printing.vine` prints one value of every type. It is what makes
+`print` the call you can drop into the middle of a program to see what is
+flowing through it, and it is why **map, filter and reduce** and **Sorting**
+promise *when* a function runs: a function handed to `map` may print, and a
+promise about printing is worth nothing if printing can fail.
 
 **It answers `nil`, so it does not pass its argument through.** `xs |> print`
 is `nil` and not `xs`. A pipeline that wants to look at what it is carrying
@@ -918,17 +917,17 @@ builtin whose whole body is one operator.
 
 **`push(xs, x)` is `concat(xs, [x])`, and it is here because the brackets are
 invisible when they are wrong.** Over every list in that value list paired
-with every value in it the two never disagree, so this one composes exactly, and the rule as written refuses
-it. The exception is not about what the composition answers; it is about what
-the composition costs to write. It has a one-element list literal in it, and
+with every value in it the two never disagree, so this one composes exactly,
+and the rule as written refuses it. The exception is not about what the
+composition answers; it is about what the composition costs to write. It has a one-element list literal in it, and
 dropping those brackets is not an error:
 
 ```
 let rows = [["north", 1]]
 let row = ["south", 2]
-concat(rows, [row])    # [["north", 1], ["south", 2]]   -- two rows
-concat(rows, row)      # [["north", 1], "south", 2]     -- one row and two strings
-push(rows, row)        # [["north", 1], ["south", 2]]   -- two rows
+concat(rows, [row])    # [["north", 1], ["south", 2]]   two rows
+concat(rows, row)      # [["north", 1], "south", 2]     a row and two strings
+push(rows, row)        # [["north", 1], ["south", 2]]   two rows
 ```
 
 The middle line is wrong, it is what an author who means *append this row*
