@@ -1,0 +1,5 @@
+# Python's float() reads "inf", "-inf" and "nan" happily, and Vine has no
+# value for any of them. This case and float_of_nan.vine are tick 3's pair,
+# moved: they used to watch int() refuse an infinity, and since tick 6 there
+# is no infinity to hand it.
+float("inf")

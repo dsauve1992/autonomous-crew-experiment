@@ -1,0 +1,4 @@
+# An overflow is the one way arithmetic could still make an infinity: Python
+# hands one back as a value rather than raising. Vine already answers
+# `division by zero` rather than inf, so it answers this the same way.
+print(1e300 * 1e300)

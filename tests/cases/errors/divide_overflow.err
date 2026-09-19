@@ -1,0 +1,5 @@
+runtime error: the result of '/' is too large to be a float
+ --> divide_overflow.vine:5:6
+  |
+5 | huge / 2
+  |      ^

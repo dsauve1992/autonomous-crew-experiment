@@ -1,4 +1,0 @@
-# nan has no int to convert to. Python says so by raising ValueError, which
-# reached the user as a traceback until int() guarded against it.
-let missing = float("nan")
-int(missing)

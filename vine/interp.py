@@ -24,6 +24,7 @@ from .values import (
     is_truthy,
     to_display,
     to_key,
+    INFINITY,
     to_repr,
     type_name,
 )
@@ -74,6 +75,20 @@ class Interpreter:
 
     def fail(self, message, pos):
         raise RuntimeError_(message, pos, self.source)
+
+    def overflowed(self, op, pos):
+        self.fail(f"the result of '{op}' is too large to be a float", pos)
+
+    def finite(self, value, op, pos):
+        """An arithmetic result, if Vine has one for it.
+
+        Vine has no infinities, so overflow is an error rather than a value --
+        the answer the language already gives for division by zero, and the
+        one `repr` needs, since `inf` is not something a program can write.
+        """
+        if value in (INFINITY, -INFINITY):
+            self.overflowed(op, pos)
+        return value
 
     # -- entry point ------------------------------------------------------
 
@@ -191,19 +206,26 @@ class Interpreter:
             if lt == "list" and rt == "list":
                 return left + right
             if lt in numeric and rt in numeric:
-                return left + right
+                return self.finite(left + right, op, node.pos)
             self.fail(f"cannot add {lt} and {rt}", node.pos)
         if op in ("-", "*", "/", "%"):
             if lt not in numeric or rt not in numeric:
                 self.fail(f"cannot apply '{op}' to {lt} and {rt}", node.pos)
             if op == "-":
-                return left - right
+                return self.finite(left - right, op, node.pos)
             if op == "*":
-                return left * right
+                return self.finite(left * right, op, node.pos)
             if right == 0:
                 self.fail("division by zero", node.pos)
             if op == "/":
-                return left / right
+                try:
+                    quotient = left / right
+                except OverflowError:
+                    # int / int whose quotient no float can hold. Python
+                    # raises here and hands back inf everywhere else; the two
+                    # mean one thing and get one report.
+                    self.overflowed(op, node.pos)
+                return self.finite(quotient, op, node.pos)
             return left % right
         if op in ("<", "<=", ">", ">="):
             comparable = (lt in numeric and rt in numeric) or (

@@ -1,0 +1,5 @@
+runtime error: the result of '*' is too large to be a float
+ --> overflow.vine:4:13
+  |
+4 | print(1e300 * 1e300)
+  |             ^

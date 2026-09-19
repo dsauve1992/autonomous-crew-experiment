@@ -1,5 +1,9 @@
 """Runtime values: how they are represented, named, printed and compared."""
 
+# Vine has no infinities and no nan -- see `repr and str` in docs/spec.md.
+# This exists so the three guards that keep them out can say so by name.
+INFINITY = float("inf")
+
 
 class Function:
     """A closure: parameters, body, and the environment it was created in.

@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from .errors import Pos, SyntaxError_
+from .values import INFINITY
 
 KEYWORDS = {"let", "fn", "if", "else", "do", "true", "false", "nil", "and", "or", "not"}
 
@@ -56,9 +57,6 @@ OPENER = {")": "(", "]": "[", "}": "{"}
 # would silently widen both: `café` would lex as an identifier, and `2²` would
 # lex as a number and then crash int() with a Python traceback.
 DIGITS = frozenset("0123456789")
-
-# Named so the too-large-literal guard reads as a fact about floats.
-INFINITY = float("inf")
 IDENT_START = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
 IDENT_REST = IDENT_START | DIGITS
 

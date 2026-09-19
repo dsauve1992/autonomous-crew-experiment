@@ -1,6 +1,16 @@
 """The standard library. Every builtin receives (interp, pos, args)."""
 
-from .values import Builtin, Function, from_key, to_display, to_key, to_repr, type_name
+from .errors import RuntimeError_
+from .values import (
+    INFINITY,
+    Builtin,
+    Function,
+    from_key,
+    to_display,
+    to_key,
+    to_repr,
+    type_name,
+)
 
 REGISTRY = []
 
@@ -80,10 +90,10 @@ def _int(interp, pos, args):
     if kind == "int":
         return value
     if kind == "float":
-        # nan and inf have no int to convert to, and Python says so by raising
-        # -- which would reach the user as a traceback.
-        if value != value or value in (float("inf"), float("-inf")):
-            interp.fail(f"cannot convert {to_display(value)} to an int", pos)
+        # Every Vine float is finite, so every one of them has an int. The
+        # guard that used to stand here was tick 3's, against nan and inf
+        # reaching Python's int() and raising; those two stopped being values
+        # in tick 6, and the fence moved to where they were born.
         return int(value)
     if kind == "bool":
         return 1 if value else 0
@@ -106,9 +116,17 @@ def _float(interp, pos, args):
             interp.fail("int is too large to convert to a float", pos)
     if kind == "string":
         try:
-            return float(value.strip())
+            result = float(value.strip())
         except ValueError:
             interp.fail(f"cannot convert {to_repr(value)} to a float", pos)
+        if result != result or result in (INFINITY, -INFINITY):
+            # "inf", "nan" and "1e400" all parse in Python, and none of the
+            # three is a Vine value. Same headline as a string that is not a
+            # number at all, because the answer is the same: no float here.
+            raise RuntimeError_(
+                f"cannot convert {to_repr(value)} to a float", pos, interp.source
+            ).help("every float is finite; the largest is about 1.8e308")
+        return result
     interp.fail(f"cannot convert {article(kind)} to a float", pos)
 
 

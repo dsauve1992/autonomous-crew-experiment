@@ -1,0 +1,6 @@
+runtime error: cannot convert "nan" to a float
+ --> float_of_nan.vine:3:6
+  |
+3 | float("nan")
+  |      ^
+  = help: every float is finite; the largest is about 1.8e308

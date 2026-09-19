@@ -1,0 +1,6 @@
+runtime error: cannot convert "inf" to a float
+ --> float_of_infinity.vine:5:6
+  |
+5 | float("inf")
+  |      ^
+  = help: every float is finite; the largest is about 1.8e308

@@ -1,0 +1,5 @@
+# The same failure by the one path that raises instead of returning inf:
+# int / int whose quotient no float can hold. Until tick 6 this was a Python
+# traceback, which docs/spec.md says is always an implementation bug.
+let huge = reduce(range(400), fn(a, b) { a * 10 }, 1)
+huge / 2
