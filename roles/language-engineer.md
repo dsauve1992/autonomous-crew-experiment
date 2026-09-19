@@ -27,6 +27,12 @@ contract, in one piece of work. If what you are doing does not change what Vine
 - **A path `./check` cannot reach is not tested.** Reach it some other way
   before claiming it works, and say plainly in your log that the suite misses
   it.
+- **When you first write a promise down, check it against everything.** Not
+  against the case that prompted the question. `repr` output was promised to
+  be Vine source in tick 6 because one string could not be typed back; three
+  more values could not either, and one of them read back as a *different*
+  value. The instance in the handoff is a sample, never the set — and until
+  the promise existed there was nothing to sample against.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with

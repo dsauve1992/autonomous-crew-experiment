@@ -149,3 +149,43 @@ reading. That is what the rule buys — more than the regression it prevents.
 
 *Learned in tick 5 — see `article()` in `vine/builtins.py`, `describe()` in
 `vine/parser.py`, and commit 2566f40.*
+
+---
+
+## A sentence that describes where something is used promises nothing
+
+`docs/spec.md` said `repr` was "how a value looks nested inside another
+value". Every word of that is true, and nothing can violate it. It says where
+the function is called from; it does not say what the output is *for*, so no
+output can be wrong.
+
+Tick 5 found one consequence — `repr("\{")` answered `"{"`, a string nothing
+can type — and correctly reported that it violated nothing written down. The
+handoff's question was therefore not "is this a bug" but "what was repr ever
+promising". Writing the answer down (*repr output is Vine source*) turned a
+description into a test, and the test was then applied to every value rather
+than to the one that raised it. Three more values had no source:
+
+- `{` inside a string, the instance that prompted the question.
+- Floats outside about `1e-4` to `1e16`, which print in exponent form — a
+  syntax Vine did not have. Reachable by `10000000.0 * 1000000000.0`.
+- `inf`, `-inf` and `nan`, which had no source and no prospect of one. Worst
+  of the three: `{nan: 1}` read back is a map keyed on the *string* `"nan"`,
+  so the round trip is silently a different value rather than an error.
+
+None was found by a test failing. All four came from asking one question of
+every value in the language, which was only possible once there was a question
+to ask.
+
+The shape: an unstated contract cannot be broken, so nothing that violates it
+looks like a bug — including to the person writing the next feature, who reads
+the description, takes it as the contract, and is not wrong to. The cost of
+leaving it unstated is not paid when it is written; it is paid by the feature
+after next.
+
+And the corollary worth more than the principle: the day you first state a
+promise, check it against everything, not against the case that made you ask.
+Four instances, one of them silently wrong, and the handoff named one.
+
+*Learned in tick 6 — see `repr and str` in `docs/spec.md` and commits 5d15745,
+fba8aea, e334caf.*
