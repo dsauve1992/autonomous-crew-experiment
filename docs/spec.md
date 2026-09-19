@@ -251,7 +251,8 @@ if cond { ... } else if cond { ... } else { ... }
   evaluate to nil and are most of what anyone types at a prompt, so echoing
   `nil` after each would be noise. Silence means nil. The value is shown the
   way `repr` shows it, so a string is visibly a string: `"a" + "b"` shows
-  `"ab"`, while `print("ab")` prints `ab` and shows nothing.
+  `"ab"`, while `print("ab")` prints `ab` and shows nothing. What the prompt
+  echoes is Vine source (see **repr and str**), so it can be pasted back.
 - **Bindings persist**, because the session shares one top-level scope.
   Re-binding a name works exactly as a second `let` in one scope does in a
   file (see Bindings), and `let x = x + 1` sees the old `x`: a binding lands
@@ -296,6 +297,67 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 `reverse(s)` `contains(s, sub)`
 
 `push` and `set` return new values; nothing in Vine mutates.
+
+## repr and str
+
+Vine turns a value into text two ways, and what separates them is who reads it.
+
+`str(x)` is for a person, and `"{x}"` is the same conversion (see **Strings**):
+`str("north")` is `north`. `repr(x)` is **Vine source for the value**:
+`repr("north")` is `"north"`, quotes and all. Stated exactly —
+
+> for any value `v` holding no function, `repr(v)` is a Vine expression, and
+> evaluating it gives a value `==` to `v`.
+
+That is what every escape in `repr` is for, and it is the promise `repr` had
+been quietly failing. Before tick 6 the prompt answered this:
+
+```
+>>> "\{"
+"{"
+```
+
+The REPL echoes a value the way `repr` shows it, so it was printing a string
+nothing could type: paste it back and Vine says `unterminated string`. Three
+values were in that state, all the same shape — no way to write them down:
+
+- `{` in a string, since interpolation made it structural. It is escaped now.
+- Floats outside roughly `1e-4` to `1e16`, which print in exponent form.
+  Numbers gained an exponent, so they are writable (see **Literals**).
+- `inf`, `-inf` and `nan`, which had no source and no prospect of one. So they
+  stopped being values instead: a literal too large is a syntax error,
+  arithmetic that overflows is a runtime error, and `float("inf")` is refused.
+  Vine had already answered `division by zero` rather than `inf`, so this is
+  the rule it was half keeping. The cost is that no Vine program can hold a
+  float beyond about `1.8e308` even briefly, which is the price of every value
+  being writable, and it is small.
+
+**Functions are the exception, and the only one.** A closure is its parameters,
+its body *and* the environment it captured; no expression denotes that. One
+reprs as `<fn name/arity>`, which is deliberately not parseable, so it cannot
+be mistaken for source that would work.
+
+### Inside a container
+
+A container reprs its elements, no matter which conversion was asked of the
+container itself:
+
+```
+let xs = ["a", "b"]
+str(xs)      # ["a", "b"]
+"{xs}"       # ["a", "b"]
+xs[0]        # a
+```
+
+So one call to `str` uses both conversions, at different depths. That reads as
+an inconsistency and is not. `str` of a string is its text, because the reader
+wants the text. `str` of a list is a description of a list, and a description
+with its strings flattened into text could not be read back: the one-element
+list holding `a, b` and the two-element list holding `a` and `b` would both
+come out `[a, b]`. The rule is that the outermost value is converted
+for its reader and everything nested inside it is converted as source — which
+is what "how a value looks nested inside another value" had always meant,
+without ever saying what it was for.
 
 ## Errors
 

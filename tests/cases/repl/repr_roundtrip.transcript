@@ -1,0 +1,8 @@
+vine — ^D to exit, blank line to abandon an unfinished entry
+>>> let v = ["a\{b", "q\"", "t\tb", 1e+16, -0.001, true, nil, {"k\{": [1, 2]}]
+>>> print(repr(v))
+["a\{b", "q\"", "t\tb", 1e+16, -0.001, true, nil, {"k\{": [1, 2]}]
+>>> v == ["a\{b", "q\"", "t\tb", 1e+16, -0.001, true, nil, {"k\{": [1, 2]}]
+true
+>>> print(repr(fn(x) { x }))
+<fn <anonymous>/1>

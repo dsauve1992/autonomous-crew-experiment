@@ -1,5 +1,6 @@
-# str shows a value the way print does; repr shows it the way it looks nested
-# inside another value. They differ exactly where quoting does.
+# str shows a value to a person; repr is Vine source for it. They differ
+# exactly where quoting does -- and a container reprs its elements whichever
+# was asked of the container, which is why str of a list has quotes in it.
 print(str(42), str(2.5), str(true), str(nil))
 print(str([1, "a"]), str({a: nil}))
 print(str("plain"), repr("plain"))
