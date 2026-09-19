@@ -1872,12 +1872,18 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Twelve rules, and every help is one of them. They live in `vine/rules.py` for
-the reason the float ceiling gives above: a rule written at the raise site
-that needed it is found only by someone already standing at that raise site,
-and the next message to need it is somewhere else. Each is listed against the
-section that states it at length, because a help is a reminder of this
-document and never a replacement for it.
+Thirteen rules, and every help is one of them. Twelve live in
+`vine/rules.py` for the reason the float ceiling gives above: a rule written
+at the raise site that needed it is found only by someone already standing at
+that raise site, and the next message to need it is somewhere else. Each is
+listed against the section that states it at length, because a help is a
+reminder of this document and never a replacement for it.
+
+The thirteenth is the command line's, and it is elsewhere because a problem
+with the command line has no position and so no report to hang a help on —
+`vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
+it. It is a rule offered for the same reason as the other twelve, so it is on
+the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
 - `every float is finite; the largest float is about 1.8e308` — **repr and str**
@@ -1891,6 +1897,7 @@ document and never a replacement for it.
 - `'\u{d800}' to '\u{dfff}' are reserved and are not text; a string holding one could not be printed` — **Strings**
 - `a literal brace is written '\{'` — **Strings**
 - `a hole holds one expression, with no format after it; for decimal places write "{fixed(x, 2)}"` — **Formatting**
+- `vine's options are -e, -h/--help and -v/--version; any other argument is a file name` — **Running it**
 
 The list is exhaustive in both directions, and `tests/properties/help_roster.py`
 is what holds it there. A rule Vine prints and this list does not name is an

@@ -2,7 +2,15 @@
 
 A help is a rule of the language -- `docs/spec.md` says so and uses the split
 to keep a guess from being printed in the voice of a fact -- so the set of
-them is finite, and **The rules a report may offer** writes it out. Twelve.
+them is finite, and **The rules a report may offer** writes it out. Thirteen.
+
+Twelve come from a report. The thirteenth is `vine/cli.py`'s, and finding it
+is why this property runs the command line as well: a problem with the command
+line has no position and so no `VineError`, so that file writes the
+` = help: ` prefix out as text. It was held by one golden, and the comment
+above it asks whoever changes `note_lines()` to remember this line -- which is
+a request, not a check. Reading it back out of the CLI's own stderr is the
+check, and it fails if either end of that coupling moves.
 
 Both directions, and the second is the one that needed a machine.
 
@@ -45,15 +53,19 @@ read. Twelve bullets, and a roster reworded so the parse finds eleven fails
 here rather than quietly checking a shorter list.
 
 The programs are `note_and_help_shape.py`'s -- 74,330 from the type grid and
-twelve hand-written mistakes. What that reaches, and what it does not, is in
-that file's docstring; it reaches all twelve rules, which is the only thing
-this property needs of it.
+thirteen hand-written mistakes -- and they reach every one of the 36 `.note(`
+and `.help(` sites in `vine/`. What the grid alone does not reach is in that
+file's docstring. Beside them are the two command lines that carry the
+thirteenth rule, run in-process for their stderr.
 """
 
+import contextlib
+import io
 import pathlib
 import re
 
 from note_and_help_shape import reports
+from vine import cli
 
 CLAIM = (
     "every help a Vine program can print is named in the roster in "
@@ -65,7 +77,7 @@ SPEC = pathlib.Path(__file__).resolve().parent.parent.parent / "docs" / "spec.md
 HEADING = "### The rules a report may offer"
 
 # How many rules there are. Exact on purpose -- see the docstring.
-EXPECTED = 12
+EXPECTED = 13
 
 # A roster line: the rule in backticks, then the section that states it, bold.
 ENTRY = re.compile(r"^- `(.+)` — \*\*(.+)\*\*$")
@@ -95,6 +107,17 @@ def headings():
     }
 
 
+# Command lines whose refusal carries the rule about options. Both sides of
+# `option_rule`: an argument that looks like an option, and two programs one
+# of which does. A command line with no `-` in it gets no help, which is the
+# case `cli_exit_contract.py` and `running_it.cli` already stand over.
+COMMAND_LINES = [["--nope"], ["--", "tests/fixtures/greet.vine"]]
+
+# The prefix `render()` puts on an extra line, which vine/cli.py writes out
+# by hand because it has no report to render.
+EXTRA = re.compile(r"^ *= (\w+): (.*)$")
+
+
 def printed():
     """The help texts and the note texts the enumeration printed, each with a
     program that printed it."""
@@ -102,6 +125,17 @@ def printed():
     for source, error in reports():
         for label, text, _ in error.notes:
             (helps if label == "help" else notes).setdefault(text, source)
+    for argv in COMMAND_LINES:
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            cli.main(argv)
+        for line in stderr.getvalue().splitlines():
+            match = EXTRA.match(line)
+            if match:
+                label, text = match.groups()
+                (helps if label == "help" else notes).setdefault(
+                    text, "vine " + " ".join(argv)
+                )
     return helps, notes
 
 

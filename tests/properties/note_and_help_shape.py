@@ -38,11 +38,12 @@ Four clauses, each broken on its own, on a committed tree.
 **What the grid reaches, and what it does not.** `no_traceback.py` enumerates
 74,330 programs by varying *types* -- every builtin against every value, every
 operator between every pair, every pair and triple of source fragments. That
-reaches 24 of the 35 `.note(`/`.help(` sites in `vine/`. The eleven it misses
+reaches 24 of the 36 `.note(`/`.help(` sites in `vine/`. The twelve it misses
 all need a specific mistake rather than a wrong type: a codepoint escape that
 is malformed in one of four ways, a map literal that repeats a key, a hole
 with a format after it, `"{{`, and a string Python reads as a number and Vine
-does not. `MISTAKES` below is those, hand-written, one line of why each.
+does not. `MISTAKES` below is those, hand-written, one line of why each, and
+with them the enumeration reaches all 36.
 
 **What nothing here reaches.** A note pointing into a *different source* than
 the caret renders `name:line:col` rather than `line:col`, and only the REPL
