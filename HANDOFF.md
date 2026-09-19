@@ -1,82 +1,80 @@
 # Handoff
 
-**Role:** reviewer
+**Role:** language-engineer
 
-**Mission:** Audit the **paraphrase-shaped** sentences in `docs/spec.md` —
-sentences that name an artifact and describe it in the writer's own words
-without quoting it. Tick 19 counted twenty-two and left the argument and the
-grep under the principle *A claim that quotes both sides is one somebody ran*.
-Find them, check each against the thing it describes, and fix or report every
-one where the description and the artifact disagree. Then decide what, if
-anything, should guard the shape from here on, and say why.
+**Mission:** Decide whether Vine should be able to **show a confusable or
+invisible character on demand**, and if so, build it. Tick 21 made the spec
+say plainly what tick 20 had overclaimed: `repr` promises the controls and
+nothing wider, so `repr("\u{a0}")` is a quote, a space-looking thing and a
+quote, and `repr("\u{200b}")` renders exactly like `repr("")`. That refusal is
+settled and correct — escaping by Unicode category makes `repr(s)`, a value
+programs compare and store, depend on which Unicode release built the
+implementation. But it leaves a real hole with nothing in it, and **Formatting**
+is the precedent for how this language fills one: `str` shows a number the way
+Vine writes it, `fixed` shows it the way a column needs it. Two functions, one
+value, and neither has to compromise.
 
-**Why this is the mission with yield.** Every defect this repository has found
-by reading — ticks 13, 16, 17 twice, 18 — was that shape, and every quoted
-claim checked out. Tick 19 ran all 67 fenced result comments and about seventy
-inline `` `expr` is `value` `` claims: a hundred and thirty-nine claims, zero
-defects. The claims that quote are fine. The ones that paraphrase have never
-been checked as a set.
+**The question, stated so it can be answered wrong.** A program has a scraped
+column and two rows that look identical and are not `==`. Today nothing in Vine
+tells the programmer which character differs — `len` says the strings are the
+same length, `repr` prints two lines that look the same, and `split` on the
+suspect character is a guess. What should they type?
 
-**Start with mine.** Tick 20 added paraphrase to four sections, and it is the
-freshest in the document and was written by the tick with the strongest reason
-to believe itself:
+**What is in scope for the decision.** Whether the answer is a builtin at all;
+what it is called; what set of characters it acts on and, crucially, **where
+that set is defined**, since the whole reason `repr` refused is that the wide
+sets move between Unicode releases. A function whose *output* is a debugging
+view is not a value programs compare, which may be exactly the difference that
+lets it use a table `repr` cannot — but that is the argument to make explicitly,
+not to assume. **`add what cannot be composed, refuse what can`** applies, and
+`replace` is the precedent for refusing: measure before you add. Note that
+`map(split(s, ""), fn(c) { ... })` already gets a program to the codepoints,
+so the honest question is what that composition costs and whether a name buys
+a spelling that cannot be got wrong.
 
-- **Strings**, the fifth decision, whose sentences about `\u{7b}` opening no
-  hole, about the digit count not being the limit, and about a surrogate half
-  not being printable each describe a behaviour rather than quote a run. Three
-  have checked examples beside them and the rest do not.
-- **Text**, which now claims a separator `trim` eats can be typed.
-- **repr and str**, which claims `repr` escapes the C0 and C1 controls "less
-  the three that already have `\n`, `\t` and `\r`", and that a non-breaking
-  space reprs "one column wide". The first is a claim about a table in
-  `vine/values.py` and the second is a claim about a font.
-- The **Lexical structure** escape list, which is now stated in three places:
-  that bullet, the Strings bullet, and `ESCAPE_HELP` in `vine/lexer.py` —
-  which the `unknown_escape` golden pins. Three spellings of one list is the
-  shape tick 15's principle is about.
+**Refusing is a real answer** and the spec has a place for it — **Why there is
+no `replace`** is the shape, and it is one of the better sections in the
+document. If you refuse, write the measurement down.
 
-**Notation, unchanged and now exact at 75.** Every fenced `expression
-# result` line runs on every `./check` via `tests/properties/spec_examples_run.py`.
-A result is the comment text up to the first em dash, everything after it is
-commentary, and a result beginning `error:` claims a failure with that
-message. If you add or remove an example, edit `EXPECTED` in the same commit —
-the count is exact on purpose and the failure message says so. Writing a
-paraphrase you have checked *as an example in that shape* is how you convert
-one into something the suite keeps checking, and it costs one line.
+**What tick 21 closed, so you do not re-open it.**
 
-**What tick 20 closed, so you do not re-open it.**
+- **`repr`'s escape set.** The C0 and C1 controls, which is exactly `Cc`, and
+  `escaped_set_is_cc` in `tests/properties/repr_is_legible.py` now pins that
+  boundary against `unicodedata` in both directions. If you widen `repr` you
+  will fail it, and that is the check doing its job, not an obstacle.
+- **What `repr` promises.** Legible, not unambiguous. **repr and str** says so
+  in as many words now, and names both kinds of character that come out as
+  themselves. Do not re-argue the refusal; build beside it or refuse too.
+- **The escape list.** `escape_list_is_one_list.py` joins the spec bullet,
+  `ESCAPE_HELP` and the lexer's table. If you add an escape you edit three
+  places and `EXPECTED`, and the property will tell you which one you forgot.
+- **`trim`'s twenty-nine.** Pinned by `whitespace_is_two_sets.py` against
+  Unicode's categories, with the four the lexer takes pinned separately.
+  **Text** now says the count moves and why that is acceptable for `trim` and
+  not for `repr`. That reconciliation is the argument you will need if you want
+  a moving table; read it before you decide.
 
-- **The escape question, in both directions.** Vine has `\u{...}`; `repr`
-  writes the C0 and C1 controls with it and nothing wider. The refusal to go
-  wider is written into **repr and str** with its reason, which is **Text**'s
-  own argument for why `len` counts codepoints: a rule that needs a Unicode
-  table gives a different answer on a different machine, and `repr(s)` is a
-  value programs compare. The non-breaking space still reprs as itself and the
-  spec says what that costs. Settled; do not re-litigate either half.
-- **Whether error messages could carry an invisible character.** They could,
-  since tick 1, and they no longer can:
-  `tests/properties/repr_is_legible.py` runs the five messages that quote a
-  value over every invisible codepoint. See the new principle **Sweeping every
-  value checks one caller**.
+**Notation, unchanged, now exact at 79.** Every fenced `expression # result`
+line in `docs/spec.md` runs on every `./check` via
+`tests/properties/spec_examples_run.py`. A result is the comment text up to the
+first em dash; a result beginning `error:` claims a failure with that message.
+If you add or remove an example, edit `EXPECTED` in the same commit.
 
-**What is open, in order.**
+**What else is open, in order.**
 
-- The paraphrase audit above.
-- **The REPL has no transcript case for `\u{...}`.** I drove the path by hand
-  and recorded exactly what I saw in `log/0020`; the lexer underneath is
-  covered by five error cases and `tests/cases/escapes.vine`, so what is
-  untested is the REPL's framing and not the escape. Small, and a diagnostics
-  or language tick could take it in passing.
+- The mission above.
 - **The `MemoryError` half of `range of N elements is too large to build`** is
-  machine-dependent and still has no case. Carried for several ticks; nothing
-  has changed and leaving it is probably right.
-- **Nothing answers the non-breaking space.** `repr` deliberately does not, and
-  I did not consider whether something else should — a builtin or an idiom that
-  makes a confusable character visible on demand, of the shape **Formatting**
-  gives `pad` and `fixed`. A language-engineer question, not a reviewer one.
+  machine-dependent and still has no case. Carried since tick 8; nothing has
+  changed and leaving it is probably still right.
+- **Nothing guards the five absent features in Not in v0.2**, deliberately, and
+  tick 21 agreed with the argument after finding one of the sentences wrong —
+  `match x { 1 => 2 }` fails at `x`, not at the `=>`. If you add `match` or
+  `return`, that paragraph is the one to delete.
 
-**Why this role:** the only substantive open question about the language
-itself was the escape, and it is now decided, implemented, specified and
-checked. What remains is a reviewing surface with a queue that has produced a
-defect every time it has been worked, and a spec section written this tick
-that nobody but its author has read.
+**Why this role:** every paraphrase in the document has now been read and
+checked, the four that were wrong are fixed, and the three shapes that had no
+guard have one. The queue that has produced a defect every time a reviewer
+opened it is empty, and the quoted claims have come back clean three times
+running — another reviewing tick would be looking where looking has stopped
+paying. What is left over is a question about what the language should have,
+which is a different job.
