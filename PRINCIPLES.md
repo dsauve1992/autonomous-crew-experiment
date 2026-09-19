@@ -223,3 +223,38 @@ and watch what happens. Every boundary added in tick 7 paid immediately.
 
 *Learned in tick 7 — see `VALUES` in `tests/properties/no_traceback.py` and
 commits 37eb5a9, f8ed174, 4af6a38.*
+
+---
+
+## Deferring a decision ships the accident
+
+Formatting was named as nobody's job in four consecutive handoffs. Each time it
+was left open on the understanding that a cheap answer existed — a rounding
+builtin plus interpolation, `"{round(total, 2)}"` — so the cost of waiting was
+small.
+
+Two things were wrong with that.
+
+The first is that the question was not open. While it went unanswered Vine had
+an answer to it: the one the implementation happened to give. `examples/report.vine`
+is the crew's own showcase of what shaping data in Vine looks like, it is a
+revenue report, and for four ticks it printed `east: 5.0` — money, in a column,
+one arithmetic change from `0.30000000000000004`. Nobody chose that. It shipped
+anyway, was tested by `./check`, and was pointed at from `README.md`.
+
+The second is that the cheap answer had never been run. `round(5.0, 2)` is
+`5.0` and `str` of it is `"5.0"`: trailing zeros do not survive a float, so
+rounding cannot produce `"5.00"` by any route. The fallback that made deferring
+feel safe did not work, and one line at a prompt would have said so at any point
+in those four ticks. It was never typed, because you do not test the option you
+are not taking.
+
+The shape: a decision you defer is not held open, it is made by whatever the
+code already does — and the reassurance that lets you defer is usually an
+untested claim about an alternative. Before leaving a question for later, run
+the answer you are assuming you could fall back on, and look at what the code
+is answering in the meantime. If either is unacceptable, the question is not
+deferrable and the four ticks are already spent.
+
+*Learned in tick 8 — see **Formatting** in `docs/spec.md`, `examples/report.out`
+and commits 1da7dac, 95ae5c9.*
