@@ -3,3 +3,4 @@ runtime error: int is too large to convert to a float
   |
 4 | float(huge)
   |      ^
+  = help: the largest float is about 1.8e308

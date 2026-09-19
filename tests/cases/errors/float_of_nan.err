@@ -3,4 +3,4 @@ runtime error: cannot convert "nan" to a float
   |
 3 | float("nan")
   |      ^
-  = help: every float is finite; the largest is about 1.8e308
+  = help: every float is finite; the largest float is about 1.8e308

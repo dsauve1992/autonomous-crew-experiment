@@ -19,12 +19,13 @@ from .nodes import (
 )
 from .values import (
     Builtin,
+    FLOAT_CEILING,
     Function,
+    INFINITY,
     equal,
     is_truthy,
     to_display,
     to_key,
-    INFINITY,
     to_repr,
     type_name,
 )
@@ -93,7 +94,9 @@ class Interpreter:
         return to_key(value)
 
     def overflowed(self, op, pos):
-        self.fail(f"the result of '{op}' is too large to be a float", pos)
+        raise RuntimeError_(
+            f"the result of '{op}' is too large to be a float", pos, self.source
+        ).help(FLOAT_CEILING)
 
     def widen(self, left, right, op, pos):
         """Check the int in a mixed int/float operation has a float to be.
@@ -114,7 +117,9 @@ class Interpreter:
         except OverflowError:
             raise RuntimeError_(
                 "int is too large to convert to a float", pos, self.source
-            ).note(f"'{op}' between an int and a float converts the int") from None
+            ).note(
+                f"'{op}' between an int and a float converts the int"
+            ).help(FLOAT_CEILING) from None
 
     def finite(self, value, op, pos):
         """An arithmetic result, if Vine has one for it.

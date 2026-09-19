@@ -3,3 +3,4 @@ runtime error: the result of '*' is too large to be a float
   |
 4 | print(1e300 * 1e300)
   |             ^
+  = help: the largest float is about 1.8e308

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 from .errors import Pos, SyntaxError_
-from .values import INFINITY
+from .values import FLOAT_CEILING, INFINITY
 
 KEYWORDS = {"let", "fn", "if", "else", "do", "true", "false", "nil", "and", "or", "not"}
 
@@ -306,7 +306,7 @@ class Lexer:
         if value in (INFINITY, -INFINITY):
             raise SyntaxError_(
                 "number too large to be a float", pos, self.src
-            ).help("the largest float is about 1.8e308")
+            ).help(FLOAT_CEILING)
         return Token("num", value, pos)
 
     def exponent_follows(self):

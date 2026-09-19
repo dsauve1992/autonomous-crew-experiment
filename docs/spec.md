@@ -1779,6 +1779,15 @@ A **help** offers a rule of the language because it is likely to be the one
 wanted. It carries no position, and it is never a claim about what the
 program meant.
 
+A help belongs on every message whose complaint the reader cannot check by
+eye. *Too large to be a float* is the case: seven messages say it — a
+literal past the ceiling, `float()` of an int or of `"1e400"`, `pow` on
+either side, an operator mixing an int with a float, and an arithmetic result
+— and *how large is allowed* is a rule of the language rather than a fact
+about the program, so each of them carries `the largest float is about
+1.8e308`. It is one string in `vine/values.py`, because three of the seven
+used to say it in two different sentences and four said nothing at all.
+
 That split is the contract, not decoration. The caret is where the failure
 was *detected*, which is not always where it was caused: a note may name the
 cause, and labelling the two differently is what keeps a message from

@@ -4,6 +4,13 @@
 # This exists so the three guards that keep them out can say so by name.
 INFINITY = float("inf")
 
+# The one place the float ceiling is written down. Seven messages tell a reader
+# something is too large to be a float, which is the one clause of such a
+# message they cannot check by eye; before tick 24 three of them said what the
+# limit was, in two different sentences, and four said nothing. See
+# PRINCIPLES.md on a rule recorded only where it was needed.
+FLOAT_CEILING = "the largest float is about 1.8e308"
+
 
 class Function:
     """A closure: parameters, body, and the environment it was created in.

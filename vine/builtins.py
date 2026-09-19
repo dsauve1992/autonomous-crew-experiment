@@ -5,9 +5,10 @@ import re
 
 from .errors import RuntimeError_
 from .values import (
-    INFINITY,
     Builtin,
+    FLOAT_CEILING,
     Function,
+    INFINITY,
     from_key,
     to_display,
     to_repr,
@@ -117,7 +118,7 @@ INT_TEXT = re.compile(r"[+-]?[0-9]+")
 FLOAT_TEXT = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
 
 NUMBER_RULE = "the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them"
-FINITE_RULE = "every float is finite; the largest is about 1.8e308"
+FINITE_RULE = f"every float is finite; {FLOAT_CEILING}"
 
 
 def revealed_note(error, value):
@@ -176,7 +177,9 @@ def _float(interp, pos, args):
         try:
             return float(value)
         except OverflowError:  # an int with more digits than a float can hold
-            interp.fail("int is too large to convert to a float", pos)
+            raise RuntimeError_(
+                "int is too large to convert to a float", pos, interp.source
+            ).help(FLOAT_CEILING) from None
     if kind == "string":
         text = value.strip(SPACE)
         error = RuntimeError_(
@@ -273,7 +276,9 @@ def _pow(interp, pos, args):
             except OverflowError:
                 raise RuntimeError_(
                     "int is too large to convert to a float", pos, interp.source
-                ).note("pow converts both of its arguments to a float") from None
+                ).note(
+                    "pow converts both of its arguments to a float"
+                ).help(FLOAT_CEILING) from None
     if base == 0 and exponent < 0:
         # 1 / 0, written the other way round. One fact, one headline -- and
         # the note, because nobody reading a line with no '/' in it goes
