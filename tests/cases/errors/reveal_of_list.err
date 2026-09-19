@@ -1,0 +1,5 @@
+runtime error: reveal argument must be a string, got list
+ --> reveal_of_list.vine:3:13
+  |
+3 | print(reveal(["east\u{a0}1", "east 1"]))
+  |             ^

@@ -1,0 +1,46 @@
+# reveal: repr, plus an escape for every character above ASCII. See
+# **Revealing**. Nothing in this file is pasted, and its golden holds no
+# character a reader cannot see -- which is the whole reason it exists.
+
+# Two rows a scrape produced. They are not ==, they measure the same, and
+# repr writes two lines of the same width.
+let scraped = "east\u{a0}1"
+let typed = "east 1"
+print(scraped == typed, len(scraped) == len(typed))
+print(len(repr(scraped)) == len(repr(typed)))
+print(reveal(scraped))
+print(reveal(typed))
+
+# Which position differs, and what is sitting there.
+let differs = filter(range(len(scraped)), fn(n) { scraped[n] != typed[n] })
+print(differs, reveal(scraped[first(differs)]))
+
+# Two spellings of one word: a precomposed e-acute, and an e with the accent
+# written after it.
+let one = "caf\u{e9}"
+let two = "cafe\u{301}"
+print(one == two, len(one), len(two))
+print(reveal(one), reveal(two))
+
+# A zero-width space is invisible outright, so repr of one is a line that
+# looks like repr of nothing.
+print(len(repr("\u{200b}")), len(reveal("\u{200b}")))
+print(reveal("\u{200b}"))
+
+# The quotes are part of the answer. A trailing space is invisible too, and
+# no escape set that keeps the output ASCII can show it.
+print(reveal("east "), reveal("east"))
+
+# Below U+007f reveal and repr are the same function.
+print(reveal("a\nb\tc") == repr("a\nb\tc"), reveal("\u{1e}\u{7f}") == repr("\u{1e}\u{7f}"))
+print(reveal("\"\\\{"))
+
+# reveal output is Vine source, the promise repr makes. The right-hand side
+# is that source spelled out one character at a time.
+let shown = reveal("a\u{a0}b")
+print(len(shown), shown == "\u{22}a\u{5c}u\u{7b}a0\u{7d}b\u{22}")
+
+# A column. A list reprs its elements, so a list of revealed strings would
+# escape their backslashes a second time; join them instead.
+let rows = ["east\u{a0}1", "east 1"]
+print(join(map(rows, reveal), " "))

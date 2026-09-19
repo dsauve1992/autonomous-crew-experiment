@@ -119,6 +119,37 @@ REPR_ESCAPES.update(
 )
 
 
+# The last codepoint `reveal` leaves alone. Everything above it is written as
+# a codepoint escape, on top of every escape `repr` already makes -- so
+# `reveal` output holds nothing but U+0020 through U+007E.
+#
+# `repr` refused a wider set because the wide notions of *invisible* are
+# Unicode categories, and a category is a table that moves between releases;
+# `repr(s)` is a value a program stores and compares, so it may not move. This
+# boundary is not a category. Printable ASCII is frozen and was frozen before
+# Unicode existed, so `reveal` can be wider than `repr` without taking on the
+# thing `repr` refused. See `Revealing` in docs/spec.md.
+REVEAL_CEILING = 0x7E
+
+
+def to_reveal(s):
+    """Vine source for a string in which every character can be seen.
+
+    `repr` plus one rule: a codepoint above `REVEAL_CEILING` is written as an
+    escape too. `repr` already escapes everything below U+0020 and U+007F
+    through U+009F, so what is left as itself is exactly printable ASCII.
+
+    The quotes are part of it and not decoration. A trailing space is as
+    invisible as a zero-width one, and no escape set that keeps ASCII
+    printable can show it; the closing quote is what shows it.
+    """
+    body = "".join(
+        REPR_ESCAPES.get(ch, ch) if ord(ch) <= REVEAL_CEILING else f"\\u{{{ord(ch):x}}}"
+        for ch in s
+    )
+    return f'"{body}"'
+
+
 def to_repr(v):
     """Vine source for a value -- see `repr and str` in docs/spec.md.
 

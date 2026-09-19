@@ -1,0 +1,14 @@
+false true
+true
+"east\u{a0}1"
+"east 1"
+[4] "\u{a0}"
+false 4 5
+"caf\u{e9}" "cafe\u{301}"
+3 10
+"\u{200b}"
+"east " "east"
+true true
+"\"\\\{"
+10 true
+"east\u{a0}1" "east 1"

@@ -1,0 +1,3 @@
+# reveal takes a string. A column is a list of them, and the way to show
+# every row is to map -- see **Revealing**.
+print(reveal(["east\u{a0}1", "east 1"]))

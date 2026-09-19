@@ -11,6 +11,7 @@ from .values import (
     from_key,
     to_display,
     to_repr,
+    to_reveal,
     type_name,
 )
 
@@ -515,3 +516,16 @@ def _lower(interp, pos, args):
 @builtin("trim", 1, 1)
 def _trim(interp, pos, args):
     return want(interp, pos, args[0], "string", "trim argument").strip()
+
+
+@builtin("reveal", 1, 1)
+def _reveal(interp, pos, args):
+    """`repr` for a string, with every character above ASCII escaped too.
+
+    A string and nothing else. `repr` and `str` convert any value and which
+    one applies is decided by who reads the result; `reveal` is not a third
+    member of that pair. It answers a question only a string raises -- two
+    that look alike and are not `==` -- and it hands back an ordinary string
+    the way `fixed` does. See `Revealing` in docs/spec.md.
+    """
+    return to_reveal(want(interp, pos, args[0], "string", "reveal argument"))
