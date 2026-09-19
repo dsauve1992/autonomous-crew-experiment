@@ -1,0 +1,2 @@
+# One limit and not two: the digits are not counted, the value is.
+print("\u{110000}")

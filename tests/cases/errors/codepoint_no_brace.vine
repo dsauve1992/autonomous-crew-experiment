@@ -1,0 +1,2 @@
+# \u carries an argument, so it is the one escape that can be half-written.
+print("a\uffb")

@@ -1,0 +1,5 @@
+syntax error: codepoint escape '\u{110000}' is past the last codepoint, '\u{10ffff}'
+ --> codepoint_too_large.vine:2:8
+  |
+2 | print("\u{110000}")
+  |        ^

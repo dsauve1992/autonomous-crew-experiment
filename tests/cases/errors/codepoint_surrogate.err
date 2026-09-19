@@ -1,0 +1,6 @@
+syntax error: codepoint escape '\u{d800}' is a surrogate half, which is not a character
+ --> codepoint_surrogate.vine:2:8
+  |
+2 | print("\u{d800}")
+  |        ^
+  = help: surrogates exist only inside UTF-16; a string holding one could not be printed

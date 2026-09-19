@@ -1,0 +1,7 @@
+syntax error: expected '}' to close a codepoint escape
+ --> codepoint_unclosed.vine:2:13
+  |
+2 | print("a\u{1g}b")
+  |             ^
+  = note: the escape was opened by the '\u' at 2:9
+  = help: a codepoint is written '\u{1e}' -- hex digits in braces

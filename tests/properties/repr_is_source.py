@@ -34,7 +34,8 @@ CLAIM = (
 
 # Scalars, chosen for the ways a value has been hard to write down before:
 # floats that print in exponent form at both ends, an int with no float, the
-# escapes, the brace interpolation made structural, a key of every type.
+# escapes, the brace interpolation made structural, a key of every type,
+# and the characters a reader cannot see.
 SCALARS = [
     "nil", "true", "false",
     "0", "1", "-1", "255", "1" + "0" * 40,
@@ -42,6 +43,11 @@ SCALARS = [
     "1e16", "1e-4", "1e15 * 10", "1.7e308", "1e-320", "1e-323",
     '""', '"s"', '"a b"', '"\\n"', '"\\t"', '"\\r"', '"\\""', '"\\\\"',
     '"\\{"', '"}"', '"{1}"', '"café"', '"a\\nb\\tc"', '"\\\\n"',
+    # Codepoints nobody can see, which repr writes as escapes since tick 20,
+    # and the two beside them it writes as themselves. The last is the escape
+    # spelt out as text, since `repr` of it has to escape its own backslash.
+    '"\\u{0}"', '"\\u{1e}"', '"a\\u{1e}b"', '"\\u{7f}"', '"\\u{85}"', '"\\u{9f}"',
+    '"\\u{a0}"', '"\\u{2028}"', '"\\u{10ffff}"', '"\\u{1f600}"', '"\\\\u\\{1e}"',
 ]
 # Values the language produces rather than the user typing them.
 COMPUTED = [

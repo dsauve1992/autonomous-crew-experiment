@@ -1,0 +1,2 @@
+# A surrogate half is not a character; a string holding one cannot print.
+print("\u{d800}")

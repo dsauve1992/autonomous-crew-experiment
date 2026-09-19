@@ -1,0 +1,6 @@
+syntax error: expected '{' after '\u'
+ --> codepoint_no_brace.vine:2:9
+  |
+2 | print("a\uffb")
+  |         ^
+  = help: a codepoint is written '\u{1e}' -- hex digits in braces

@@ -1,0 +1,6 @@
+syntax error: a codepoint escape needs at least one hex digit
+ --> codepoint_no_digits.vine:2:9
+  |
+2 | print("a\u{}b")
+  |         ^
+  = help: a codepoint is written '\u{1e}' -- hex digits in braces

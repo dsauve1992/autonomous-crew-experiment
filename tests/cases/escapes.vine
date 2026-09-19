@@ -1,0 +1,31 @@
+# Codepoint escapes: \u{H...}, hex digits in braces. See **Strings**.
+# Nothing in this file is pasted, and its golden holds no character a reader
+# cannot see -- which is the whole reason the escape exists.
+
+# Either case of hex, and the digit count is not the limit; the value is.
+print("\u{48}\u{49}", "\u{000000000048}" == "H", "\u{6a}" == "\u{6A}")
+
+# Both ends of the range, and one codepoint past the BMP.
+print(len("\u{0}"), len("\u{10ffff}"), "\u{1f600}" == "😀")
+
+# An escape makes a character and never syntax: \u{7b} is a brace that opens
+# no hole, \u{22} a quote that ends no string, \u{5c} a backslash that
+# escapes nothing.
+print("\u{7b}1 + 1\u{7d}", len("a\u{22}b"), len("\u{5c}n"))
+
+# The characters the escape is for, which trim removes and nobody can see.
+print(len(trim("\u{1e}x\u{1e}")), len(trim("\u{a0}x")), len(trim("\u{2028}x")))
+
+# repr writes a control as an escape and everything else as itself. The
+# non-breaking space is not a control, so it stays -- see **repr and str**.
+print(repr("a\u{1e}b"), repr("\u{7f}"), repr("\u{9f}"))
+print(repr("\u{a0}") == "\u{22}\u{a0}\u{22}", len(repr("\u{a0}")))
+
+# The named escapes keep the short spelling; repr does not write \u{a} for a
+# newline. The count is repr's output for a NUL: quote, backslash, u, brace,
+# 0, brace, quote.
+print(repr("\n\t\r"), len(repr("\u{0}")))
+
+# Round trip, and an escape inside a string inside a hole.
+let s = "a\u{1e}b\u{0}c"
+print(len(s), "{s}" == s, len("{"\u{1e}"}"))

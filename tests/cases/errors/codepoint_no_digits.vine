@@ -1,0 +1,2 @@
+# The braces are not optional and neither is what goes between them.
+print("a\u{}b")

@@ -1,0 +1,2 @@
+# 'g' is not a hex digit, so the digits stop there and the '}' is missing.
+print("a\u{1g}b")
