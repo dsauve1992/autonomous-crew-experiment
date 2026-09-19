@@ -14,6 +14,14 @@ What it has caught, in tick 7: `huge + 2.5` where huge is an int no float can
 hold (four operators), `range(2 ** 63)`, and expressions nested past the
 Python stack (nine constructs, three entry paths). Tick 6 found five more with
 the first version of it, which lived in a scratch file and was thrown away.
+
+The last value in VALUES is the one boundary here that has never caught
+anything: a list holding a float beside an int no float can hold. Tick 7's
+`huge + 2.5` bug was arithmetic converting the int and Python raising where it
+could not; tick 10 added `sort(xs, key)`, which puts those two values on
+either side of a `<` instead, and wanted the same boundary watched from then
+on rather than checked once by hand. Comparison converts nothing, so it is
+quiet -- and quiet is the answer this file exists to keep getting.
 """
 
 import io
@@ -30,12 +38,14 @@ CLAIM = "every failure a Vine program can reach is a Vine error, not a Python tr
 # Ordinary values, and the ones that sit on a seam. The first twelve are tick
 # 6's; everything after them is a boundary some part of the implementation
 # treats specially -- an int with no float, the largest float, a float that
-# underflows, an empty container, a container needing a key, a function value.
+# underflows, an empty container, a container needing a key, a function value,
+# and a list holding two representations that have to be compared to each other.
 VALUES = [
     "1", "2.5", '"s"', "true", "nil", "[1]", "{a: 1}", "fn(x) { x }",
     "[]", '""', "{}", "-1",
     "0", "0.0", "-0.0", "false", "1" + "0" * 400, "1.7e308", "1e-320",
     '"\\n"', "[[1]]", '[1, "a"]', "{1: 2}", "print", "[1, 2, 3]",
+    "[1.7e308, " + "1" + "0" * 400 + "]",
 ]
 
 BINARY = ["+", "-", "*", "/", "%", "==", "!=", "<", "<=", ">", ">=",
