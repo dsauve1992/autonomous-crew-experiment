@@ -1,0 +1,4 @@
+# A hole is lexed in the ordinary token stream, so a `#` inside one is a
+# comment and runs to the end of the line -- taking the closing quote with it.
+# Same fact as interp_newline_in_hole.vine, reached by a different character.
+let s = "count: {1 # one}"

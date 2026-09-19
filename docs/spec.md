@@ -249,7 +249,12 @@ runtime error: cannot add string and int
 A hole may contain a string, which may contain a hole. It may not contain a
 newline: a string does not span lines, so a line ending inside a hole is an
 unterminated string rather than an unfinished expression — including at a
-prompt, where the entry is not continued.
+prompt, where the entry is not continued. Nor may it contain a `#`, for the
+same reason rather than a second one: a hole is lexed in the ordinary token
+stream, so a `#` inside it starts a comment, and the comment runs to the end
+of the line and takes the closing quote with it. Both report
+`unterminated string` at the quote that opened, which is where the string
+really did begin.
 
 Two mistakes this design makes easy. `"{"`, meant as a brace, opens a hole and
 then reads the closing quote as the start of another string. `"{{1}}"`,

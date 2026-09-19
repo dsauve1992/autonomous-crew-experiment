@@ -1,0 +1,5 @@
+syntax error: unterminated string
+ --> interp_comment_in_hole.vine:4:9
+  |
+4 | let s = "count: {1 # one}"
+  |         ^
