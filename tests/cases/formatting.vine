@@ -41,3 +41,6 @@ print("total: {fixed(total, 2)}")
 let pad = fn(s, w) { join(map(range(w - len(s)), fn(_) { " " }), "") + s }
 print("east:" + pad(fixed(5.0, 2), 9))
 print("north:" + pad(fixed(14.0, 2), 8))
+# A width the string is already past asks range for a negative count of
+# spaces, and gets none of them. pad has to be total to be a pad.
+print("wide:" + pad(fixed(14.0, 2), 3))

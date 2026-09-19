@@ -425,6 +425,15 @@ writes `take(xs, -1)` for *all but the last* — which is what the same
 expression means in Python — and an empty list would answer them without ever
 saying they had been misread.
 
+**`range` is a different question and gets a different answer.** `range(-1)`
+is `[]`, and so is `range(5, 2)`. That is not an inconsistency with the rule
+above: `range(a, b)` takes *bounds*, and it is the integers from `a` up to but
+not excluding `b`, of which there are none when `b` is not above `a`. A bound
+below the start has one reading; a count below zero has two. The spec leans on
+this already — the padding one-liner under **Formatting** asks for
+`range(w - len(s))` spaces, and is a pad rather than an error on a string
+already wider than `w` only because that answers `[]`.
+
 **The price is `take(xs, len(xs) - 1)`**, the short spelling of all but the
 last, which asks for `-1` elements of an empty list and so fails on exactly
 the input the totality above was for. The spelling that survives it reverses
