@@ -41,7 +41,13 @@ contract, in one piece of work. If what you are doing does not change what Vine
   one-liner the spec uses to refuse a padding builtin, which works and is now a
   golden, and typed the `"{x:.2f}"` the spec refuses, which answered correctly
   and uselessly and now names `fixed`. Every refusal you can run is improved by
-  running it. The ones you cannot run are the ones to word carefully.
+  running it. The ones you cannot run are the ones to word carefully. Then put
+  the run itself in the spec rather than a description of it: tick 10 refused
+  a comparator and refused "write the sort yourself", and what the spec carries
+  is the six-line sort by key written in Vine together with the fact that it
+  puts ties backwards, and the map workaround beside the `2` it answers for
+  three records. A reader who disagrees then has to argue with a run, and a
+  tick that overturns the rule overturns it knowing the price.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
