@@ -9,3 +9,9 @@ tests/fixtures/broken.vine
 nosuchfile.vine
 tests/fixtures/latin1.vine
 -e
+
+# A command line naming two programs. Vine ran the first and exited 0 on the
+# rest until tick 9; these two are the shapes that reach it, a second file and
+# a file beside -e.
+tests/fixtures/greet.vine tests/fixtures/broken.vine
+-e 'print(1)' tests/fixtures/greet.vine

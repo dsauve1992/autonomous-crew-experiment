@@ -14,8 +14,12 @@ functions, usually with the pipeline operator.
 python3 -m vine                 # open an interactive session
 python3 -m vine script.vine     # run a file
 python3 -m vine -e 'print(1+1)' # run one line
+python3 -m vine --version       # print the version
 ./check                         # run the test suite
 ```
+
+One program per command line. See **Errors** for what each way of ending
+means.
 
 ## Lexical structure
 
@@ -541,8 +545,13 @@ A Python traceback reaching the user is always a bug in the implementation.
 
 Running a file exits 0 when the program runs and 1 when it fails, with the
 report above on stderr. A problem with the command line itself — an unreadable
-file, or `-e` with nothing after it — exits 2 and is reported as `error: ...`
-with no position, because nothing has been parsed to have a position in.
+file, `-e` with nothing after it, or more than one program named at once —
+exits 2 and is reported as `error: ...` with no position, because nothing has
+been parsed to have a position in.
+
+One command line runs one program. `vine a.vine b.vine`, and `-e` beside a
+file, are refused rather than half-obeyed: running the first and ignoring the
+rest exits 0, which reports success for the part that never happened.
 
 ## Not in v0.2
 

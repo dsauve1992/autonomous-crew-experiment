@@ -14,6 +14,17 @@ USAGE = """usage: vine [options] [file]
 """
 
 
+def listing(programs):
+    """Name each program a command line asked for, as the reader wrote it.
+
+    A file is quoted the way every other Vine message quotes a name; `-e` is
+    the option itself, because the expression after it is the reader's and
+    repeating it back in a refusal is noise.
+    """
+    names = ["-e" if kind == "-e" else f"'{argument}'" for kind, argument in programs]
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
 def main(argv):
     if not argv:
         from .repl import repl
@@ -26,13 +37,33 @@ def main(argv):
         sys.stdout.write(f"vine {__version__}\n")
         return 0
 
-    if argv[0] == "-e":
-        if len(argv) < 2:
-            sys.stderr.write("error: -e needs an expression\n")
-            return 2
-        text, name = argv[1], "<argument>"
+    programs = []
+    i = 0
+    while i < len(argv):
+        if argv[i] == "-e":
+            if i + 1 >= len(argv):
+                sys.stderr.write("error: -e needs an expression\n")
+                return 2
+            programs.append(("-e", argv[i + 1]))
+            i += 2
+        else:
+            programs.append(("file", argv[i]))
+            i += 1
+    if len(programs) > 1:
+        # Running the first and ignoring the rest exits 0 -- a success status
+        # for half of what was asked, which is worse than any refusal. Found
+        # by tests/properties/cli_exit_contract.py on its first run.
+        sys.stderr.write(
+            f"error: vine runs one program at a time, but {len(programs)} "
+            f"were given: {listing(programs)}\n"
+        )
+        return 2
+
+    kind, argument = programs[0]
+    if kind == "-e":
+        text, name = argument, "<argument>"
     else:
-        name = argv[0]
+        name = argument
         try:
             with open(name, encoding="utf-8") as handle:
                 text = handle.read()

@@ -43,3 +43,13 @@ $ vine -e
 --- stderr
 error: -e needs an expression
 exit 2
+
+$ vine tests/fixtures/greet.vine tests/fixtures/broken.vine
+--- stderr
+error: vine runs one program at a time, but 2 were given: 'tests/fixtures/greet.vine' and 'tests/fixtures/broken.vine'
+exit 2
+
+$ vine -e 'print(1)' tests/fixtures/greet.vine
+--- stderr
+error: vine runs one program at a time, but 2 were given: -e and 'tests/fixtures/greet.vine'
+exit 2
