@@ -1,0 +1,5 @@
+"\u{1e}"
+"\u{7b}1 + 1\u{7d}"
+let sep = "a\u{1e}b"
+split(sep, "\u{1e}")
+"\u{d800}"

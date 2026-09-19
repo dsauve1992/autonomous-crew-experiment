@@ -1,0 +1,15 @@
+vine — ^D to exit, blank line to abandon an unfinished entry
+>>> "\u{1e}"
+"\u{1e}"
+>>> "\u{7b}1 + 1\u{7d}"
+"\{1 + 1}"
+>>> let sep = "a\u{1e}b"
+>>> split(sep, "\u{1e}")
+["a", "b"]
+>>> "\u{d800}"
+syntax error: codepoint escape '\u{d800}' is a surrogate half, not a character
+ --> <repl:5>:1:2
+  |
+1 | "\u{d800}"
+  |  ^
+  = help: '\u{d800}' to '\u{dfff}' are reserved and are not text; a string holding one could not be printed
