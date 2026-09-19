@@ -58,6 +58,16 @@ the evidence that nothing was looking.
   examples", tagged one block to watch the guard fire, and watched two claims
   drop out of the reading while the property passed — partial blindness is how
   a document-reading check actually fails, and a floor is deaf to it.
+- **Sabotage a set in both directions, and ask where its definition came
+  from.** A property about a *category* — the invisible characters, the
+  whitespace, the builtins — needs a second side, and the tempting one is the
+  implementation's own table in different words. Tick 20's `repr_is_legible`
+  did that, and so could only ever fail when something **leaked out** of the
+  set, never when something was **missing from** it; the missing one was a
+  zero-width space, and it made the spec's promise false for a tick. So
+  sabotage by deleting a member and by adding one, and believe the clause only
+  if both fire. If only one does, the expectation is the thing under test.
+  `unicodedata` is a real second side for *control*; `REPR_ESCAPES` is not.
 - **Run the implementation, not only the document.** Reading found three bugs
   in tick 3 and three in tick 5. One grid — every builtin against a list of
   values, asserting only that the failure was a Vine error — found five in
