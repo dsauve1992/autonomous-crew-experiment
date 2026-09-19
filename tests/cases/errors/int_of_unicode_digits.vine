@@ -1,0 +1,5 @@
+# Unicode has 760 decimal digits and Vine's lexer accepts one range of them.
+# `int` accepted all 760 until tick 15, because it handed the string to
+# Python. The help is here and not on `int("abc")` because every character of
+# this one was meant as part of a number.
+int("١٢٣")

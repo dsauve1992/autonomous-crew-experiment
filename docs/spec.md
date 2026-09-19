@@ -438,6 +438,51 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 
 `push` and `set` return new values; nothing in Vine mutates.
 
+Most of those groups have a section of their own — **Conversions**, **Text**,
+**Range**, **Powers**, **Taking and dropping**, **Sorting**, **repr and str**,
+**Formatting**. A builtin whose whole contract is its line of this roster has
+not been decided; it has been implemented, and the first program that asks it
+a question the roster does not answer will get whatever the implementation
+happens to do.
+
+## Conversions
+
+`str(x)` and `repr(x)` convert any value and never fail — see **repr and str**.
+`int(x)` and `float(x)` are the two that can, and what they accept is written
+out here because for fourteen ticks it was whatever Python accepted.
+
+`int` truncates a float towards zero, so `int(2.9)` is `2` and `int(-2.9)` is
+`-2`; a bool is `1` or `0`. `float` widens an int, and an int with more digits
+than a float can hold is an error rather than a rounded answer. Neither reads
+a list, a map, a function or `nil`.
+
+From a string:
+
+- **The digits are `0` to `9` and nothing else.** Unicode has 760 decimal
+  digits, and `int("١٢٣")` is an error rather than `123` — for the same reason
+  `let n = ١٢٣` is not a program. The lexer answered that question first and
+  this is the other half of it. An underscore is not a digit either:
+  `int("1_000")` is refused rather than read as a thousand, because that
+  spelling exists to make a *literal* readable in some languages, and a string
+  arriving as data spelled that way is a typo rather than a number.
+- **The space around the digits is the space a program may have.** A space, a
+  tab, a carriage return or a newline — not the twenty-nine characters Unicode
+  calls whitespace. `float` of `"2.5"` with a non-breaking space after it is an
+  error and not `2.5`. `trim` *does* remove that character; the two disagree on
+  purpose, and **Text** says why.
+- **The shape is wider than a literal's.** `".5"` and `"1."` both convert,
+  though neither is a number a program may write, and a leading `+` is allowed
+  though `+5` is not an expression Vine has. The lexer refuses the first two
+  because in a program a `.` is also the member operator and `1.` may begin
+  something longer; inside a string there is nothing else for either to be, and
+  a column of measurements contains `.5`.
+
+A string that is not a number by anyone's reading is refused with the headline
+alone: `cannot convert "abc" to an int`. One that Vine refuses and something
+else would read carries the rule as a help, because every character of
+`"1_000"` was meant as part of a number and the headline on its own reads like
+a mistake.
+
 ## Range
 
 `range(n)` is the integers from 0 up to but not including `n`, and

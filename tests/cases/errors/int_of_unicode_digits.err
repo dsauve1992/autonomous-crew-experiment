@@ -1,0 +1,6 @@
+runtime error: cannot convert "١٢٣" to an int
+ --> int_of_unicode_digits.vine:5:4
+  |
+5 | int("١٢٣")
+  |    ^
+  = help: the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them

@@ -1,0 +1,6 @@
+runtime error: cannot convert "2.5 " to a float
+ --> float_of_unicode_space.vine:6:6
+  |
+6 | float("2.5 ")
+  |      ^
+  = help: the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them

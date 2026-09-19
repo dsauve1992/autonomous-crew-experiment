@@ -1,0 +1,5 @@
+# `1_000` is how a *program* is allowed to write a thousand in some languages,
+# and Vine is not one of them: `let n = 1_000` lexes as `1` then the name
+# `_000`. So a string arriving as data spelled that way is a typo, and reading
+# it as a thousand would be the conversion deciding what the data meant.
+int("1_000")

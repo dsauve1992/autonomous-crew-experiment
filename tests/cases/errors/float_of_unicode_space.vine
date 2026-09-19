@@ -1,0 +1,6 @@
+# The space `float` skips is the space the lexer skips: a space, a tab, a
+# carriage return, a newline. Python's is 29 characters wide and this string
+# ends in one of the other 25 -- a non-breaking space, which prints as a space
+# and is not one. `trim` does remove it; the two disagree on purpose, and
+# **Conversions** says why.
+float("2.5 ")

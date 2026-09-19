@@ -1,6 +1,7 @@
 """The standard library. Every builtin receives (interp, pos, args)."""
 
 import math
+import re
 
 from .errors import RuntimeError_
 from .values import (
@@ -92,6 +93,32 @@ def _str(interp, pos, args):
     return to_display(args[0])
 
 
+# What `int` and `float` accept when handed a string, written out here rather
+# than left to Python.
+#
+# Vine's lexer already decided what a number looks like, and said so: ASCII
+# digits, because str.isdigit is Unicode-aware and would let `2²` lex as a
+# number. `int(s)` is the other half of that question and had never been asked
+# it, so it answered Python's way. `int("١٢٣")` was 123, and Unicode has 760
+# decimal digits it read like that. `int("1_000")` was 1000 -- Python's
+# spelling for a readable *literal*, honoured by a function that reads *data*,
+# where `1_000` is a typo and not a thousand. And the space tolerated around
+# the digits was Python's 29-character whitespace set, four of which are the
+# ASCII information separators, rather than the four the lexer skips.
+#
+# So the alphabet is Vine's. The *shape* stays Python's: `".5"` and `"1."` are
+# read, though neither is a literal a program may write. The lexer refuses
+# those two because in a program `.` is also the member operator and `1.` may
+# begin something longer; in a string there is nothing else for it to be, and
+# a column of measurements contains `.5`.
+SPACE = " \t\r\n"
+INT_TEXT = re.compile(r"[+-]?[0-9]+")
+FLOAT_TEXT = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
+
+NUMBER_RULE = "the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them"
+FINITE_RULE = "every float is finite; the largest is about 1.8e308"
+
+
 @builtin("int", 1, 1)
 def _int(interp, pos, args):
     value = args[0]
@@ -107,10 +134,19 @@ def _int(interp, pos, args):
     if kind == "bool":
         return 1 if value else 0
     if kind == "string":
+        text = value.strip(SPACE)
+        if INT_TEXT.fullmatch(text):
+            return int(text)
+        error = RuntimeError_(
+            f"cannot convert {to_repr(value)} to an int", pos, interp.source
+        )
         try:
-            return int(value.strip())
+            int(text)
         except ValueError:
-            interp.fail(f"cannot convert {to_repr(value)} to an int", pos)
+            raise error  # not a number by anyone's reading
+        # Python reads it and Vine does not, so every character in it is one
+        # somebody meant as part of a number and the headline looks wrong.
+        raise error.help(NUMBER_RULE)
     interp.fail(f"cannot convert {article(kind)} to an int", pos)
 
 
@@ -124,18 +160,25 @@ def _float(interp, pos, args):
         except OverflowError:  # an int with more digits than a float can hold
             interp.fail("int is too large to convert to a float", pos)
     if kind == "string":
+        text = value.strip(SPACE)
+        error = RuntimeError_(
+            f"cannot convert {to_repr(value)} to a float", pos, interp.source
+        )
+        if FLOAT_TEXT.fullmatch(text):
+            result = float(text)
+            if result != result or result in (INFINITY, -INFINITY):
+                # "1e400": the shape of a number, and past every float there
+                # is. Same headline as text that is not a number at all,
+                # because the answer is the same: no float here.
+                raise error.help(FINITE_RULE)
+            return result
         try:
-            result = float(value.strip())
+            result = float(text)
         except ValueError:
-            interp.fail(f"cannot convert {to_repr(value)} to a float", pos)
+            raise error  # not a number by anyone's reading
         if result != result or result in (INFINITY, -INFINITY):
-            # "inf", "nan" and "1e400" all parse in Python, and none of the
-            # three is a Vine value. Same headline as a string that is not a
-            # number at all, because the answer is the same: no float here.
-            raise RuntimeError_(
-                f"cannot convert {to_repr(value)} to a float", pos, interp.source
-            ).help("every float is finite; the largest is about 1.8e308")
-        return result
+            raise error.help(FINITE_RULE)  # "inf" and "nan", which Python reads
+        raise error.help(NUMBER_RULE)  # a number, spelled a way Vine does not
     interp.fail(f"cannot convert {article(kind)} to a float", pos)
 
 

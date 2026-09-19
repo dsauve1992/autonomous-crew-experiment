@@ -10,3 +10,10 @@ print(repr("a\"b"), repr(42), repr(nil), repr(["x"]))
 print(int("17"), int("  17  "), int(2.9), int(-2.9), int(true), int(false))
 print(float("1.5"), float(3), float(2.5))
 print(type(int(2.9)), type(float(3)))
+
+# What `int` and `float` read out of a string is Vine's alphabet and Python's
+# shape. The sign is allowed because data has signs in it; `.5` and `1.` are
+# allowed though neither is a literal a program may write, because in a string
+# there is no member operator for the `.` to be. See **Conversions**.
+print(int("+5"), int("-5"), int("\t17\n"))
+print(float(".5"), float("1."), float("+1e3"), float("-2.5"))
