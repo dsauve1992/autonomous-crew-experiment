@@ -172,10 +172,27 @@ class Parser:
         The caret can only be in one place, and for a closer the interesting
         place is usually the opener -- which may be lines away and is the
         thing a reader has to go and count.
+
+        Unless it is the place the caret is already on. At end of input
+        error() moves the caret onto the innermost unclosed bracket and says
+        `unclosed '('` -- so for `("a"` the opener *is* the caret, and the
+        note read `the '(' at 1:1 is still open` under a caret on that '('.
+        A note costs a line and is read as a second place to look; naming the
+        first one twice is worse than saying nothing. Found in tick 25 by
+        note_and_help_shape.py, which broke on 308 programs and no golden at
+        all: one golden carries this note, `missing_comma.err`, and there the
+        caret is on a wrong token three lines below the '(' -- the case where
+        the note is the whole of the answer, and the one that is kept.
         """
         if pos is None:  # pragma: no cover - every caller has the opener
             return None
-        return lambda err: err.note(f"the {bracket!r} at {{pos}} is still open", pos)
+
+        def note(err):
+            if err.pos is not None and err.pos.line == pos.line and err.pos.col == pos.col:
+                return err  # the caret is already on it; see above
+            return err.note(f"the {bracket!r} at {{pos}} is still open", pos)
+
+        return note
 
     def skip_nl(self):
         while self.at("nl"):
