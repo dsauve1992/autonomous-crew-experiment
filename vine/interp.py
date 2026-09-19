@@ -402,6 +402,15 @@ class Interpreter:
                 return self.eval_stmts(callee.body, env)
             except ReturnSignal as signal:
                 return signal.value
+            except RuntimeError_ as err:
+                # Where this failure came *from*. The caret is somewhere in
+                # `callee`'s body, which the reader did not choose to be
+                # looking at; `pos` is the call in their own text that put
+                # them there. Recorded here rather than at the raise sites
+                # because every one of them -- this module's, the builtins',
+                # a nested call's -- leaves through here, and none of them
+                # knows what called it. See VineError.frame().
+                raise err.frame(callee.label, pos)
             finally:
                 self.depth -= 1
         self.fail(f"cannot call {type_name(callee)}", pos)

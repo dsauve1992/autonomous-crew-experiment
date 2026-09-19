@@ -38,13 +38,14 @@ Four clauses, each broken on its own, on a committed tree.
 **What the grid reaches, and what it does not.** `no_traceback.py` enumerates
 75,167 programs by varying *types* -- every builtin against every value, every
 operator between every pair, every pair and triple of source fragments. That
-reaches 26 of the 39 `.note(`/`.help(` sites in `vine/`. The thirteen it
+reaches 26 of the 40 `.note(`/`.help(` sites in `vine/`. The fourteen it
 misses all need a specific mistake rather than a wrong type: a codepoint
 escape that is malformed in one of four ways, a map literal that repeats a
 key, a hole with a format after it, `"{{`, a string Python reads as a number
-and Vine does not, and a keyword written where the grid only ever writes
-values. `MISTAKES` below is those, hand-written, one line of why each, and
-with them the enumeration reaches all 39.
+and Vine does not, a keyword written where the grid only ever writes values,
+and a call that fails inside a function the program itself wrote.
+`MISTAKES` below is those, hand-written, one line of why each, and with them
+the enumeration reaches all 40.
 
 **What nothing here reaches.** A note pointing into a *different source* than
 the caret renders `name:line:col` rather than `line:col`, and only the REPL
@@ -81,7 +82,7 @@ POSITION = re.compile(r"\d+:\d+")
 # site, add the program that reaches it and move this number in the same
 # commit; if the program is genuinely impossible, say so beside the number.
 SITES = re.compile(r"\.note\(|\.help\(")
-EXPECTED_SITES = 39
+EXPECTED_SITES = 40
 VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.
@@ -103,6 +104,14 @@ MISTAKES = [
     "take([1], -1)",       # a count that is not a quantity
     "fixed(1, 2000)",      # more decimal places than any float has
     "return 1",            # a statement of a function body, outside one
+    # A failure four calls down: the frame notes that say which call reached
+    # it, and the line counting the ones the report has no room for. The grid
+    # varies types and never nests a call, so nothing in it has a caller.
+    "let a = fn() { 1 / 0 }\n"
+    "let b = fn() { a() }\n"
+    "let c = fn() { b() }\n"
+    "let d = fn() { c() }\n"
+    "d()",
 ]
 
 

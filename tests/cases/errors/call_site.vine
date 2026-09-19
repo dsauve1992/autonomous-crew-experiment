@@ -1,0 +1,11 @@
+# Where a failure came from. The caret is on line 7 and is true; the bug is
+# the empty list on line 9. `mean` is correct and is called twice, so the
+# only thing that tells the two calls apart is the note -- which names the
+# call that reached the failing line rather than guessing at a cause. Tick
+# 27 hit this on a ninety-nine-line program and could not tell which call
+# was which.
+let mean = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) / len(xs) }
+let hours = [1.0, 2.0]
+let extra = []
+print(mean(hours))
+print(mean(extra))

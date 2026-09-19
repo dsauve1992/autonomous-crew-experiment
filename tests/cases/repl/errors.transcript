@@ -16,6 +16,7 @@ runtime error: division by zero
   |
 1 | let oops = fn(n) { n / 0 }
   |                      ^
+  = note: oops was called at <repl:5>:1:5
 >>> missing_name
 runtime error: undefined name 'missing_name'
  --> <repl:6>:1:1

@@ -3,3 +3,5 @@ runtime error: call depth exceeded 500 (infinite recursion?)
   |
 1 | let loop = fn(n) { loop(n + 1) }
   |                        ^
+  = note: loop was called at 2:5
+  = note: 499 more calls are not shown

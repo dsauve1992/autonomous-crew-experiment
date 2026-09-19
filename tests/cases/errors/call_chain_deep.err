@@ -1,0 +1,9 @@
+runtime error: division by zero
+ --> call_chain_deep.vine:5:19
+  |
+5 | let d = fn(x) { x / 0 }
+  |                   ^
+  = note: d was called at 6:18
+  = note: c was called at 7:18
+  = note: b was called at 8:18
+  = note: 1 more call is not shown

@@ -1,0 +1,9 @@
+# Two functions calling each other, and the shape of a chain 500 long. Every
+# frame at the caret's own position is dropped -- it is not a second place to
+# look -- and the repeats of the other collapse into the one named line, so
+# what is left is the cycle and the call that entered it. Three identical
+# notes would be the noise a note exists to avoid; the count carries the
+# depth instead.
+let ping = fn(n) { pong(n) }
+let pong = fn(n) { ping(n) }
+ping(0)

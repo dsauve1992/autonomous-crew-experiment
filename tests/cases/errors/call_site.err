@@ -1,0 +1,6 @@
+runtime error: division by zero
+ --> call_site.vine:7:57
+  |
+7 | let mean = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) / len(xs) }
+  |                                                         ^
+  = note: mean was called at 11:11

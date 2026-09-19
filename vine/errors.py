@@ -31,6 +31,15 @@ class Source:
         return ""
 
 
+# How many calls a report names before it starts counting them instead. The
+# caret is inside the innermost one, so these are read innermost first: they
+# answer *which call produced this*, which is the question a reader with a
+# helper function on screen cannot answer from their own text. The outer ones
+# they can walk up to, having been given a position inside their own program;
+# 500 of them would bury the report, and `frame()` counts what it drops.
+MAX_FRAMES = 3
+
+
 class VineError(Exception):
     """Anything Vine reports to the user. Never a Python traceback."""
 
@@ -43,6 +52,10 @@ class VineError(Exception):
         self.source = source
         # Extra lines under the caret, as (label, text, pos). See note().
         self.notes = []
+        # The call chain: how many calls this failure has left on its way
+        # out, and the ones the report names. See frame().
+        self.frames = 0
+        self.named = []
 
     def note(self, text, pos=None):
         """Add a fact the headline message leaves out, and return self.
@@ -68,6 +81,47 @@ class VineError(Exception):
         """
         self.notes.append(("help", text, None))
         return self
+
+    def marks(self, pos):
+        """Whether `pos` names the very character the caret is on.
+
+        A note pointing where the caret already points costs a line and says
+        nothing, and a bare `line:col` is read against whichever source the
+        report quotes -- so this cannot compare line and column alone.
+        """
+        if self.pos is None or pos is None:
+            return False
+        here = self.pos.source or self.source
+        return (pos.source or here) is (self.pos.source or here) and (
+            pos.line,
+            pos.col,
+        ) == (self.pos.line, self.pos.col)
+
+    def frame(self, label, pos):
+        """Record a call this failure left on its way out, and return self.
+
+        The caret is where the failure was *detected*, and inside a function
+        that is a place the reader did not choose to be. A frame is the fact
+        that answers *which call*: the position is a call in the reader's own
+        text, so it is a note rather than a help, and it states where control
+        came from rather than guessing what was meant.
+
+        Two calls are counted and not named. One whose position is the
+        caret's is not a second place to look -- `fn(n) { loop(n) }` failing
+        at its own recursive call is the case. One identical to the call just
+        named is recursion, and on a stack that is the only thing it can be:
+        three copies of the same line are the noise a note exists to avoid,
+        and the count below says how deep it went. Past MAX_FRAMES the rest
+        are counted rather than named; see note_lines().
+        """
+        self.frames += 1
+        if pos is None or self.marks(pos) or len(self.named) >= MAX_FRAMES:
+            return self
+        here = (label, pos.line, pos.col, pos.source)
+        if self.named and here == self.named[-1]:
+            return self
+        self.named.append(here)
+        return self.note(f"{label} was called at {{pos}}", pos)
 
     def render(self):
         """Format as a caret-annotated report. Falls back gracefully."""
@@ -104,6 +158,14 @@ class VineError(Exception):
                     where = f"{pos.source.name}:{where}"
                 text = text.replace("{pos}", where)
             out.append(f"{pad} = {label}: {text}")
+        hidden = self.frames - len(self.named)
+        if hidden:
+            # Counted rather than named: too deep, at the caret already, or
+            # the same call over again. A reader is owed the depth even when
+            # the lines would say nothing -- a failure two hundred calls down
+            # reads exactly like one at the top without it.
+            calls = "call is" if hidden == 1 else "calls are"
+            out.append(f"{pad} = note: {hidden} more {calls} not shown")
         return out
 
 

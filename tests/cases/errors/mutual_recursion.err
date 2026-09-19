@@ -1,0 +1,8 @@
+runtime error: call depth exceeded 500 (infinite recursion?)
+ --> mutual_recursion.vine:8:24
+  |
+8 | let pong = fn(n) { ping(n) }
+  |                        ^
+  = note: pong was called at 7:24
+  = note: ping was called at 9:5
+  = note: 498 more calls are not shown

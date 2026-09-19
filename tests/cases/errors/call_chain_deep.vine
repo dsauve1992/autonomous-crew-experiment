@@ -1,0 +1,9 @@
+# More calls than a report has room for. Three are named and the rest are
+# counted: the named ones answer *which call*, and the count is what keeps a
+# failure four calls down from reading like one at the top. Naming all of
+# them is what `infinite_recursion.vine` would print 500 lines of.
+let d = fn(x) { x / 0 }
+let c = fn(x) { d(x) }
+let b = fn(x) { c(x) }
+let a = fn(x) { b(x) }
+print(a(1))

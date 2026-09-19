@@ -2044,6 +2044,67 @@ guessing. `"{"` is the case that forced it — a string really did open at that
 quote and never close, so the caret belongs there, and everything the reader
 is missing is a fact about a different character.
 
+**Where the failure came from** is the other thing one caret cannot say. A
+function is written once and called from everywhere, so a true position
+inside one is a place the reader did not choose to be looking at:
+
+```
+let mean = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) / len(xs) }
+let hours = [1.0, 2.0]
+let extra = []
+print(mean(hours))
+print(mean(extra))
+```
+
+```
+runtime error: division by zero
+ --> mean.vine:1:57
+  |
+1 | let mean = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) / len(xs) }
+  |                                                         ^
+  = note: mean was called at 5:11
+```
+
+`mean` is correct, it is called twice, and the mistake is the empty list on
+line 3. Without the last line nothing in that report is about the half of the
+program the reader has to change.
+
+Each call is a **note**, for the reason the split already gives: the position
+is a call in the reader's own text, so it is a fact about this program rather
+than a rule of the language, and it says where control came from rather than
+guessing what was meant. They are innermost first, because the innermost is
+the one the reader cannot work out — every position given is inside their own
+program, so they can walk up from it.
+
+Three calls are named and the rest are counted:
+
+```
+  = note: d was called at 6:18
+  = note: c was called at 7:18
+  = note: b was called at 8:18
+  = note: 1 more call is not shown
+```
+
+Two kinds of call are counted without being named. One at the caret's own
+position is not a second place to look: `fn(n) { loop(n + 1) }` fails at its
+own recursive call, and five hundred copies of that line would say nothing
+the caret has not. One identical to the call just named is recursion, which
+on a stack is the only thing it can be. What is left of runaway recursion is
+the call that entered it and the depth, which is the whole of what the caret
+was missing:
+
+```
+  = note: loop was called at 2:5
+  = note: 499 more calls are not shown
+```
+
+The count is of calls and not of dropped lines, so a failure two hundred
+calls down never reads like one at the top. A builtin is never named: it has
+no Vine text to point at. A function a builtin called is named at the
+builtin's own call, which is where that call came from, and under the same
+label an arity error would use — `map([1], fn(x) { x + nil })` reports
+`<anonymous> was called at` the `map`.
+
 A report quotes a value the way `repr` writes it, which is the form a reader
 of the program recognises: `a map of 2 keys has no key "thé"` and not a row of
 escapes. Where that form is what makes a true message look wrong, the report
