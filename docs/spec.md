@@ -919,8 +919,8 @@ builtin whose whole body is one operator.
 invisible when they are wrong.** Over every list in that value list paired
 with every value in it the two never disagree, so this one composes exactly,
 and the rule as written refuses it. The exception is not about what the
-composition answers; it is about what the composition costs to write. It has a one-element list literal in it, and
-dropping those brackets is not an error:
+composition answers; it is about what the composition costs to write. It has
+a one-element list literal in it, and dropping those brackets is not an error:
 
 ```
 let rows = [["north", 1]]
