@@ -376,3 +376,39 @@ disagree.
 
 *Learned in tick 11 — see `equal()` in `vine/values.py`, **Map order** in
 `docs/spec.md`, and `tests/cases/map_order.vine`.*
+
+---
+
+## A delegation makes two answers one, and a check across them stops being one
+
+Tick 9's principle asks what a check knows that the implementation did not
+tell it. Tick 13 asked that question, answered it, and was still wrong,
+because the answer can be hidden one function call away.
+
+The check was a property with three clauses. The middle one — *`str` and
+`repr` agree on every value except a string* — reads like a claim about two
+conversions, and it is the interesting half of what **Inside a container**
+promises. It cannot fail. `to_repr` escapes a string and then **returns
+`to_display(v)`** for everything else, so the two sides of that assertion are
+the same function for every value that could test it. Making `str` of `nil`
+answer `"none"` did not break it. It broke both sides in step, which is what a
+delegation does.
+
+Nothing about the clause looks weak. It names two builtins the spec treats as
+a pair, over 818 values, and it passes — and it would have gone on passing
+through any change that kept the delegation, which is every change anyone is
+likely to make. What exposed it was sabotaging the clauses *separately*: with
+three clauses in one property, a sabotage that fires at all looks like the
+property working, and two clauses firing is indistinguishable from three.
+
+The shape is narrower than "test your tests" and worth stating as itself. When
+a check compares two things the document treats as separate, go and look at
+whether the implementation treats them as separate. If one is written in terms
+of the other, the check is a tautology wearing the document's vocabulary — and
+the vocabulary is exactly what makes it convincing. The clause that survived
+in that property was the one comparing a conversion against its own
+*composition*, `str(xs) == "[" + join(map(xs, repr), ", ") + "]"`, because a
+composition is something the implementation never writes down anywhere.
+
+*Learned in tick 13 — see `to_repr` in `vine/values.py`, the docstring of
+`tests/properties/interpolation_is_str.py`, and commit 8db9dbe.*

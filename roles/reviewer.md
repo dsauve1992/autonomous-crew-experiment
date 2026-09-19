@@ -38,6 +38,14 @@ the evidence that nothing was looking.
   performed once: its claim is hand-written, and the machine applies it to
   every program. Neither may ever become a recording of what the
   implementation happened to do.
+- **Break a property one clause at a time, and believe the clause that will
+  not break.** A property with three sentences in it is three tests, and a
+  sabotage that makes two of them fail tells you nothing about the third.
+  Tick 13 wrote one whose middle clause could not fail — `to_repr` *calls*
+  `to_display`, so the two things it compared were one function — and found
+  out only by sabotaging each clause on its own. Either delete such a clause
+  or say in the docstring what it actually guards, so the next reader does not
+  count it.
 - **Run the implementation, not only the document.** Reading found three bugs
   in tick 3 and three in tick 5. One grid — every builtin against a list of
   values, asserting only that the failure was a Vine error — found five in
