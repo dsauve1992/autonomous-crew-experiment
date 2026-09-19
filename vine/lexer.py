@@ -3,7 +3,15 @@
 from dataclasses import dataclass
 
 from .errors import Pos, SyntaxError_
-from .values import FLOAT_CEILING, INFINITY
+from .rules import (
+    BRACE_RULE,
+    CODEPOINT_RULE,
+    ESCAPE_RULE,
+    EXPONENT_RULE,
+    FLOAT_CEILING,
+    SURROGATE_RULE,
+)
+from .values import INFINITY
 
 KEYWORDS = {"let", "fn", "if", "else", "do", "true", "false", "nil", "and", "or", "not"}
 
@@ -49,13 +57,9 @@ ESCAPES = {
     "}": "}",
 }
 
-ESCAPE_HELP = 'the escapes are \\n \\t \\r \\" \\\\ \\{ \\} and \\u{...}'
-
 # What a codepoint escape is made of. Upper and lower case both, because the
 # hex a reader copies out of a character table comes in both.
 HEX = frozenset("0123456789abcdefABCDEF")
-
-CODEPOINT_HELP = "a codepoint is written '\\u{1e}' -- hex digits in braces"
 
 # Which opener a closer is allowed to pop off the bracket stack. Popping on any
 # closer would let `)` end a string interpolation, and the lexer would carry on
@@ -161,7 +165,7 @@ class Lexer:
                 "opened by the '{' at {pos}",
                 hole,
             )
-            err.help("a literal brace is written '\\{'")
+            err.help(BRACE_RULE)
         return err
 
     def tokens(self):
@@ -280,7 +284,7 @@ class Lexer:
         if ch == "^":
             # The other spelling of the operator Vine does not have. A
             # spreadsheet writes it this way and so does every BASIC.
-            err.help("there is no exponent operator; x to the power y is pow(x, y)")
+            err.help(EXPONENT_RULE)
         raise err
 
     def number(self, pos):
@@ -367,7 +371,7 @@ class Lexer:
                     # after the escape, which is not the thing to look at.
                     raise SyntaxError_(
                         f"unknown escape '\\{esc}'", at, self.src
-                    ).help(ESCAPE_HELP)
+                    ).help(ESCAPE_RULE)
                 else:
                     text += ESCAPES[esc]
             else:
@@ -391,7 +395,7 @@ class Lexer:
         if self.peek() != "{":
             raise SyntaxError_(
                 "expected '{' after '\\u'", at, self.src
-            ).help(CODEPOINT_HELP)
+            ).help(CODEPOINT_RULE)
         self.advance()
         digits = ""
         while self.peek() in HEX:
@@ -404,14 +408,14 @@ class Lexer:
                 raise self.unterminated_string(quote)
             raise SyntaxError_(
                 "expected '}' to close a codepoint escape", self.here(), self.src
-            ).note("the escape was opened by the '\\u' at {pos}", at).help(
-                CODEPOINT_HELP
-            )
+            ).note(
+                "the escape was opened by the '\\u' at {pos}", at
+            ).help(CODEPOINT_RULE)
         self.advance()
         if not digits:
             raise SyntaxError_(
                 "a codepoint escape needs at least one hex digit", at, self.src
-            ).help(CODEPOINT_HELP)
+            ).help(CODEPOINT_RULE)
         value = int(digits, 16)
         if value > 0x10FFFF:
             raise SyntaxError_(
@@ -426,10 +430,7 @@ class Lexer:
                 "not a character",
                 at,
                 self.src,
-            ).help(
-                "'\\u{d800}' to '\\u{dfff}' are reserved and are not text; a "
-                "string holding one could not be printed"
-            )
+            ).help(SURROGATE_RULE)
         return chr(value)
 
     def word(self, pos):

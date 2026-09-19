@@ -4,6 +4,7 @@ import sys
 
 from .errors import SyntaxError_
 from .lexer import OPENER, Lexer
+from .rules import BRACE_RULE, EXPONENT_RULE, HOLE_RULE
 from .nodes import (
     Binary,
     Block,
@@ -256,10 +257,7 @@ class Parser:
                     raise self.error(
                         "expected an expression, found "
                         + self.describe(self.peek())
-                    ).help(
-                        "there is no exponent operator; x to the power y is "
-                        "pow(x, y)"
-                    )
+                    ).help(EXPONENT_RULE)
                 if op == "|>":
                     left = self.pipe(left, tok)
                 elif op in ("and", "or"):
@@ -340,10 +338,7 @@ class Parser:
                     # does not -- see Formatting in docs/spec.md. Refusing a
                     # syntax everyone arrives with is cheap; refusing it
                     # without naming what replaces it is not.
-                    err.help(
-                        "a hole holds one expression, with no format after "
-                        'it; for decimal places write "{fixed(x, 2)}"'
-                    )
+                    err.help(HOLE_RULE)
                 raise err
             chunk = self.next()
             if chunk.value:
@@ -431,7 +426,7 @@ class Parser:
         return lambda err: err.note(
             "'{' inside an interpolation opens a map literal, "
             "not an escaped brace"
-        ).help("a literal brace is written '\\{'")
+        ).help(BRACE_RULE)
 
     def map_key(self):
         """A bare identifier is shorthand for its own name as a string key."""

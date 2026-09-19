@@ -4,9 +4,16 @@ import math
 import re
 
 from .errors import RuntimeError_
+from .rules import (
+    COUNT_RULE,
+    FINITE_RULE,
+    FIXED_DIGITS_RULE,
+    FLOAT_CEILING,
+    MAX_DIGITS,
+    NUMBER_RULE,
+)
 from .values import (
     Builtin,
-    FLOAT_CEILING,
     Function,
     INFINITY,
     from_key,
@@ -117,8 +124,6 @@ SPACE = " \t\r\n"
 INT_TEXT = re.compile(r"[+-]?[0-9]+")
 FLOAT_TEXT = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
 
-NUMBER_RULE = "the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them"
-FINITE_RULE = f"every float is finite; {FLOAT_CEILING}"
 
 
 def revealed_note(error, value):
@@ -209,15 +214,6 @@ def _float(interp, pos, args):
 
 # -- numbers --------------------------------------------------------------
 
-# The most digits `fixed` will write after the point. 1074 is not a round
-# number and is not meant to be: the smallest float Vine has is 5e-324, which
-# is exactly 2 ** -1074, and its decimal expansion ends at the 1074th place.
-# So every float can be written out exactly, and every digit past the ceiling
-# would be a zero. A ceiling is needed at all because Python's formatter
-# refuses a precision above 2 ** 31 by raising, and below that quietly builds
-# a string of that many characters.
-MAX_DIGITS = 1074
-
 
 @builtin("fixed", 2, 2)
 def _fixed(interp, pos, args):
@@ -233,10 +229,7 @@ def _fixed(interp, pos, args):
             interp.source,
         )
         if digits > MAX_DIGITS:
-            error.help(
-                f"the smallest float is 5e-324, which has {MAX_DIGITS} "
-                "decimal places; nothing has more"
-            )
+            error.help(FIXED_DIGITS_RULE)
         raise error
     point = "." + "0" * digits if digits else ""
     if kind == "int":
@@ -386,7 +379,7 @@ def count(interp, pos, value, name):
     if value < 0:
         raise RuntimeError_(
             f"{name} count must not be negative, got {value}", pos, interp.source
-        ).help("a negative index counts from the end, but a count does not")
+        ).help(COUNT_RULE)
     return value
 
 

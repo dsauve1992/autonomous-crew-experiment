@@ -1785,7 +1785,7 @@ literal past the ceiling, `float()` of an int or of `"1e400"`, `pow` on
 either side, an operator mixing an int with a float, and an arithmetic result
 — and *how large is allowed* is a rule of the language rather than a fact
 about the program, so each of them carries `the largest float is about
-1.8e308`. It is one string in `vine/values.py`, because three of the seven
+1.8e308`. It is one string in `vine/rules.py`, because three of the seven
 used to say it in two different sentences and four said nothing at all.
 
 That split is the contract, not decoration. The caret is where the failure
@@ -1841,6 +1841,34 @@ been parsed to have a position in.
 One command line runs one program. `vine a.vine b.vine`, and `-e` beside a
 file, are refused rather than half-obeyed: running the first and ignoring the
 rest exits 0, which reports success for the part that never happened.
+
+### The rules a report may offer
+
+Twelve rules, and every help is one of them. They live in `vine/rules.py` for
+the reason the float ceiling gives above: a rule written at the raise site
+that needed it is found only by someone already standing at that raise site,
+and the next message to need it is somewhere else. Each is listed against the
+section that states it at length, because a help is a reminder of this
+document and never a replacement for it.
+
+- `the largest float is about 1.8e308` — **repr and str**
+- `every float is finite; the largest float is about 1.8e308` — **repr and str**
+- `the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them` — **Conversions**
+- `the smallest float is 5e-324, which has 1074 decimal places; nothing has more` — **Formatting**
+- `there is no exponent operator; x to the power y is pow(x, y)` — **Operators, loosest binding first**
+- `a negative index counts from the end, but a count does not` — **Taking and dropping**
+- `to give a key a new value, use set(m, k, v)` — **Map order**
+- `the escapes are \n \t \r \" \\ \{ \} and \u{...}` — **Lexical structure**
+- `a codepoint is written '\u{1e}' -- hex digits in braces` — **Strings**
+- `'\u{d800}' to '\u{dfff}' are reserved and are not text; a string holding one could not be printed` — **Strings**
+- `a literal brace is written '\{'` — **Strings**
+- `a hole holds one expression, with no format after it; for decimal places write "{fixed(x, 2)}"` — **Formatting**
+
+The list is exhaustive in both directions, and `tests/properties/help_roster.py`
+is what holds it there. A rule Vine prints and this list does not name is an
+undocumented rule; a rule named here that no program can print is one whose
+message was deleted or reworded with the document left behind. Neither is
+visible in a golden file, because a golden is a copy of the message it checks.
 
 ## Not in v0.2
 

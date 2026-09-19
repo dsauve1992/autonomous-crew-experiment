@@ -1,7 +1,7 @@
 """The escape list is written three times and the three say the same thing.
 
 `\\n \\t \\r \\" \\\\ \\{ \\}` and `\\u{...}` appear in **Lexical structure** in
-`docs/spec.md`, in `ESCAPE_HELP` in `vine/lexer.py`, and -- the only one that
+`docs/spec.md`, in `ESCAPE_RULE` in `vine/rules.py`, and -- the only one that
 decides anything -- in the `ESCAPES` table the lexer actually reads. Tick 20
 added `\\u{...}` to all three by hand and tick 20's handoff flagged the shape:
 one list, three spellings, and the only thing joining them was that the same
@@ -9,7 +9,7 @@ person edited them in the same hour.
 
 What guards them today is `tests/cases/errors/unknown_escape.err`, and it
 guards less than it looks. A golden compares a message with itself -- it pins
-the *text* of `ESCAPE_HELP` and says nothing about whether that text is true.
+the *text* of `ESCAPE_RULE` and says nothing about whether that text is true.
 Measured rather than asserted: adding `"0": chr(0)` to `ESCAPES` gives the
 lexer an escape that neither list documents, and before this file existed the
 whole suite passed. Dropping `"}"` from `ESCAPES` -- the other direction, the
@@ -41,10 +41,11 @@ import re
 
 from vine import run
 from vine.errors import VineError
-from vine.lexer import ESCAPES, ESCAPE_HELP
+from vine.lexer import ESCAPES
+from vine.rules import ESCAPE_RULE
 
 CLAIM = (
-    "the escape list in docs/spec.md, the list in ESCAPE_HELP and the "
+    "the escape list in docs/spec.md, the list in ESCAPE_RULE and the "
     "escapes the lexer actually accepts are one list of eight, and no other "
     "escape is accepted"
 )
@@ -63,7 +64,7 @@ ARGUMENT = "\\u{...}"
 
 
 def named_in_help():
-    return TOKEN.findall(ESCAPE_HELP)
+    return TOKEN.findall(ESCAPE_RULE)
 
 
 def named_in_spec():
@@ -94,7 +95,7 @@ def check():
     failures, checked = [], 0
     helped, specced = named_in_help(), named_in_spec()
 
-    for label, listed in (("ESCAPE_HELP", helped), ("the spec bullet", specced)):
+    for label, listed in (("ESCAPE_RULE", helped), ("the spec bullet", specced)):
         checked += 1
         if len(listed) != EXPECTED:
             failures.append(
@@ -109,7 +110,7 @@ def check():
     checked += 1
     if helped != specced:
         failures.append(
-            ("the two lists", f"ESCAPE_HELP says {helped}, the spec {specced}")
+            ("the two lists", f"ESCAPE_RULE says {helped}, the spec {specced}")
         )
 
     # Every escape the help names, the lexer takes.
@@ -117,7 +118,7 @@ def check():
         checked += 1
         probe = "\\u{41}" if escape == ARGUMENT else escape
         if not accepted(probe):
-            failures.append((escape, "is offered by ESCAPE_HELP and refused"))
+            failures.append((escape, "is offered by ESCAPE_RULE and refused"))
 
     # And every escape the lexer takes, the help names. The table, plus the
     # one that carries an argument and so is not in it.

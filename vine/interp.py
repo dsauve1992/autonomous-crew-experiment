@@ -17,9 +17,9 @@ from .nodes import (
     StrLit,
     Unary,
 )
+from .rules import FLOAT_CEILING, SET_RULE
 from .values import (
     Builtin,
-    FLOAT_CEILING,
     Function,
     INFINITY,
     equal,
@@ -203,7 +203,7 @@ class Interpreter:
                     self.source,
                 )
                 err.note("the key is first given at {pos}", first[slot])
-                err.help("to give a key a new value, use set(m, k, v)")
+                err.help(SET_RULE)
                 raise err
             first[slot] = key_node.pos
             out[slot] = self.eval(value_node, env)
