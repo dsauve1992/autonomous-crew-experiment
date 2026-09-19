@@ -173,6 +173,20 @@ def broken_by(argv, done):
     return None
 
 
+def printable(argv):
+    """The command line as a reader would type it, short enough to read.
+
+    One of these is five thousand brackets. A counterexample is the whole of
+    the evidence, so it is quoted verbatim wherever it can be -- but a wall
+    nobody can see past is not evidence either, and the two that would be a
+    wall say how much of them is missing.
+    """
+    text = "vine " + " ".join(shlex.quote(a) for a in argv)
+    if len(text) > 120:
+        text = f"{text[:100]}... and {len(text) - 100} more characters"
+    return text
+
+
 def check():
     """Returns (how many command lines were checked, the ones that broke it)."""
     failures = []
@@ -188,7 +202,7 @@ def check():
         os.chmod(noread, 0)
         for argv in command_lines(scratch):
             checked += 1
-            printable = "vine " + " ".join(shlex.quote(a) for a in argv)
+            shown = printable(argv)
             try:
                 done = subprocess.run(
                     [sys.executable, "-m", "vine", *argv],
@@ -199,10 +213,10 @@ def check():
                     timeout=TIMEOUT,
                 )
             except subprocess.TimeoutExpired:
-                failures.append((printable, f"did not finish in {TIMEOUT}s"))
+                failures.append((shown, f"did not finish in {TIMEOUT}s"))
                 continue
             broke = broken_by(argv, done)
             if broke is not None:
-                failures.append((printable, broke))
+                failures.append((shown, broke))
         os.chmod(noread, 0o600)
     return checked, failures
