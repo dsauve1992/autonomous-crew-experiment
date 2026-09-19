@@ -1,0 +1,31 @@
+vine — ^D to exit, blank line to abandon an unfinished entry
+>>> {[1]: "x"}
+runtime error: map key must be a string, number or bool, got list
+ --> <repl:1>:1:2
+  |
+1 | {[1]: "x"}
+  |  ^
+>>> set({}, [1], "x")
+runtime error: map key must be a string, number or bool, got list
+ --> <repl:2>:1:4
+  |
+1 | set({}, [1], "x")
+  |    ^
+>>> get({}, [1])
+runtime error: map key must be a string, number or bool, got list
+ --> <repl:3>:1:4
+  |
+1 | get({}, [1])
+  |    ^
+>>> {a: 1}[[1]]
+runtime error: map key must be a string, number or bool, got list
+ --> <repl:4>:1:7
+  |
+1 | {a: 1}[[1]]
+  |       ^
+>>> contains({a: 1}, [1])
+runtime error: map key must be a string, number or bool, got list
+ --> <repl:5>:1:9
+  |
+1 | contains({a: 1}, [1])
+  |         ^

@@ -7,7 +7,6 @@ from .values import (
     Function,
     from_key,
     to_display,
-    to_key,
     to_repr,
     type_name,
 )
@@ -222,7 +221,11 @@ def _contains(interp, pos, args):
     if kind == "list":
         return any(equal(x, needle) for x in target)
     if kind == "map":
-        return to_key(needle) in target
+        # A needle that cannot be a key gets the same answer the string branch
+        # gives a needle that is not a string: an error, not `false`. Asking
+        # whether a list is a key is a category mistake, not a lookup that
+        # missed -- absence is what `get(m, k, default)` is for.
+        return interp.key_for(needle, pos) in target
     if kind == "string":
         return want(interp, pos, needle, "string", "contains needle") in target
     interp.fail(f"contains expects a list, map or string, got {kind}", pos)
@@ -246,14 +249,14 @@ def _values(interp, pos, args):
 def _get(interp, pos, args):
     target = want(interp, pos, args[0], "map", "get target")
     default = args[2] if len(args) == 3 else None
-    return target.get(to_key(args[1]), default)
+    return target.get(interp.key_for(args[1], pos), default)
 
 
 @builtin("set", 3, 3)
 def _set(interp, pos, args):
     target = want(interp, pos, args[0], "map", "set target")
     out = dict(target)
-    out[to_key(args[1])] = args[2]
+    out[interp.key_for(args[1], pos)] = args[2]
     return out
 
 

@@ -42,7 +42,11 @@ is `false`. `type(x)` returns the type name as a string.
 
 Map keys may be strings, numbers or booleans, and two keys are the same key on
 the same type-strict terms: `{1: "a", 1.0: "b", true: "c"}` has three entries.
-Maps preserve insertion order.
+Maps preserve insertion order. Anything else offered as a key is an error
+wherever a key is expected — in a literal, in `set`, in `get`, in `contains`
+and in `m[k]` — rather than a lookup that quietly misses, because a list can
+never be a key and asking is a different mistake from asking for one that is
+absent. `get(m, k, default)` is for absence.
 
 ## Truthiness
 

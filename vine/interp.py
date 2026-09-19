@@ -76,6 +76,22 @@ class Interpreter:
     def fail(self, message, pos):
         raise RuntimeError_(message, pos, self.source)
 
+    def key_for(self, value, pos):
+        """A map key's slot in the dict underneath, or an error.
+
+        Only a string, number or bool can be one. `to_key` tags the value and
+        hands it to a Python dict, so a list or a map reaches `hash()` and
+        used to leave through it as a traceback -- from `set`, from `get` and
+        from `m[k]`. The map literal was the one place that checked, and no
+        case had ever printed even that message.
+        """
+        if type_name(value) not in ("string", "int", "float", "bool"):
+            self.fail(
+                f"map key must be a string, number or bool, got {type_name(value)}",
+                pos,
+            )
+        return to_key(value)
+
     def overflowed(self, op, pos):
         self.fail(f"the result of '{op}' is too large to be a float", pos)
 
@@ -143,13 +159,8 @@ class Interpreter:
     def eval_map(self, node, env):
         out = {}
         for key_node, value_node in node.pairs:
-            key = self.eval(key_node, env)
-            if type_name(key) not in ("string", "int", "float", "bool"):
-                self.fail(
-                    f"map key must be a string, number or bool, got {type_name(key)}",
-                    key_node.pos,
-                )
-            out[to_key(key)] = self.eval(value_node, env)
+            slot = self.key_for(self.eval(key_node, env), key_node.pos)
+            out[slot] = self.eval(value_node, env)
         return out
 
     def eval_block(self, node, env):
@@ -267,7 +278,7 @@ class Interpreter:
                 )
             return target[index]
         if kind == "map":
-            slot = to_key(key)
+            slot = self.key_for(key, node.pos)
             if slot not in target:
                 self.fail(f"map has no key {to_repr(key)}", node.pos)
             return target[slot]
