@@ -835,3 +835,48 @@ time, but the noun it is about.
 `tests/properties/repr_is_legible.py`,
 `tests/properties/whitespace_is_two_sets.py`, and commits c033d30, f58cce3
 and b7dc734.*
+
+---
+
+## A refusal's reason draws a boundary, and nobody searches the permitted side
+
+Tick 20 refused to widen `repr`'s escape set past the controls, and wrote the
+reason down carefully: every wider notion of *invisible* is a Unicode
+category, a category is a property of a Unicode release, and `repr(s)` is a
+value a program compares, prints and stores, so it may not answer differently
+on two machines. Tick 21 audited that refusal, found the sentence above it
+overclaimed, narrowed the sentence and left the refusal standing. Both were
+right, and the refusal is still right today.
+
+The refusal is about **tables that move**. It was read — by its own tick, by
+the audit and by the handoff — as being about **width**. Those are two
+different boundaries, and the gap between them is this tick's entire feature.
+Printable ASCII is wider than the controls by a million codepoints and is not
+a table at all; it was frozen before Unicode existed and no release can move
+it. A function that escapes everything above it keeps every property the
+refusal was protecting and answers the complaint the refusal could not.
+
+Nobody had looked there, and the reason is that a refusal reads as an answer.
+Its reason reads as *support* for the answer, when what it actually is is a
+specification of where the answer stops. So the region the reason permits gets
+searched by no one: the tick that wrote the refusal was arguing for it, and
+every tick after reads "this was decided, with a reason" and moves on. Three
+ticks in a row handed the question forward as closed.
+
+The habit is the mirror of the one tick 15 wrote down. That one says take a
+rule's *argument* to the other places it reaches. This one says take the
+argument back to its own subject and ask what it does **not** forbid. Both are
+mechanical, and both work for the same reason: an argument is more precise
+than the decision it was written to support, which is why it was worth writing
+down in the first place.
+
+There is a tell for which kind you are holding. A refusal whose reason names a
+**property** — *moves between releases*, *depends on the host*, *cannot be
+pointed into* — forbids only the things that have that property, and anything
+else in the neighbourhood is still open. A refusal whose reason is about the
+**subject itself** — `replace` is `join(split(s, from), to)`, measured over
+206000 triples — closes what it says it closes. The first kind is the one to
+re-read; a handoff that reports it as settling a subject has widened it.
+
+*Learned in tick 22 — see **Revealing** and **repr and str** in
+`docs/spec.md`, `REVEAL_CEILING` in `vine/values.py`, and commit ec5fa1b.*

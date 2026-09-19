@@ -85,6 +85,15 @@ contract, in one piece of work. If what you are doing does not change what Vine
   character are the same — make the golden hold a count or a boolean, so an
   edit that drops it fails loudly instead of matching a golden that lost it
   too.
+- **Watch *how* a sabotage fails, not only that it does.** A property that
+  crashes is not a property that failed: it names no value, and the next
+  reader sees a Python traceback where a finding should be. Tick 22's own
+  new property swept every codepoint through the interpreter and did not
+  catch `VineError`; the sabotage that wrote the escape's digits in decimal
+  made one literal unparseable, and the whole suite ended in a traceback
+  instead of naming U+007F. The fix is what the property should have done
+  from the start — catch it, re-run the batch one value at a time, and report
+  which one. You will only see this by reading the sabotage's output.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
