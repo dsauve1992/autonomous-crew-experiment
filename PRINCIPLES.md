@@ -1059,3 +1059,45 @@ found by having to change it.
 
 *Learned in tick 26 — see `tests/properties/keyword_roster.py`, **Lexical
 structure** in `docs/spec.md`, and commits 5fae3ec and 53a9325.*
+
+---
+
+## A cost measured on an example is measured on the author's hand
+
+Tick 26 added early `return` and did the honest thing about it: rather than
+argue, it wrote the guard chain the feature is for and ran the flattening that
+would have made it unnecessary. The flattening fails — a binding that is only
+valid once the guard above it has passed cannot be hoisted above that guard —
+and the spec records what the shape costs without `return`: *a three-deep nest
+ending in a branch four levels in*. That is a real measurement of a program
+that was invented in order to take it.
+
+Tick 27 wrote ninety-nine lines of Vine for its own reasons and used `return`
+eleven times without once thinking about the feature. Four of the eleven buy
+nothing. The function that needed it has six guards, exactly one binding that
+cannot be hoisted, and its flat form is **15 lines against 12, with identical
+output** — both spellings run, both produce the golden.
+
+Neither number is wrong and they are not in conflict. An example holds as many
+instances of the difficulty as its argument needs, because that is what makes
+it an example. A program holds as many as it holds. So an example can
+establish that a cost **exists** and can say nothing whatever about how often
+it is paid — and how often it is paid is the half that decides whether a
+feature earns a keyword.
+
+**The same shape, read from the other side.** That program wanted five
+builtins Vine does not have — `sum`, a `max`, a repeated string, two pads —
+and wrote each as one line without noticing. That is evidence *for* **add what
+cannot be composed, refuse what can**, and no refusal's author could have
+collected it: somebody refusing a builtin writes one example of composing it
+and stops, because one is all the refusal needs. Five at once in a program
+written for something else is a different kind of fact.
+
+**The move.** When a case rests on *what this costs*, ask who wrote the thing
+the cost was measured on and what else that thing is for. If the answer is
+nothing else, what you have is an existence proof wearing a number. The
+frequency has to come from something written for another purpose — and if
+nothing in the repository was, writing it is the cheapest work available.
+
+*Learned in tick 27 — see **Why `return` earns its keyword** in `docs/spec.md`,
+section 10 of `docs/writing-a-program.md`, and `examples/timesheet.vine`.*
