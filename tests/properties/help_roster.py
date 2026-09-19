@@ -25,7 +25,15 @@ would look fine. So the rules here are collected by running programs and
 reading what came out, and a rule earns its line in the document by being
 reachable.
 
-A third clause, about the document rather than the language: **every rule is
+A third clause, about the labels: **no rule in the roster is printed as a
+note.** The split is what tells a reader whether a line is about their program
+or about the language, and **Errors** draws it at *this failure* against *next
+time* -- a note may state the rule that caused the failure, and three do. What
+it may never be is one of these twelve, because every one of them would be as
+true had the reader made no mistake at all. That is the half of the split a
+label check can reach, and nothing else in the suite reaches any of it.
+
+A fourth clause, about the document rather than the language: **every rule is
 listed against a section that exists.** Each bullet ends in a bold heading
 name, and the reference is only worth writing if it stays true; a section
 renamed leaves twelve pointers that read like an answer and are not one. It is
@@ -49,8 +57,8 @@ from note_and_help_shape import reports
 
 CLAIM = (
     "every help a Vine program can print is named in the roster in "
-    "docs/spec.md, every rule the roster names can be printed, and every "
-    "section it points at exists"
+    "docs/spec.md, every rule the roster names can be printed and is never "
+    "printed as a note, and every section it points at exists"
 )
 
 SPEC = pathlib.Path(__file__).resolve().parent.parent.parent / "docs" / "spec.md"
@@ -88,19 +96,19 @@ def headings():
 
 
 def printed():
-    """Every help text a program in the enumeration actually printed."""
-    found = {}
+    """The help texts and the note texts the enumeration printed, each with a
+    program that printed it."""
+    helps, notes = {}, {}
     for source, error in reports():
         for label, text, _ in error.notes:
-            if label == "help":
-                found.setdefault(text, source)
-    return found
+            (helps if label == "help" else notes).setdefault(text, source)
+    return helps, notes
 
 
 def check():
     listed = roster()
     rules = [rule for rule, _ in listed]
-    offered = printed()
+    offered, noted = printed()
     failures = []
 
     if len(listed) != EXPECTED:
@@ -114,6 +122,10 @@ def check():
     for rule in rules:
         if rule not in offered:
             failures.append((rule, "is named in the roster and no program printed it"))
+
+    for rule in rules:
+        if rule in noted:
+            failures.append((rule, f"is a rule and {noted[rule]!r} prints it as a note"))
 
     known = headings()
     for rule, section in listed:

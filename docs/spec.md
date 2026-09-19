@@ -1779,6 +1779,21 @@ A **help** offers a rule of the language because it is likely to be the one
 wanted. It carries no position, and it is never a claim about what the
 program meant.
 
+The line between the two is not quite *fact* against *rule*, and three
+messages show where it really falls. `pow(2, n)` for an `n` no float can hold
+says `pow converts both of its arguments to a float`, which is true of every
+call to `pow` and is therefore a rule — and it is a **note**, because without
+it the headline is a non-sequitur: the program named no float. So is `'+'
+between an int and a float converts the int`, and so is `'{' inside an
+interpolation opens a map literal, not an escaped brace`, without which
+`expected ':' after the map key` is about a map the reader did not write.
+
+A note is what a reader needs to understand **this** failure, whether that is
+a fact about their program or the rule that caused it. A help is a rule they
+may want **next**, and it would be just as true had they made no mistake at
+all. That is why the float ceiling is a help on all seven messages that need
+it, and `pow converts both of its arguments to a float` is a note on one.
+
 A help belongs on every message whose complaint the reader cannot check by
 eye. *Too large to be a float* is the case: seven messages say it — a
 literal past the ceiling, `float()` of an int or of `"1e400"`, `pow` on
@@ -1822,6 +1837,19 @@ map, got int` from `index 5 is out of range for a list of length 3`, and it is
 the question to ask of a new message: *would this message be the same for
 every argument of this type?* If it would, the type is the whole of what was
 there.
+
+That question is about **values**, and the parser's messages are not about
+values. `expected ']', found the number 1` names one where the clause above
+would ask for a type: no number closes a bracket, so every number is equally
+wrong. But the type is the whole of what was *asked for*, not of what was
+**there** — the token is the parser's reading of the reader's own text, and
+the two can differ. `[1 01]` puts the caret under a `0` and says `found the
+number 1`, because `01` is one token whose value is 1; `[1 1_0]` says the same
+under the second `1`, because `1_0` is a number and a name and not one number.
+A reader whose text was read differently than they wrote it has no other way
+to find out, and quoting the token is the only line in the report that tells
+them. So: a message about a value asks whether the type is the whole of what
+was there; a message about a token quotes the token.
 
 Two messages are deliberately short of it. `undefined name 'x'` does not say
 what names are in scope, because the scope is the program's own text and the
