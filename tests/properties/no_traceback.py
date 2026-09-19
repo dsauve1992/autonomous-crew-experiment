@@ -162,6 +162,18 @@ def programs():
     for nest in NESTS.values():
         for depth in DEPTHS:
             yield nest(depth)
+    # Numbers wider than a value list can afford to carry. VALUES holds a
+    # 401-digit int; these four are past CPython's 4300-digit limit on
+    # converting between an int and its digits, which is the width at which
+    # reading one, writing one and computing one each left through a
+    # ValueError -- and the last of them types no long number at all. One
+    # program each: every one of them is quadratic, and this is a width, not
+    # a grid.
+    huge = "1" + "0" * 5000
+    yield huge
+    yield f'int("{huge}")'
+    yield f'float("{huge}")'
+    yield "str(reduce(range(700), fn(a, i) { a * 10000000 }, 1))"
     # Source that is mostly not a program at all, for the lexer and parser.
     for a, b in itertools.product(FRAGMENTS, repeat=2):
         yield a + b

@@ -1,0 +1,19 @@
+# An int wider than CPython will convert between a number and its digits --
+# 4300 of them -- reached every way a Vine program can reach one. All five
+# lines raised a Python ValueError until tick 28 lifted that limit in
+# vine/__init__.py. **Powers** already promised ints are unbounded; what was
+# bounded was writing one down, which is the same number said another way.
+let zeros = join(map(range(5000), fn(i) { "0" }), "")
+
+# Read in: 5001 digits of string, which is 10 to the 5000th.
+let big = int("1" + zeros)
+print(len(str(big)))
+print(len(str(big * 10)))
+
+# Computed rather than typed -- the half no literal can reach, and the half a
+# reader never sees coming. Seven hundred multiplications by ten million;
+# nothing in the source is long.
+let grown = reduce(range(700), fn(a, i) { a * 10000000 }, 1)
+print(len(str(grown)))
+print(int(str(grown)) == grown)
+print(len("{grown}") == 4901)

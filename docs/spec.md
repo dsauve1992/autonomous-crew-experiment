@@ -702,6 +702,16 @@ From a string:
   something longer; inside a string there is nothing else for either to be, and
   a column of measurements contains `.5`.
 
+**An int is as wide in text as it is in arithmetic.** **Powers** says ints are
+unbounded; reading and writing one is the same number said another way, so
+`int(s)` reads a string of any length, `str(n)` writes one, and
+`int(str(n)) == n` at every width. Until tick 28 that held only to 4300
+digits, which is the point at which the implementation refused and took the
+program with it — and the width is reached by multiplying, not only by typing
+a long literal, so the program that met it first had no long number in it.
+What is bounded is the time: writing out an enormous int is quadratic, which
+is the slow program **Powers** already describes and not a failure.
+
 A string that is not a number by anyone's reading is refused with the headline
 alone: `cannot convert "abc" to an int`. One that Vine refuses and something
 else would read carries the rule as a help, because every character of
