@@ -8,3 +8,17 @@ print((2 + 3) * 4)
 print(1 + 2.5)
 print(-(3 + 4))
 print(10 / 4)
+
+# `%` takes the sign of the right operand, not the left. Under the other
+# convention the first of these would be -1 and the second 1.
+print(-3 % 2)
+print(3 % -2)
+print(-3 % -2)
+# Which is what lets the pipeline example in docs/spec.md read as "keep the odd
+# ones" for negative numbers too. Under the other convention it drops them.
+print([-3, -2, -1, 0, 1, 2, 3] |> filter(fn(n) { n % 2 == 1 }))
+# `%` takes floats on the same terms as the rest of arithmetic.
+print(2.5 % 1)
+print(-2.5 % 2)
+# An int beside a float becomes a float. This is the only mixing in Vine.
+print(type(1 + 2.5), type(7 - 0.5), type(2 * 0.5), type(1 % 0.5))

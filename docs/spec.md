@@ -271,6 +271,59 @@ and a help giving `\{`. See **Errors**, and `interp_lone_brace.vine` and
 | 8          | unary `-` `not`        |                                      |
 | 9          | `f(x)` `x[k]` `x.k`    | call, index, member                  |
 
+The table's Notes column is a reminder, not the rule. Five of those reminders
+are short enough to read as one fact each and are wider than that, so they are
+written out here. Each was the answer Python happened to give until this
+paragraph was written; four of the five are kept, and the reason is given
+rather than the fact alone, because a reason is what tells the next tick
+whether it may change the answer.
+
+**Arithmetic mixes ints and floats, and nothing else mixes.** `1 + 2.5` is
+`3.5`: an int beside a float in `+ - * / %` becomes a float, and so does the
+result. That is the only place two types meet in this language — `==` is
+type-strict, `1 + true` is an error, and every other pairing is an error
+naming both sides. `+` is three operators wearing one symbol: it adds two
+numbers, joins two strings and joins two lists. A pairing across those three
+is an error like any other, so `1 + "a"` is `cannot add int and string` and
+`[1] + "a"` is `cannot add list and string`. Maps do not join; there is no
+merge operator.
+
+**`%` takes the sign of the right operand.** `-3 % 2` is `1`, `3 % -2` is
+`-1`. The other convention — the sign of the *left* operand, so `-3 % 2` is
+`-1` — is at least as common in other languages, and what settles it for Vine
+is a line already in this document: `filter(fn(n) { n % 2 == 1 })` under
+**Pipeline** is how anyone writes *keep the odd ones*, and under that other
+convention it silently drops every negative odd number and still looks like it
+worked. A remainder that always lands in `[0, n)` is the one that can be used
+to classify, which is what a language for shaping data reaches for `%` to do.
+It takes floats on the same terms as the rest of arithmetic — `2.5 % 1` is
+`0.5` — and a right operand of zero is `division by zero`, as `/` is.
+
+**`<` on strings is codepoint order.** Every uppercase letter is below every
+lowercase one, so `sort(["north", "South", "east"])` is
+`["South", "east", "north"]` and not the order a person would file names in.
+This is the order `sort` reaches through — see **Sorting** — so it is the
+order a report's rows come out in, and it is worth knowing before a column of
+names looks wrong. `sort(xs, lower)` is the spelling that files them the
+other way, and it is a key function rather than a second meaning for `<`.
+
+**`==` is structural everywhere except functions, where it is identity.** A
+closure is its parameters, its body *and* the environment it captured, and
+nothing compares those — the same fact that makes functions the one exception
+to `repr` under **repr and str**. So `f == f` is `true` while
+`fn(x) { x } == fn(x) { x }` is `false`, though the two are written the same.
+Structural comparison descends into lists and maps and stops at a function on
+those terms, so `[f] == [f]` is `true`. Map order is not part of `==` — see
+**Map order**.
+
+**There is no exponent operator, and no builtin either.** Neither `**` nor
+`^`: `2 ** 3` is a syntax error at the second `*`, `^` is not a character Vine
+has, and there is no `pow`, so a cube is written `n * n * n`. The `e` in `1e5`
+is part of a float *literal* and not an operator — see **Literals** — which is
+easy to read the other way once a number can carry an exponent. Whether Vine
+should have the operator is open; that it does not have one today is written
+here so nothing else quietly reads as though it does.
+
 `x.k` is exactly `x["k"]`. Negative indexes count from the end of a list or
 string. Indexing a missing map key is an error; use `get(m, k, default)` to
 tolerate absence.

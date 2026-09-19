@@ -11,3 +11,15 @@ print(0 and "zero is truthy")
 print([1, 2] == [1, 2])
 print({a: 1} == {a: 1})
 print(type(1), type(2.5), type("s"), type(true), type(nil), type([]), type({}), type(print))
+
+# `<` on strings is codepoint order, so every uppercase letter is below every
+# lowercase one -- and that is the order `sort` files a column of names in.
+print("Z" < "a")
+print(sort(["north", "South", "east"]))
+print(sort(["north", "South", "east"], lower))
+# `==` is structural everywhere but functions, where it is identity. The two
+# below are written identically and are not equal.
+let f = fn(x) { x }
+print(f == f, fn(x) { x } == fn(x) { x })
+# Structural comparison descends into containers and stops at a function.
+print([f] == [f], {a: f} == {a: f})
