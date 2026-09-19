@@ -366,8 +366,8 @@ General: `type(x)` `len(x)` `str(x)` `int(x)` `float(x)`
 Numbers: `fixed(x, digits)`
 
 Lists: `range(n)` `range(a, b)` `map(xs, f)` `filter(xs, f)` `reduce(xs, f, init)`
-`push(xs, x)` `concat(a, b)` `first(xs)` `rest(xs)` `reverse(xs)` `sort(xs)`
-`sort(xs, key)` `contains(xs, x)`
+`push(xs, x)` `concat(a, b)` `first(xs)` `rest(xs)` `take(xs, n)` `drop(xs, n)`
+`reverse(xs)` `sort(xs)` `sort(xs, key)` `contains(xs, x)`
 
 Maps: `keys(m)` `values(m)` `get(m, k)` `get(m, k, default)` `set(m, k, v)`
 
@@ -375,6 +375,86 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 `reverse(s)` `contains(s, sub)`
 
 `push` and `set` return new values; nothing in Vine mutates.
+
+## Taking and dropping
+
+`take(xs, n)` is the first `n` elements of a list and `drop(xs, n)` is the
+ones after them. They are the generalisation of `first` and `rest`, not a
+second convention beside them: `drop(xs, 1)` is `rest(xs)`, and `take(xs, 1)`
+is `first(xs)` in a list.
+
+```
+let xs = [1, 2, 3, 4]
+take(xs, 2)     # [1, 2]
+drop(xs, 2)     # [3, 4]
+```
+
+What they are for is a stage of a pipeline: `examples/report.vine` ranks its
+orders and then writes `ranked |> take(3)`. The stage that already drops
+elements is `filter`, and `filter` cannot count — it sees one element and no
+index. Nor is a list sliced, because Vine has no slice syntax and adding one
+is a grammar change plus an arithmetic contract — what `xs[1:99]` does, what
+a negative bound means — that neither of these needs.
+
+**A list shorter than `n` is not an error.** `take(xs, 5)` on a three-element
+list answers the three, and `drop` of more than there is answers `[]`. This
+is inherited rather than chosen: `first([])` is `nil` and `rest([])` is `[]`,
+and no list builtin fails for being asked about something that is not there.
+A report wanting its top three on a two-row day wants the two rows, and would
+otherwise have to count before it was allowed to ask.
+
+**The two halves are the whole list**, at every count either accepts:
+`concat(take(xs, n), drop(xs, n))` is `xs`. Past the end included, where the
+halves are `xs` and `[]`.
+
+**A negative count is an error**, not an empty list.
+
+```
+take([1, 2, 3], -1)   # runtime error: take count must not be negative, got -1
+```
+
+This is the one choice here with no precedent in the family, and it goes the
+other way from the totality above on purpose. Totality is about the list
+being shorter than the question, and `take(xs, 5)` on three elements is a
+question with an answer. Minus one elements is not a quantity.
+
+What decides it is that Vine already gives a negative integer a meaning
+against a list: `xs[-1]` is the last element, and a negative index counts
+from the end (see **Operators**). A reader carrying that meaning across
+writes `take(xs, -1)` for *all but the last* — which is what the same
+expression means in Python — and an empty list would answer them without ever
+saying they had been misread.
+
+**The price is `take(xs, len(xs) - 1)`**, the short spelling of all but the
+last, which asks for `-1` elements of an empty list and so fails on exactly
+the input the totality above was for. The spelling that survives it reverses
+rather than counting:
+
+```
+let all_but_last = fn(xs) { reverse(drop(reverse(xs), 1)) }
+all_but_last([1, 2, 3])   # [1, 2]
+all_but_last([])          # []
+```
+
+Both of those lines are goldens. If a later tick finds that idiom often
+enough to want a name, the name is the change to argue for — not a reading of
+`-1` that only some readers hold.
+
+**They are list-only**, as `first` and `rest` are. The first two letters of a
+string are `take(split(s, ""), 2) |> join("")`, which runs and is a golden. A
+`take` that also cut strings would be a truncation builtin wearing this one's
+name, with questions of its own — what counts as one character, and whether
+what was cut gets marked — and none of them is this gap.
+
+**`first` keeps its single argument.** `first(xs)` answers `nil` for an empty
+list and `nil` for a list whose first element is `nil`, and cannot tell the
+two apart — which is the ambiguity `get(m, k, default)` exists to remove for
+maps. It does not get the same treatment, because `take` now answers it:
+`take([], 1)` is `[]` and `take([nil], 1)` is `[nil]`. A default is how a map
+lookup reports a miss, where missing is ordinary and the key came from the
+caller; a list has no first element only when it is empty, which is
+`len(xs) == 0` and is usually the question that was meant. Decided in tick
+12, having been raised in two, so that it stops being raised in a third.
 
 ## Sorting
 
