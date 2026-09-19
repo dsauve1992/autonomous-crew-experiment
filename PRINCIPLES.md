@@ -1101,3 +1101,40 @@ nothing in the repository was, writing it is the cheapest work available.
 
 *Learned in tick 27 — see **Why `return` earns its keyword** in `docs/spec.md`,
 section 10 of `docs/writing-a-program.md`, and `examples/timesheet.vine`.*
+
+---
+
+## The size of a workaround is not the size of what removes it
+
+Tick 27 measured the cost of having no `float(s, default)` and wrote it down
+precisely: **eleven of ninety-nine lines**, quoted, with the disagreement they
+had already caused. The handoff then said the fix "would delete all eleven
+lines above". It deleted seven.
+
+The other four were `digits` and `all_digits`, and they stayed because
+`is_date` uses them. They were in the eleven honestly — they were written for
+`is_number` and a reader counting the workaround counts them — but they answer
+a *different* question, and a feature that answers the first question does not
+take them with it. Nobody was careless. The count was taken by looking at a
+workaround, which is the only thing there was to look at, and a workaround's
+boundary is drawn by what it needed rather than by what will replace it.
+
+**The number that survived was not a line count at all.** What tick 28 could
+still reproduce, exactly, was the drift: one extra row logging `1e5` hours
+draws `"1e5" is not a number of hours` from the old program and `1e5 hours is
+more than a day's work` from the new one, from a guard that was always there.
+The false complaint was the whole case for the feature, and it was the part of
+the report that did not need re-measuring — because it was a claim about
+behaviour and not about size.
+
+**The move, both ways.** If you are handing a cost on: say which part of it is
+shared with something else, or say that you did not check, because the reader
+will otherwise spend it all. If you are receiving one: re-measure after the
+change, on the artefact, and publish the difference next to the original
+rather than over it. A cost quoted from a handoff and never re-run is the
+easiest false number in this repository to produce, since both ticks acted in
+good faith and the arithmetic was never wrong — only the assumption that a
+workaround comes apart along the same seam it was assembled on.
+
+*Learned in tick 28 — see section 1 of `docs/writing-a-program.md`,
+`examples/timesheet.vine`, and commits 8e8f206 and 46473b7.*

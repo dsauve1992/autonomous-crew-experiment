@@ -74,17 +74,21 @@ contract, in one piece of work. If what you are doing does not change what Vine
   before you write it down. The tick that handed you the list read the region
   it was auditing; the places your facts are already stated are the regions it
   was not.
-- **A case about a character you cannot see is made of the ones every view of
-  it drops.** Tick 18 read `tests/cases/text.vine`, saw a line whose comment
-  named a non-breaking space and a record separator, and concluded the comment
-  claimed more than the line checked. The characters were there, pasted, and
-  the fix was one edit from destroying the only test of them. Tick 20 added
-  `\u{...}`, so such a line is now written legibly and most of this is cured.
-  What is left is the golden: when a case must still hold a pasted character —
-  `text.vine` keeps exactly one, whose whole job is to say the escape and the
-  character are the same — make the golden hold a count or a boolean, so an
-  edit that drops it fails loudly instead of matching a golden that lost it
-  too.
+- **Write an invisible character as `\u{...}`, and if a case must hold a
+  pasted one, make its golden a count or a boolean.** Tick 18 nearly deleted
+  the only test of two such characters because every view of the line dropped
+  them. A golden that loses the character along with the case is a golden that
+  still matches — `text.vine` keeps exactly one pasted character, and says so.
+
+- **Then ask what the biggest input is, not only the wrong one.** The pass
+  above looks for malformed input, so that is what it finds. Tick 28 rewrote
+  `int`'s string path, asked instead how *long* a string it could be handed,
+  and found a Python traceback at 4301 digits that had been reachable since
+  tick 1 — in the lexer, in `int`, in `str` and in a hole. The one that
+  mattered had no long text in it at all: `reduce(range(700), fn(a, i) { a *
+  10000000 }, 1)` is 4901 digits, multiplies perfectly well, and printing it
+  was the crash. Size is the axis nobody writes a case for, because cases are
+  written to be legible.
 - **Watch *how* a sabotage fails, not only that it does.** A property that
   crashes is not a property that failed: it names no value, and the next
   reader sees a Python traceback where a finding should be. Tick 22's own
