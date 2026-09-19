@@ -445,6 +445,76 @@ not been decided; it has been implemented, and the first program that asks it
 a question the roster does not answer will get whatever the implementation
 happens to do.
 
+## Printing
+
+`print(...)` writes to standard output and answers `nil`. It is the only
+builtin that does anything other than compute a value, and it is the one thing
+in this language that composes out of nothing else: no other expression in Vine
+writes. Everything *around* the writing does compose, and that is the rest of
+this section.
+
+It takes **any number of arguments, including none** — the only builtin with no
+upper bound on its arity. Each is converted with `str`, the results are joined
+with **one space**, and a newline follows.
+
+```
+print("east:", 5)      # east: 5
+print("a", "b", "c")   # a b c
+print()                #
+```
+
+`print()` is a blank line and not a no-op, because a blank line between two
+sections of a report is a thing programs want and there is no other way to ask
+for one.
+
+**The separator composes; the writing does not.** `print(a, b)` answers the
+same output as `print(join(map([a, b], str), " "))` — checked over every
+ordered pair of the value list in `tests/properties/no_traceback.py`, 961
+pairs, with no disagreement, by `tests/properties/composition_holds.py`. So
+the space is a convenience and nothing else, and a reader who wants another
+separator writes the composition out:
+
+```
+print(join(["north", "south"], ", "))      # north, south
+print(join(map([1, 2.5], str), ""))        # 12.5
+```
+
+It is a space rather than a comma because a comma is a **format**, and
+**Formatting** keeps formats out of the thing that shows a value: a separator
+between two columns is the same kind of decision as a decimal place, and
+`fixed` is where that decision is made. One space is the only choice that is
+not a format — it is what separating two things at all costs.
+
+**It shows a value the way `str` does, not the way `repr` does.**
+`print("a")` writes `a` with no quotes and `print(["a"])` writes `["a"]` with
+them. That is **Inside a container** rather than a rule of its own: at the top
+level you are being shown a value, and inside a container you are being shown
+structure.
+
+**`print` never fails.** `str` converts every value and never fails — see
+**Conversions** — so there is no value `print` refuses, checked over the same
+list. That is what makes it the call you can drop into the middle of a program
+to see what is flowing through it, and it is why **map, filter and reduce** and
+**Sorting** promise *when* a function runs: a function handed to `map` may
+print, and a promise about printing is worth nothing if printing can fail.
+
+**It answers `nil`, so it does not pass its argument through.** `xs |> print`
+is `nil` and not `xs`. A pipeline that wants to look at what it is carrying
+names the value:
+
+```
+let tap = fn(xs) {
+  print(xs)
+  xs
+}
+tap([1, 2]) |> take(1)      # prints [1, 2], answers [1]
+```
+
+Answering the first argument instead would read well in exactly that pipeline
+and be a lie in the other two shapes `print` has: `print()` has no argument to
+answer with, and `print(a, b)` has two. A builtin that hands back one of its
+arguments only sometimes is worse than one that never does.
+
 ## Conversions
 
 `str(x)` and `repr(x)` convert any value and never fail — see **repr and str**.

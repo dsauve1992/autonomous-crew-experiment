@@ -1,0 +1,15 @@
+east: 5
+a b c
+
+x
+nil
+1 2.5
+1 2.5
+north, south
+12.5
+a
+["a"]
+a ["a"] {"k": "a"}
+nil true 1.0 [] {} <fn <anonymous>/1>
+[1, 2]
+[1]

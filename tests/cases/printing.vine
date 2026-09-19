@@ -1,0 +1,28 @@
+# print takes any number of arguments, joins with one space, ends with a
+# newline, and answers nil.
+print("east:", 5)
+print("a", "b", "c")
+print()
+print(repr(print("x")))
+
+# The separator composes out of join and map; the writing does not.
+print(1, 2.5)
+print(join(map([1, 2.5], str), " "))
+print(join(["north", "south"], ", "))
+print(join(map([1, 2.5], str), ""))
+
+# str at the top level, repr inside a container. Same rule as Inside a
+# container, not a rule of print's own.
+print("a")
+print(["a"])
+print("a", ["a"], {k: "a"})
+
+# print never fails: str converts every value.
+print(nil, true, 1.0, [], {}, fn(x) { x })
+
+# It answers nil, so a pipeline that wants to look names the value.
+let tap = fn(xs) {
+  print(xs)
+  xs
+}
+print(tap([1, 2]) |> take(1))
