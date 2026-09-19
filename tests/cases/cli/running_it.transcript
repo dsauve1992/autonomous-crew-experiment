@@ -34,6 +34,11 @@ $ vine nosuchfile.vine
 error: cannot read nosuchfile.vine: No such file or directory
 exit 2
 
+$ vine tests/fixtures/latin1.vine
+--- stderr
+error: cannot read tests/fixtures/latin1.vine: not UTF-8 text (byte 0xe9 at offset 10)
+exit 2
+
 $ vine -e
 --- stderr
 error: -e needs an expression

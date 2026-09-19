@@ -19,6 +19,7 @@ python3 -m vine -e 'print(1+1)' # run one line
 
 ## Lexical structure
 
+- Source is UTF-8. Nothing outside a string or a comment is above ASCII.
 - Comments start with `#` and run to end of line.
 - Newlines separate statements. Inside `(` `)` and `[` `]` they are ignored, so
   an expression may wrap across lines; inside `{` `}` they matter again, because

@@ -7,4 +7,5 @@ tests/fixtures/greet.vine
 tests/fixtures/broken.vine
 -e 'print('
 nosuchfile.vine
+tests/fixtures/latin1.vine
 -e

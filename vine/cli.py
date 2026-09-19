@@ -39,6 +39,16 @@ def main(argv):
         except OSError as exc:
             sys.stderr.write(f"error: cannot read {name}: {exc.strerror}\n")
             return 2
+        except UnicodeDecodeError as exc:
+            # Vine source is UTF-8. A file that is not -- a binary, or a
+            # program saved in another encoding -- fails inside read(), and
+            # UnicodeDecodeError is a ValueError rather than an OSError, so
+            # the handler above let it out as a Python traceback.
+            sys.stderr.write(
+                f"error: cannot read {name}: not UTF-8 text "
+                f"(byte 0x{exc.object[exc.start]:02x} at offset {exc.start})\n"
+            )
+            return 2
 
     try:
         run(text, name)
