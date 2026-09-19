@@ -525,6 +525,24 @@ cost is that `trim` takes a record separator off data delimited by one, and
 there is no narrower spelling to reach for, because Vine has no `replace`.
 That one is a live question rather than a settled answer.
 
+**`split` and `join` are a pair, and the pair is why the empty cases look
+odd.** `split(s, sep)` answers one more piece than there are separators, so
+`split("", ",")` is `[""]` — one empty piece — rather than `[]`. That is what
+makes `join(split(s, sep), sep)` hand `s` back for every `s`, which is what a
+column taken apart and put together again rests on. With an empty separator
+there are no separators to count, and `split(s, "")` is the codepoints of `s`,
+so `split("", "")` is `[]`. The two empty answers differ because they answer
+two different questions, and neither is the other one being wrong. `join`
+requires every element to be a string and names the one that was not.
+
+**`contains` is three builtins wearing one name.** In a string it looks for a
+substring, the needle must be a string, and `contains(s, "")` is `true`
+because every string holds the empty one. In a list it looks for an element by
+`==`, so a needle of any type is a fair question and `false` is a real answer.
+In a map it looks for a *key*, so a needle no key could be — a list, a map, a
+function — is an error rather than `false`: that is a category mistake and not
+a lookup that missed. Absence is what `get(m, k, default)` is for.
+
 ## Range
 
 `range(n)` is the integers from 0 up to but not including `n`, and

@@ -19,3 +19,13 @@ print(len("İ"), len(lower("İ")))
 # characters a program may have: a non-breaking space and a record separator
 # both go.
 print(len(trim(" x ")), len(trim("x")), len(trim(" \t x \n ")))
+
+# split and join are a pair: one more piece than there are separators, so the
+# empty string splits to one empty piece and joins back to itself. With an
+# empty separator there is nothing to count and the pieces are the codepoints.
+print(repr(split("", ",")), repr(split("aa", "a")), repr(split("", "")))
+print(join(split("a,,b", ","), ",") == "a,,b", repr(join([], ",")))
+
+# contains is three builtins under one name: substring, element, key.
+print(contains("abc", ""), contains([1], [1]), contains([[1]], [1]))
+print(contains({a: 1}, "a"), contains({a: 1}, "z"))
