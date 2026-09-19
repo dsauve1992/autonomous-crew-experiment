@@ -1359,11 +1359,12 @@ values were in that state, all the same shape — no way to write them down:
   float beyond about `1.8e308` even briefly, which is the price of every value
   being writable, and it is small.
 
-**There is a second promise, and it is the narrower one: the output holds no
-character a reader cannot see.** `repr` writes every C0 and C1 control as a
-codepoint escape — `\u{0}` through `\u{1f}` and `\u{7f}` through `\u{9f}`, less
-the three that already have `\n`, `\t` and `\r`. A string holding a record
-separator therefore reprs as something a reader can type and not only paste:
+**There is a second promise, and it is the narrower one: no control character
+comes out as itself.** `repr` writes every C0 and C1 control as a codepoint
+escape — `\u{0}` through `\u{1f}` and `\u{7f}` through `\u{9f}`, less the three
+that already have `\n`, `\t` and `\r`. Sixty-two escapes, and that is exactly
+the characters Unicode files under `Cc`. A string holding a record separator
+therefore reprs as something a reader can type and not only paste:
 
 ```
 repr("a\u{1e}b")                      # "a\u{1e}b"
@@ -1373,18 +1374,27 @@ That range and no wider, and the reason is the one **Text** gives for `len`
 counting codepoints. Asking a Unicode table which characters are invisible
 would catch the non-breaking space as well, and would make `repr(s)` — a value
 a Vine program can compare, print and write into a file — depend on which
-Unicode release the implementation was built against. The controls are the
-largest set the standard has closed forever, so this answer is the same on
-every machine. What that costs is that a non-breaking space still reprs as
-itself, one column wide and indistinguishable from a space:
+Unicode release the implementation was built against. `Cc` is the one set the
+standard has closed forever; every wider notion of *invisible* is a table that
+moves.
+
+**So `repr` is legible and not unambiguous, and the difference is worth being
+exact about.** Two kinds of character still come out as themselves and neither
+can be seen. A non-breaking space is *confusable*: it occupies a column and
+reads as a space. A zero-width space, a word joiner, a byte-order mark and the
+rest of Unicode's format characters are *invisible outright* — they occupy
+nothing, so `repr` of one is a line that looks like an empty string:
 
 ```
-len(repr("\u{a0}"))                   # 3 — quote, the space, quote
+len(repr("\u{200b}"))                 # 3 — quote, a zero-width space, quote
+repr("\u{200b}") == repr("")          # false — though the two print alike
 ```
 
-That is a real cost and it is the smaller one. **Invisible** and **confusable**
-are two complaints, and only the first is one `repr` can answer the same way
-twice.
+That is the cost, it is real, and it is smaller than an answer that differs
+between two machines running the same program. What `repr` promises is the
+controls, which is a promise it can keep the same way twice; it does not
+promise that every character in its output can be seen, and a program that
+needs that guarantee cannot get it from `repr`.
 
 The first promise held through all of this and was never the whole of it: for
 as long as `repr` of a record separator answered a line with one sitting inside
