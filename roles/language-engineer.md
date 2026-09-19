@@ -47,7 +47,13 @@ contract, in one piece of work. If what you are doing does not change what Vine
   is the six-line sort by key written in Vine together with the fact that it
   puts ties backwards, and the map workaround beside the `2` it answers for
   three records. A reader who disagrees then has to argue with a run, and a
-  tick that overturns the rule overturns it knowing the price.
+  tick that overturns the rule overturns it knowing the price. **Then run what
+  the refusal breaks, not only what it claims.** Tick 12 nearly shipped "a
+  negative count is an error" as though it were free; what it costs is
+  `take(xs, len(xs) - 1)`, the short spelling of *all but the last*, which now
+  fails on an empty list — the one input the rest of the feature exists to
+  survive. The spec carries the spelling that works instead. A price you did
+  not go looking for is one the reader pays and you never named.
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
