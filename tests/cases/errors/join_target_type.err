@@ -1,0 +1,5 @@
+runtime error: join target must be a list, got string
+ --> join_target_type.vine:5:11
+  |
+5 | print(join("a,b", ","))
+  |           ^

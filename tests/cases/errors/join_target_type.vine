@@ -1,0 +1,5 @@
+# join's first argument must be a list. The spec quotes this message under
+# **Why there is no replace**: split(join(s, from), to) is the composition
+# nested the wrong way round, and the only wrong spelling of it that fails
+# instead of quietly answering. Nothing pinned the wording before that.
+print(join("a,b", ","))
