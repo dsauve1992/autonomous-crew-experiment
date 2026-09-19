@@ -1,0 +1,178 @@
+# A timesheet auditor. The input is raw text — whatever somebody typed into a
+# file, with blank lines, comments, ragged spacing and mistakes in it. The
+# program says which lines it could not use and why, and reports the hours it
+# could. Everything below treats the input as data that arrived from
+# somewhere: it is trimmed, split and checked, never trusted.
+#
+# Vine has no file I/O and a string cannot span lines, so the text is a list
+# of lines. That is the only thing here that would be different if it had been
+# read from a file; line 1 of the file is element 0 of the list.
+
+let input = [
+  "# hours, week of 2024-03-11",
+  "",
+  "2024-03-11  alice  vine-core  6.5   parser review",
+  "2024-03-11  bob    vine-core  8     lexer",
+  "2024-03-11  alice  docs       1.5   spec pass",
+  "2024-03-12  alice  vine-core  7",
+  "2024-03-12  bob    infra      4.25  ci",
+  "2024-03-12  carol  docs       3     examples",
+  "2024-03-12  alice  vine-core  9.5   long day",
+  "2024-03-12  alice  docs       8     longer",
+  "2024-03-13  bob    vine-core  abc   rewrote the tokenizer",
+  "2024-03-13  carol             5     forgot the project",
+  "2024-03-13  alice  vine-core  -2    negative",
+  "2024-03-13  dave   infra      3.75  runners",
+  "2024-03-14  carol  docs       2     examples",
+  "# friday",
+  "2024-03-14  bob    vine-core  20    all-nighter",
+  "13-03-2024  dave   infra      1     wrong way round",
+  "2024-03-14  dave   vine-core  4.5   review",
+]
+
+let known_projects = ["vine-core", "docs", "infra"]
+
+let digits = "0123456789"
+
+# There is no s[a:b], so a few characters out of the middle of a string are a
+# list of codepoints, dropped, taken and joined back up.
+let slice = fn(s, from, count) { take(drop(split(s, ""), from), count) |> join("") }
+
+let all_digits = fn(s) {
+  len(s) > 0 and len(filter(split(s, ""), fn(c) { not contains(digits, c) })) == 0
+}
+
+let is_date = fn(s) {
+  if len(s) != 10 { return false }
+  if slice(s, 4, 1) != "-" or slice(s, 7, 1) != "-" { return false }
+  all_digits(slice(s, 0, 4)) and all_digits(slice(s, 5, 2)) and all_digits(slice(s, 8, 2))
+}
+
+# `float(s)` on text that is not a number is a runtime error, and Vine cannot
+# catch one, so a program reading data it did not write has to answer this
+# question for itself before it dares to convert.
+let is_number = fn(s) {
+  let cs = split(s, "")
+  let body = if len(cs) > 0 and first(cs) == "-" { rest(cs) } else { cs }
+  if len(filter(body, fn(c) { c == "." })) > 1 { return false }
+  if len(filter(body, fn(c) { not contains(digits + ".", c) })) > 0 { return false }
+  len(filter(body, fn(c) { contains(digits, c) })) > 0
+}
+
+# Fields are separated by runs of spaces and tabs. `split` counts separators
+# rather than runs, so the empty pieces are dropped afterwards.
+let fields = fn(line) {
+  join(split(line, "\t"), " ") |> split(" ") |> filter(fn(w) { w != "" })
+}
+
+# A line is either an entry or a complaint about itself, and the only way to
+# say "one of these two" is a tag that both of them carry.
+let complaint = fn(n, why) { {ok: false, line: n, why: why} }
+
+let read_line = fn(n, line) {
+  let text = trim(line)
+  if len(text) == 0 or slice(text, 0, 1) == "#" { return nil }
+  let f = fields(text)
+  if len(f) < 4 { return complaint(n, "expected date, person, project, hours; found {len(f)}") }
+  if not is_date(f[0]) { return complaint(n, "{repr(f[0])} is not a date") }
+  if not contains(known_projects, f[2]) { return complaint(n, "{repr(f[2])} is not a project") }
+  if not is_number(f[3]) { return complaint(n, "{repr(f[3])} is not a number of hours") }
+  let hours = float(f[3])
+  if hours <= 0.0 { return complaint(n, "hours must be above zero, got {f[3]}") }
+  if hours > 16.0 { return complaint(n, "{f[3]} hours is more than a day's work") }
+  {ok: true, line: n, date: f[0], who: f[1], project: f[2], hours: hours}
+}
+
+# `map` hands the function an element and never an index, so the index is what
+# gets mapped over and the line is fetched with it.
+let read = map(range(len(input)), fn(i) { read_line(i + 1, input[i]) })
+  |> filter(fn(row) { row != nil })
+
+let entries = filter(read, fn(row) { row.ok })
+let complaints = filter(read, fn(row) { not row.ok })
+
+let sum = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) }
+let hours_of = fn(rows) { sum(map(rows, fn(r) { r.hours })) }
+let total = hours_of(entries)
+
+let by_project = reduce(entries, fn(acc, r) {
+  set(acc, r.project, get(acc, r.project, 0.0) + r.hours)
+}, {})
+
+# A person's day is two values and a map key cannot be two values, so the pair
+# is spelled as text here and taken apart again where it is read.
+let by_day = reduce(entries, fn(acc, r) {
+  set(acc, "{r.who} {r.date}", get(acc, "{r.who} {r.date}", 0.0) + r.hours)
+}, {})
+
+# A map of maps. Updating the inner one means setting the outer one too,
+# because nothing here is changed in place.
+let grid = reduce(entries, fn(acc, r) {
+  let row = get(acc, r.who, {})
+  set(acc, r.who, set(row, r.project, get(row, r.project, 0.0) + r.hours))
+}, {})
+
+let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
+let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
+let pad = fn(s, w) { s + spaces(w - len(s)) }
+let rjust = fn(s, w) { spaces(w - len(s)) + s }
+let money = fn(x) { fixed(x, 2) }
+
+print("timesheet: {len(entries)} entries, {len(keys(grid))} people, {money(total)} hours")
+print()
+
+# By project, widest first, with a bar forty characters wide at the whole week.
+let projects = keys(by_project) |> sort(fn(p) { -get(by_project, p) })
+let project_width = widest(projects)
+print("by project")
+print(join(map(projects, fn(p) {
+  let hours = get(by_project, p)
+  let share = hours / total
+  let bar = join(map(range(int(share * 40.0)), fn(_) { "#" }), "")
+  "  {pad(p, project_width)}  {rjust(money(hours), 6)}  {rjust(fixed(share * 100.0, 1), 5)}%  {bar}"
+}), "\n"))
+print()
+
+# Person against project. The columns are every project anybody logged, in
+# name order, and a person who never touched one gets a dash rather than a
+# zero: the two are different facts and a report that prints 0.00 for both has
+# thrown one of them away.
+let people = keys(grid) |> sort
+let column = 11
+let name_width = widest(concat(people, ["person", "total"]))
+let cell = fn(row, p) {
+  rjust(if contains(row, p) { money(get(row, p)) } else { "-" }, column)
+}
+let columns = sort(projects)
+# A wrapped expression is continued by an operator at the end of the line
+# above it, and `|>` is the only one that may open a line. Inside a block,
+# where a newline separates statements, that is the only way to wrap at all.
+let across = fn(label, cells) {
+  "  {pad(label, name_width)}" +
+    join(cells, "")
+}
+print("person by project")
+print(across("person", concat(map(columns, fn(p) { rjust(p, column) }), [rjust("total", column)])))
+print(join(map(people, fn(who) {
+  let row = get(grid, who)
+  across(who, concat(map(columns, fn(p) { cell(row, p) }),
+    [rjust(money(sum(values(row))), column)]))
+}), "\n"))
+print(across("total", concat(map(columns, fn(p) { rjust(money(get(by_project, p)), column) }),
+  [rjust(money(total), column)])))
+print()
+
+# A day over twelve hours is nothing a single line said, so it is not a
+# complaint about a line: it is only visible once the lines are added up.
+let long_days = keys(by_day)
+  |> filter(fn(k) { get(by_day, k) > 12.0 })
+  |> map(fn(k) {
+    let parts = split(k, " ")
+    "  {parts[0]} logged {money(get(by_day, k))} hours on {parts[1]}"
+  })
+
+# `join([], "\n")` is the empty string and `print` of it is a blank line, so
+# an empty section is a case the program has to notice for itself.
+let questions = concat(map(complaints, fn(c) { "  line {c.line}: {c.why}" }), long_days)
+print("questions")
+print(if len(questions) == 0 { "  none" } else { join(questions, "\n") })
