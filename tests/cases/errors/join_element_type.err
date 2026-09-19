@@ -1,0 +1,5 @@
+runtime error: join element at index 2 must be a string, got int
+ --> join_element_type.vine:4:11
+  |
+4 | print(join(["a", "b", 3, "d"], ", "))
+  |           ^

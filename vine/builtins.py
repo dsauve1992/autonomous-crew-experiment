@@ -492,8 +492,11 @@ def _split(interp, pos, args):
 def _join(interp, pos, args):
     items = want(interp, pos, args[0], "list", "join target")
     sep = want(interp, pos, args[1], "string", "join separator")
-    for item in items:
-        want(interp, pos, item, "string", "join element")
+    for i, item in enumerate(items):
+        # The index is the only "where" there is. The caret is on the call,
+        # and a list built by a pipeline has no source position per element
+        # to move it to even if moving it were allowed.
+        want(interp, pos, item, "string", f"join element at index {i}")
     return sep.join(items)
 
 

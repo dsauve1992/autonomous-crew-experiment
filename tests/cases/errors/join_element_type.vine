@@ -1,0 +1,4 @@
+# join checks every element and stops on the first that is not a string. The
+# caret goes on the call, because that is where the check runs -- so the index
+# is the only "where" the reader gets, and before this case there was none.
+print(join(["a", "b", 3, "d"], ", "))

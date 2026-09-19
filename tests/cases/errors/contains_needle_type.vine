@@ -1,0 +1,8 @@
+# Read aloud and left as it is, so that this is a decision and not an
+# oversight. `contains` takes a list, a map or a string, and only the string
+# branch requires a string needle -- `contains([1], 1)` is fine. The message
+# states that rule without its condition: true of this call, not of the
+# builtin. The clause was not added because the reader of this message has
+# already been told exactly what to change, and docs/spec.md carries the
+# condition where someone learning `contains` will meet it.
+print(contains("abc", 1))

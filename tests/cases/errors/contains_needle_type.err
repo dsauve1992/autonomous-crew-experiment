@@ -1,0 +1,5 @@
+runtime error: contains needle must be a string, got int
+ --> contains_needle_type.vine:8:15
+  |
+8 | print(contains("abc", 1))
+  |               ^

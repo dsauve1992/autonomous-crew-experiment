@@ -1,0 +1,5 @@
+runtime error: first argument must be a list, got string
+ --> first_argument_type.vine:6:12
+  |
+6 | print(first("ab"))
+  |            ^

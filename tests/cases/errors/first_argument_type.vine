@@ -1,0 +1,6 @@
+# Read aloud and left as it is. `first` is the one builtin whose name is also
+# an ordinal, so `first argument must be a list` can be read as "the first
+# argument", which would promise a second one that does not exist. Both
+# readings name the same value, because `first` takes exactly one argument,
+# so the ambiguity cannot send a reader to the wrong place.
+print(first("ab"))
