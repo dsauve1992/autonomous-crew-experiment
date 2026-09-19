@@ -469,9 +469,9 @@ for one.
 
 **The separator composes; the writing does not.** `print(a, b)` answers the
 same output as `print(join(map([a, b], str), " "))` — checked over every
-ordered pair of the value list in `tests/properties/no_traceback.py`, 961
-pairs, with no disagreement, by `tests/properties/composition_holds.py`. So
-the space is a convenience and nothing else, and a reader who wants another
+ordered pair of the value list in `tests/properties/no_traceback.py` by
+`tests/properties/composition_holds.py`, with no disagreement. So the space is
+a convenience and nothing else, and a reader who wants another
 separator writes the composition out:
 
 ```
@@ -492,8 +492,10 @@ level you are being shown a value, and inside a container you are being shown
 structure.
 
 **`print` never fails.** `str` converts every value and never fails — see
-**Conversions** — so there is no value `print` refuses, checked over the same
-list. That is what makes it the call you can drop into the middle of a program
+**Conversions** — so there is no value `print` refuses. That is a consequence
+rather than a measurement: nothing enumerates it, and
+`tests/cases/printing.vine` prints one value of every type. That is what makes
+it the call you can drop into the middle of a program
 to see what is flowing through it, and it is why **map, filter and reduce** and
 **Sorting** promise *when* a function runs: a function handed to `map` may
 print, and a promise about printing is worth nothing if printing can fail.
@@ -886,11 +888,12 @@ refuse what can** — the rule **Formatting** settles — neither of them should
 be here. Both are, and the two reasons are different ones.
 
 **`concat(a, b)` is `a + b`, and it is here because `+` is not a value.**
-Over every pair of lists in the value list of
-`tests/properties/no_traceback.py` the two never disagree; over every pair of
-*values* they disagree on 925 of 961, because `+` also adds two numbers and
-joins two strings, while `concat` refuses both and names the side that was not
-a list. So `concat` is one third of `+` with the other two thirds taken away,
+Over the value list of `tests/properties/no_traceback.py` the two agree on
+every pair of lists and on no other pair whatever, because `+` also adds two
+numbers and joins two strings while `concat` refuses both and names the side
+that was not a list. `tests/properties/composition_holds.py` checks both of
+those directions, because where they agree is the claim and not that they
+agree. So `concat` is one third of `+` with the other two thirds taken away,
 and that earns a name only because Vine has no way to hand an operator to a
 function:
 
@@ -905,8 +908,8 @@ maps over a list, it passes to `reduce`* — and the argument reaches every
 builtin whose whole body is one operator.
 
 **`push(xs, x)` is `concat(xs, [x])`, and it is here because the brackets are
-invisible when they are wrong.** Over 310 pairs of list and value the two
-never disagree, so this one composes exactly, and the rule as written refuses
+invisible when they are wrong.** Over every list in that value list paired
+with every value in it the two never disagree, so this one composes exactly, and the rule as written refuses
 it. The exception is not about what the composition answers; it is about what
 the composition costs to write. It has a one-element list literal in it, and
 dropping those brackets is not an error:
