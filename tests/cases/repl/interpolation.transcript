@@ -14,3 +14,4 @@ syntax error: unterminated string
   |
 1 | "a{
   | ^
+  = note: the '{' at 1:3 opened an interpolation, and the line ended with it still open

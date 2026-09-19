@@ -254,7 +254,10 @@ same reason rather than a second one: a hole is lexed in the ordinary token
 stream, so a `#` inside it starts a comment, and the comment runs to the end
 of the line and takes the closing quote with it. Both report
 `unterminated string` at the quote that opened, which is where the string
-really did begin.
+really did begin, and both carry a note naming the `{` that was still open
+when the line ended. The `#` case carries a second note naming the `#` as
+well, because the closing quote the comment swallowed is still on the screen
+for the reader to point at.
 
 Two mistakes this design makes easy. `"{"`, meant as a brace, opens a hole and
 then reads the closing quote as the start of another string. `"{{1}}"`,

@@ -94,6 +94,9 @@ class Lexer:
         # literal text are read to completion the moment they begin, so there
         # is no third state to be in.
         self.strings = []
+        # Where the last `#` consumed inside a hole was. Kept for one message
+        # and nothing else: see unterminated().
+        self.hole_comment = None
 
     def error(self, message):
         return SyntaxError_(message, self.here(), self.src)
@@ -167,8 +170,33 @@ class Lexer:
             self.next_token(out)
 
     def unterminated(self):
-        """The innermost open string ran off the end of its line."""
-        return SyntaxError_("unterminated string", self.strings[-1], self.src)
+        """The innermost open string ran off the end of its line.
+
+        The note reads the other way round from unterminated_string()'s: the
+        string blamed here *contains* the open hole rather than sitting inside
+        one, and a hole is always open when this is raised -- `self.strings`
+        is non-empty only between a hole opening and the string closing, and
+        the string can only close from inside chunk().
+
+        The second note is for the `#` case alone, and it earns its line: the
+        reader can see a closing quote at the end of that line and has to be
+        told it is inside a comment. Without the first note they would learn
+        the wrong rule from it, since a `#` in a string's ordinary text is
+        just a character.
+        """
+        err = SyntaxError_("unterminated string", self.strings[-1], self.src)
+        err.note(
+            "the '{' at {pos} opened an interpolation, "
+            "and the line ended with it still open",
+            self.open_hole(),
+        )
+        if self.hole_comment is not None:
+            err.note(
+                "the '#' at {pos} began a comment, "
+                "so the rest of the line is not part of the program",
+                self.hole_comment,
+            )
+        return err
 
     def continues(self):
         """True when the next line picks up the previous one, not a new one.
@@ -200,6 +228,8 @@ class Lexer:
             elif ch in " \t\r":
                 self.advance()
             elif ch == "#":
+                if self.strings:
+                    self.hole_comment = self.here()
                 while self.i < len(self.text) and self.peek() != "\n":
                     self.advance()
             else:

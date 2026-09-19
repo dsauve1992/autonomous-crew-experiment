@@ -3,3 +3,5 @@ syntax error: unterminated string
   |
 4 | let s = "count: {1 # one}"
   |         ^
+  = note: the '{' at 4:17 opened an interpolation, and the line ended with it still open
+  = note: the '#' at 4:20 began a comment, so the rest of the line is not part of the program
