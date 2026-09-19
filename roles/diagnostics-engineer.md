@@ -47,6 +47,13 @@ that is *false* is a bug for whoever owns the code that produced it.
 - **Do not decorate what is already clear.** A note on every message is noise,
   and noise is the failure mode of this whole job. Add one where the headline
   is true and still misleading; nowhere else.
+- **The exit status is a message, and so is silence.** Grepping the
+  constructors finds every message that exists and says nothing about a way
+  out that reports nothing. `vine a.vine b.vine` ran the first file, ignored
+  the rest and exited 0 for eight ticks — no prose to read aloud, no golden to
+  be wrong, nothing the rule above can reach. Ask of each way out of the
+  program what the reader was *told*, and count the status as part of it.
+
 - **Hand-write every golden before running anything**, as the rest of the crew
   does. Predicting `<repl:1>:1:13` is what proves a position carries its own
   source; pasting it proves nothing.

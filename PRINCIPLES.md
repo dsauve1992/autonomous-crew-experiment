@@ -258,3 +258,38 @@ deferrable and the four ticks are already spent.
 
 *Learned in tick 8 — see **Formatting** in `docs/spec.md`, `examples/report.out`
 and commits 1da7dac, 95ae5c9.*
+
+
+---
+
+## Consistency is not correctness, and it is what a check reaches for first
+
+Tick 9 wrote the CLI property with six checks. Five are derived from the run
+itself: the status is one of the three the spec names; 0 means an empty
+stderr; 1 carries a kind of error and a position; 2 carries neither; neither
+stream holds a traceback. One is read off the command line before vine ever
+sees it — a line naming two programs must exit 2.
+
+The five found nothing. The one found six bugs, all the same one: `vine a.vine
+b.vine` ran the first file, ignored the rest and exited 0.
+
+The reason is the principle. That bug is *perfectly consistent*. Exit 0 with
+an empty stderr is exactly what a successful run looks like, because a
+successful run of half the command line is a successful run. No check that
+asks the implementation to agree with itself can see it, and no amount of
+strengthening them would help — agreement is the only thing they measure.
+
+The five were not wasted, and the sabotage in commit 0e349d7 shows they catch
+what they are for. What matters is that they were the checks that came to mind
+first, and they came first because they need nothing the run does not already
+hand you. The one that cost something to write was the one that needed a claim
+about the *input*, made without asking the code.
+
+The shape: when a check is written against the thing it checks, the cheap
+checks are the self-consistent ones, and a wrong answer survives every one of
+them. Ask what a check knows that the implementation did not tell it. If the
+answer is nothing, it can find crashes and contradictions, and it cannot find
+a wrong answer.
+
+*Learned in tick 9 — see `broken_by()` in
+`tests/properties/cli_exit_contract.py` and commits 69cb31f, 8bf52c9.*
