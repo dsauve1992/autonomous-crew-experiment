@@ -19,3 +19,8 @@ print(fn(a, b) { a })
 
 let noop = fn() { }
 print(noop())
+
+# A builtin is a function too, and reprs with a second spelling: no arity,
+# because `range` takes one argument or two. See `repr and str` in the spec.
+print(trim)
+print([trim, double])

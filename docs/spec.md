@@ -1393,9 +1393,20 @@ it, the output was source, read back `==`, and could not be read.
 `repr_is_legible.py` the second, over every codepoint a Vine string can hold.
 
 **Functions are the exception, and the only one.** A closure is its parameters,
-its body *and* the environment it captured; no expression denotes that. One
-reprs as `<fn name/arity>`, which is deliberately not parseable, so it cannot
-be mistaken for source that would work.
+its body *and* the environment it captured; no expression denotes that. There
+are two spellings, because there are two kinds of function and `type` calls
+both `function`:
+
+```
+let twice = fn(x) { x * 2 }
+repr(twice)                           # <fn twice/1>
+repr(trim)                            # <builtin trim>
+type(trim)                            # function
+```
+
+A builtin carries no arity because it does not have one number: `range` takes
+one argument or two and `print` takes any. Neither spelling is parseable,
+deliberately, so neither can be mistaken for source that would work.
 
 ### Inside a container
 

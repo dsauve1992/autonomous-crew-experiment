@@ -5,3 +5,5 @@
 <fn double/1>
 <fn <anonymous>/2>
 nil
+<builtin trim>
+[<builtin trim>, <fn double/1>]
