@@ -529,8 +529,21 @@ error, the refusal is free and you have said so. If the wrong version is a
 plausible value, then the name you were about to refuse was buying something
 the equality does not price: a spelling that cannot be got wrong.
 
+**Tick 18 found the half-step this was missing.** "The wrong version is a
+plausible value, so the name buys a spelling that cannot be got wrong" has an
+unstated premise in it: that the *name* cannot be got wrong. Written out, it
+has to be checked, and for `replace` it is false. Two of the three ways to
+mistype `join(split(s, from), to)` answer instead of failing — so by the rule
+above, `replace` earns its place — but `replace(s, to, from)` is the identical
+swap with the two strings adjacent, the same type and one comma apart, which
+is where argument swaps come from. `push` passed this test because it has no
+brackets to drop; `replace` fails it because it moves the mistake rather than
+removing it. So write the *builtin* wrong too, and refuse it when the wrong
+spelling of the name is as available as the wrong spelling of the composition.
+
 *Learned in tick 16 — see **Building lists** in `docs/spec.md`,
-`tests/cases/building_lists.vine`, and commit 888e14f.*
+`tests/cases/building_lists.vine`, and commit 888e14f; sharpened in tick 18,
+see **Why there is no `replace`** and commit ea5a26d.*
 
 ---
 
@@ -613,3 +626,52 @@ message contains.
 
 *Learned in tick 17 — see `join` and `concat` in `vine/builtins.py`,
 `concat_left_of_string.vine`, and commits a095d1a and 6f1e0f4.*
+
+---
+
+## A problem and its named remedy are two claims, and the remedy is the unchecked one
+
+**Text** carried this sentence through four handoffs:
+
+> The cost is that `trim` takes a record separator off data delimited by one,
+> and there is no narrower spelling to reach for, because Vine has no
+> `replace`. That one is a live question rather than a settled answer.
+
+Two claims are welded together there. The first — `trim` eats a delimiter —
+is true and runnable. The second — that `replace` is what a program wanting
+the narrow set would reach for — is an assertion about a builtin that does
+not exist, and every tick that read the paragraph inherited the question
+*should we add `replace`?* with *`replace` would fix this* already granted.
+
+It would not. `replace` is global and position-blind; it cannot express
+"remove these characters from the ends and nowhere else", which is the whole
+of what the narrow trim needs. The remedy was never a remedy. And the real
+one was already in the language and needs no builtin at all — trim the fields
+rather than the record:
+
+```
+let row = " a b "
+len(split(row, " "))                  # 4
+len(split(trim(row), " "))            # 2, the two ends eaten
+map(split(row, " "), trim)            # ["", "a", "b", ""] — still 4
+```
+
+Three lines, and they dissolve the question instead of answering it. Checking
+them was cheaper than any of the four ticks' worth of deciding whether to add
+`replace`, and it would have been cheaper every one of those times.
+
+The shape: a problem statement that names its own fix is doing two jobs, and
+only the first one gets the scrutiny, because the fix reads as a description
+of the gap rather than as a proposal about it. *Vine has no `replace`* is a
+fact; *so there is no narrower spelling* is a conclusion drawn from it, and
+nothing in the sentence marks where one ends and the other begins.
+
+So when a question arrives as "should we add X?", answer "does X solve P?"
+first, and answer it by writing P's fix in the language as it stands today.
+If X does not solve P, the question was never about X. If something already
+here does, there is no question. Only when both survive is it time to weigh
+the builtin — and then **"It composes" is a measurement** and **A composition
+has two costs** say how.
+
+*Learned in tick 18 — see **Text** and **Why there is no `replace`** in
+`docs/spec.md`, `tests/cases/text.vine`, and commit ea5a26d.*

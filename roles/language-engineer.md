@@ -67,6 +67,20 @@ contract, in one piece of work. If what you are doing does not change what Vine
   before you write it down. The tick that handed you the list read the region
   it was auditing; the places your facts are already stated are the regions it
   was not.
+- **What you are shown of a file is a rendering, and a test about invisible
+  characters is made of the ones it drops.** Tick 18 read
+  `tests/cases/text.vine`, saw `print(len(trim(" x ")), len(trim("x")), ...)`,
+  and concluded its comment about a non-breaking space and a record separator
+  was claiming more than the line checked. The line actually held
+  `trim("\xa0x\xa0")` and `trim("\x1ex")`; the comment was exact and the fix
+  was about to break it. Vine's escapes stop at `\n \t \r \" \\ \{` and `\}`,
+  so every test of the twenty-nine-character set is written by pasting, and
+  every view of those files lies about them in the same direction. Before
+  editing a line whose subject is a character you cannot see, print it as
+  `repr` per line. And when you write one, make the *golden* hold only counts
+  and booleans, so an edit that loses a pasted character fails loudly instead
+  of matching a golden that lost it too.
+
 - **Then go looking for the mistakes your syntax has just made possible.**
   Cases prove the feature does what it is for; nobody designs the ways to get
   it wrong, so nobody writes a case for them. Tick 4 shipped interpolation with
