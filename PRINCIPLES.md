@@ -449,3 +449,43 @@ have found its price, which is the thing the reader was owed.
 
 *Learned in tick 14 — see **Powers** in `docs/spec.md`, `tests/cases/powers.vine`
 and commits c0901a8, 3f96777.*
+
+---
+
+## A rule is recorded where it was needed; its reasoning goes further
+
+Tick 3 found that the lexer asked Python whether a character was a digit, so
+`2²` lexed as a number. It fixed the lexer and wrote the reason into the code,
+naming the very function the bad answer went on to reach:
+
+> Python's own str.isalpha/isdigit are Unicode-aware and would silently widen
+> both: `café` would lex as an identifier, and `2²` would lex as a number and
+> then crash int() with a Python traceback.
+
+`int()` kept Python's answer for the next twelve ticks. `int("١٢٣")` was 123,
+`int("1_000")` was 1000, and the whitespace it skipped was Python's
+twenty-nine characters rather than the four the lexer had just been taught.
+One language, two answers to what a digit is, with the argument for one of
+them written down and the other never asked.
+
+It is not the only one. Tick 10 argued that when a sort key function runs
+belongs in the contract, because a key function is ordinary Vine and may
+print. Every word of that is true of `map`, `filter` and `reduce`; none of it
+was ever said about them. Both of these were found in tick 15 by the same
+move, and neither is a borrowed answer nobody noticed — in both cases somebody
+had already done the thinking and written it down.
+
+The shape: a decision is recorded at the site that forced it. The record is
+local and the reasoning is general, and nobody re-reads a comment in the lexer
+while editing the standard library. So the second place the argument applies
+does not get it, and the two halves of the language disagree with a full
+suite passing over them.
+
+The habit is cheap. When you find a rule argued anywhere — in a spec section,
+a docstring, a commit message — take the *argument* rather than the rule, and
+list every other place that argument reaches. That list is mechanical to
+build, and it is never the one in your handoff: the handoff was written by
+whoever argued the rule at the one place that needed it.
+
+*Learned in tick 15 — see **Conversions** and **map, filter and reduce** in
+`docs/spec.md`, `DIGITS` in `vine/lexer.py`, and commits f4f2c4d, ea1860c.*

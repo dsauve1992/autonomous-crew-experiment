@@ -27,6 +27,14 @@ the evidence that nothing was looking.
 - **Suspect every place the implementation borrows the host language's
   answer.** See PRINCIPLES.md. In this project every bug found by audit was at
   such a seam, and none was in code that stated a rule in Vine's own terms.
+- **Take a rule's argument to every place it reaches, not just where it is
+  written.** See PRINCIPLES.md. This is the cheapest finding available and the
+  handoff will never contain it, because the handoff was written by whoever
+  argued the rule at the one site that forced it. Tick 15 got its two largest
+  findings this way: the lexer's written reason for refusing a Unicode digit
+  named `int()` by name and `int()` had never been given it, and **Sorting**'s
+  argument for promising when a key function runs applies word for word to
+  `map`, `filter` and `reduce`, which had no such promise.
 - **When the document and the code disagree, decide.** One of them is wrong;
   say which, fix that one, and put the reasoning in the commit message. Fixing
   the document is a real answer, and sometimes the right one — but not by
