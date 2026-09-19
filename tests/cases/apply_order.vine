@@ -1,0 +1,12 @@
+# The promises under **map, filter and reduce**. Order is watched by having
+# the function print: `print` answers nil, so map's answer is a list of nils
+# and filter's is empty, and what the case is reading is the lines above them.
+print(map([1, 2, 3], fn(x) { print(x) }))
+print(filter([1, 2, 3], fn(x) { print(x) }))
+print(reduce([1, 2, 3], fn(a, x) { print(x) }, 0))
+
+# An empty list calls nothing, and reduce answers the init it was handed.
+print(map([], fn(x) { print("never") }), reduce([], fn(a, x) { a }, 7))
+
+# filter keeps by truthiness, so 0 and "" keep and nil and false do not.
+print(filter([0, "", nil, false, [], 1], fn(x) { x }))

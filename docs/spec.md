@@ -683,6 +683,25 @@ add `sqrt` knowing exactly what it buys, which is this paragraph and nothing
 else.
 
 
+## map, filter and reduce
+
+`map(xs, f)` answers `f` of every element. `filter(xs, p)` keeps the elements
+`p` is true of, by **Truthiness** — so anything but `nil` and `false` keeps.
+`reduce(xs, f, init)` folds from the left: `f` is called with the accumulator
+and then the element, and an empty list answers `init` without calling `f` at
+all.
+
+**The function runs once per element, in list order, and the first failure
+ends the call.** That is the promise **Sorting** makes about a key function,
+made here for the same reason and not a second one: the function is ordinary
+Vine, so it may print, and when it runs belongs in the contract rather than in
+whatever shape the loop happens to have. `map([1, 2, 3], f)` where `f` fails on
+the second element has already done whatever `f` did to the first, and has not
+touched the third.
+
+All three take the list first, so all three pipe — see **Pipeline** — and none
+of them changes `xs`.
+
 ## Taking and dropping
 
 `take(xs, n)` is the first `n` elements of a list and `drop(xs, n)` is the

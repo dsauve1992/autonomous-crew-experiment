@@ -1,0 +1,19 @@
+$ vine -e 'print(map([1, 2, 3], fn(x) { print(x) + 1 }))'
+1
+--- stderr
+runtime error: cannot add nil and int
+ --> <argument>:1:39
+  |
+1 | print(map([1, 2, 3], fn(x) { print(x) + 1 }))
+  |                                       ^
+exit 1
+
+$ vine -e 'print(reduce([1, 2, 3], fn(a, x) { print(x) + 1 }, 0))'
+1
+--- stderr
+runtime error: cannot add nil and int
+ --> <argument>:1:45
+  |
+1 | print(reduce([1, 2, 3], fn(a, x) { print(x) + 1 }, 0))
+  |                                             ^
+exit 1

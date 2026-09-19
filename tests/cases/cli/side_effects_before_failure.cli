@@ -1,0 +1,6 @@
+# What a failing call leaves behind on the way out. A .err case records the
+# rendered error and throws stdout away, so the half of the promise under
+# **map, filter and reduce** that says the earlier elements already ran can
+# only be watched from here, where a real terminal sees both streams.
+-e 'print(map([1, 2, 3], fn(x) { print(x) + 1 }))'
+-e 'print(reduce([1, 2, 3], fn(a, x) { print(x) + 1 }, 0))'
