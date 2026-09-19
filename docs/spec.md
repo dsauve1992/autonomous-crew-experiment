@@ -822,11 +822,12 @@ m["version"]           # 1
 get(m, "kind")         # nil
 get(m, "kind", "?")    # "?"
 contains(m, "kind")    # false
+m["kind"]              # error: a map of 2 keys has no key "kind"
 ```
 
 - **`m.k` and `m["k"]` fail.** `{a: 1}["z"]` is
-  `runtime error: map has no key "z"`. This is the spelling for a key the
-  program requires — a field of a record it is reading — where a missing one
+  `runtime error: a map of 1 key has no key "z"`. This is the spelling for a
+  key the program requires — a field of a record it is reading — where a missing one
   means the data is not what the program was written for, and stopping at the
   lookup names the key instead of letting a `nil` travel.
 - **`get(m, k)` answers `nil`.** The spelling for a key that may or may not be
@@ -837,6 +838,19 @@ contains(m, "kind")    # false
 - **`contains(m, k)` answers whether it is there**, and nothing about the
   value. It is the only one of the four that asks the actual question, and the
   only one that can tell a key holding `nil` from no key.
+
+**The failing one names the map's size, and not its keys.** `map has no key
+"z"` said what was asked for and nothing about what was there, which is half
+of the standard **Errors** sets for itself. The fact it now adds is a count,
+for the same reason `index 5 is out of range for a list of length 3` names a
+length and never the elements: a message summarises the container it failed
+in. A list's summary happens to be complete — a length says exactly which
+indexes are valid — and a map's is not, so the count is the weaker fact and
+is still the only bounded one. Listing some of the keys would be worse than
+listing none, because a reader shown five of two hundred reads the five as
+all of them; listing all of them has no bound. What the count does answer is
+`an empty map has no key "north"`, which is a different bug from a missing
+key and used to read the same.
 
 **`get(m, k)` cannot tell a missing key from a key holding `nil`.** Both
 answer `nil`. That is the same ambiguity `first([])` has — **Taking and
@@ -1773,7 +1787,7 @@ quote and never close, so the caret belongs there, and everything the reader
 is missing is a fact about a different character.
 
 A report quotes a value the way `repr` writes it, which is the form a reader
-of the program recognises: `map has no key "thé"` and not a row of
+of the program recognises: `a map of 2 keys has no key "thé"` and not a row of
 escapes. Where that form is what makes a true message look wrong, the report
 adds the value **written out in escapes** as a note -- see **Conversions**,
 which is the only place the language can tell the two apart without

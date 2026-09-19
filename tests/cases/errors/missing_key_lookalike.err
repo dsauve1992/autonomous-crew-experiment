@@ -1,4 +1,4 @@
-runtime error: map has no key "café"
+runtime error: a map of 1 key has no key "café"
   --> missing_key_lookalike.vine:19:8
    |
 19 | print(m["café"])

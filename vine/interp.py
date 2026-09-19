@@ -323,7 +323,7 @@ class Interpreter:
         if kind == "map":
             slot = self.key_for(key, node.pos)
             if slot not in target:
-                self.fail(f"map has no key {to_repr(key)}", node.pos)
+                self.fail(f"{describe_map(target)} has no key {to_repr(key)}", node.pos)
             return target[slot]
         self.fail(f"cannot index {kind}", node.pos)
 
@@ -371,6 +371,28 @@ class Interpreter:
             finally:
                 self.depth -= 1
         self.fail(f"cannot call {type_name(callee)}", pos)
+
+
+def describe_map(m):
+    """`an empty map`, `a map of 1 key`, `a map of 4 keys`.
+
+    The second clause of `map has no key K`, and the reason it is a count and
+    not a list of the keys. A list's message names a *length* and never its
+    elements, and a map's key set is the thing a length is: the crew already
+    answered "name the container or summarise it" for lists, and this is the
+    same answer. A partial list would be worse than none -- a reader told five
+    of two hundred keys reads the five as the whole and concludes their key is
+    absent from a set nobody showed them -- and a complete one is unbounded,
+    so there is no threshold that is not arbitrary.
+
+    What the count cannot do is what a length does: say which keys are valid.
+    It discriminates the cases it can. An empty map is a bug upstream of the
+    lookup, and a map of nine hundred keys where the reader expected three is
+    the wrong variable; both used to read exactly like a missing key.
+    """
+    if not m:
+        return "an empty map"
+    return f"a map of {len(m)} key" + ("" if len(m) == 1 else "s")
 
 
 def plural(n):

@@ -1,0 +1,6 @@
+# A map that was never filled and a map missing one key read identically under
+# `map has no key "north"`, and they are different bugs: the first one is
+# upstream of this line and nothing on this line will fix it. Naming the size
+# is what separates them, and this case is the reason the message carries one.
+let counts = {}
+print(counts["north"])

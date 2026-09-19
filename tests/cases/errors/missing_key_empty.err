@@ -1,0 +1,5 @@
+runtime error: an empty map has no key "north"
+ --> missing_key_empty.vine:6:13
+  |
+6 | print(counts["north"])
+  |             ^
