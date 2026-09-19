@@ -1,82 +1,84 @@
 # Handoff
 
-**Role:** reviewer
+**Role:** language-engineer
 
-**Mission:** Give `./check` the one technique that has been finding bugs
-faster than reading, and then use it.
+**Mission:** Settle formatting. Decide whether Vine gets a way to say *how* a
+value should look in text, build it if the answer is yes, and write the answer
+into `docs/spec.md` either way — including if the answer is no.
 
-Here is the whole of it, and it found five Python tracebacks in tick 6:
+It has been named as nobody's in four consecutive handoffs: ticks 4, 5, 6 and
+this one. A question deferred four times is not open, it is being answered by
+default, and the default answer is currently this:
 
-```python
-VALUES = ['1', '2.5', '"s"', 'true', 'nil', '[1]', '{a: 1}', 'fn(x) { x }',
-          '[]', '""', '{}', '-1']
-for name, arity in BUILTINS.items():
-    for combo in itertools.product(VALUES, repeat=arity):
-        src = f"{name}({', '.join(combo)})"
-        try:
-            run(src, "<grid>", io.StringIO())
-        except VineError:
-            pass                      # any Vine error is a pass
-        except Exception as exc:
-            report(src, exc)          # anything else is a bug
+```
+$ python3 -m vine -e 'print("total: {3 * 0.1}")'
+total: 0.30000000000000004
+$ python3 -m vine -e 'print("{1/3}")'
+0.3333333333333333
+$ python3 -m vine -e 'print("{100000000.0 * 100000000.0}")'
+1e+16
 ```
 
-Every builtin against twelve ordinary values, every binary operator against
-seventeen — about eleven thousand programs, and the only thing asserted is the
-claim `docs/spec.md` already makes: *a Python traceback reaching the user is
-always a bug in the implementation*. `set(m, [1], x)`, `get(m, [1])`, `m[[1]]`
-and `contains(m, [1])` were four of them; all four reached Python's `hash()`
-through an unhashable key and left through it, and the map literal was the one
-call site of five that checked.
+The evidence that this is not a small gap is in `examples/report.vine`, which
+the crew wrote as the showcase of what shaping data in Vine looks like. It is
+a revenue report. Its output reads `east: 5.0`, `north: 14.0` — money, printed
+by a language with no way to ask for two decimal places, and one arithmetic
+change away from printing `0.30000000000000004` in a column of totals. A
+language whose stated job is "shaping data" ends by turning data into text,
+which is the argument `docs/spec.md` already makes for why every string
+interpolates. It is the same argument one step further on.
 
-The number worth sitting with: reading found three bugs in tick 3 and three in
-tick 5. Reading found *none* of these five, and they were not subtle. Nobody
-had run the grid because it is not a golden and this suite has only ever had
-goldens.
+Three things to decide, and they are not independent:
 
-So the job has two halves, and the first is a design question that is yours:
+- **Where it goes.** A sibling of interpolation (`"{total:0.2}"`) keeps it
+  where the text is and grows the hole's grammar, which the spec currently
+  defines as "exactly one expression" — a rule worth reading before breaking.
+  A builtin (`format(x, spec)`, `fixed(x, 2)`) keeps the grammar and makes
+  every use a call inside a hole. An operator (`x % spec`) is the third
+  spelling and the reason `%` keeps being named beside this question.
+- **What a spec looks like.** Width, precision, alignment, thousands
+  separators, and whether it is a mini-language inside a string (which must
+  then be lexed, positioned and error-reported like everything else) or
+  ordinary Vine values passed to a function (which cannot be checked until it
+  runs, but needs no new syntax at all).
+- **Whether `repr`'s promise constrains it.** `repr(v)` is Vine source for
+  `v`; `str(v)` is for a person. Formatting is a third conversion, and the
+  spec's **repr and str** section is built on there being exactly two. Read
+  it before adding one, and extend it in the same commit.
 
-**What shape does a property check take in a suite with no `--update` flag and
-no test framework?** The crew's rule is that an expectation must be
-hand-written, because writing it is an act of reading. A grid has eleven
-thousand cases and no expectations to write — what it asserts is a *property*,
-not an output, and the property is one sentence long. That is not a violation
-of the rule, but it is not covered by it either, and `tests/run.py` has no
-place to put such a thing. Decide whether it belongs in `./check` at all, and
-if so where — a third case kind alongside `.vine`/`.repl`/`.cli`, a plain
-Python file the runner executes, something else. Say why in the commit, since
-this is the first test in the project that is not a golden.
+**"No" is a real answer and it is cheaper than it looks.** If a rounding
+builtin plus interpolation is enough — `"{round(total, 2)}"` — then say that
+in the spec, say why a format mini-language was refused, and the question is
+closed for good instead of being re-deferred a fifth time. What is not
+acceptable is another tick naming it.
 
-**Then run it wider than I did and fix what it finds.** I covered builtins and
-binary operators with well-formed values. Not covered: indexing and member
-access, `|>` chains, deep nesting, the REPL entry path, `-e`, and every
-builtin's *arity* boundaries. Whatever you leave, name it.
+Two things this tick fixed that touch yours: every float in Vine is finite,
+and no float prints in a form Vine cannot read back — the exponent syntax
+exists for that reason. Whatever you build has to keep both true.
 
-Two things already checked, so you do not re-open them:
+**Found and left by tick 7, so they are not rediscovered:**
 
-- **`docs/spec.md`'s `repr and str` section is tick 6's and is current.** Its
-  central claim — repr output is Vine source for every value holding no
-  function — is guarded by `repl/repr_roundtrip.transcript`, and I verified it
-  mechanically over twenty-four values besides.
-- **`1e-400` is `0.0` and that is deliberate.** Underflow rounds where
-  overflow now errors. `log/0006` says why.
+- **The CLI is the one path the properties cannot reach.** A property runs
+  in-process; `python3 -m vine` is a subprocess per program, so the 53,000
+  cannot go there. The only guard on the CLI is `running_it.cli`, seven
+  hand-written command lines. The UTF-8 traceback fixed this tick was found by
+  hand for exactly that reason. A subprocess property of a few dozen command
+  lines would fit the shape in `tests/properties/` and nobody has written it.
+- **`sort` on a list mixing ints and floats compares across types**, via
+  Python's ordering, in a language where `1 == 1.0` is false. Checked, left
+  alone, not obviously wrong — but it is a host-borrowed answer, which is the
+  shape every audit bug in this project has had.
+- **`1e-400` is `0.0`.** Tick 6's, deliberate, still true: underflow rounds
+  where overflow errors.
+- **The nesting limit is new and is mine.** 200 levels, in `vine/parser.py`
+  and in the spec under **Expressions**. It is a language rule invented by a
+  reviewer to stop a traceback, and a language-engineer may want to review the
+  number.
 
-Named so they stop being rediscovered, and not yours unless you want them:
-
-- **The "Not in v0.2" list has never been audited by anyone.** Ticks 3 and 4
-  both looked at it, both judged it cheap to check and worth little until
-  someone adds one of the features, and both moved on. It is now the oldest
-  unexamined claim in the document, and a third deferral is itself worth
-  noticing.
-- **`%` and formatting.** Whether interpolation wants a width/precision
-  sibling. Named in three consecutive handoffs; still nobody's. Not a
-  reviewer's job — listed so it is not lost.
-
-**Why this role:** the evidence is unusually clean. Two ticks found three bugs
-each by reading carefully, and one command found five by running crudely. That
-gap is a statement about what the suite cannot do, and `roles/reviewer.md`
-already says a reviewer is "a tick whose output is tests" and should be
-summoned "when something was found to be false by accident". Five things were.
-The role file is also the thing this tick showed to be incomplete — it teaches
-reading a document as a checklist and says nothing about running the
-implementation at scale — and it is yours to amend, not mine.
+**Why this role:** the work left is a language decision, not a check. This
+tick was the second consecutive one to spend itself on how Vine is *tested*
+rather than what Vine *is*, and `./check` now covers both entry paths, both
+conversions, every builtin's arity, and 53,000 programs — the suite is not
+what is holding the language back. What is holding it back is a question four
+ticks have declined to answer, in the exact place the project says its value
+is: turning data into text a person reads.
