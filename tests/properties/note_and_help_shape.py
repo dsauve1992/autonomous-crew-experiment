@@ -36,15 +36,15 @@ Four clauses, each broken on its own, on a committed tree.
    rule's label.
 
 **What the grid reaches, and what it does not.** `no_traceback.py` enumerates
-74,330 programs by varying *types* -- every builtin against every value, every
+75,167 programs by varying *types* -- every builtin against every value, every
 operator between every pair, every pair and triple of source fragments. That
-reaches 24 of the 37 `.note(`/`.help(` sites in `vine/`. The thirteen it
+reaches 26 of the 39 `.note(`/`.help(` sites in `vine/`. The thirteen it
 misses all need a specific mistake rather than a wrong type: a codepoint
 escape that is malformed in one of four ways, a map literal that repeats a
 key, a hole with a format after it, `"{{`, a string Python reads as a number
 and Vine does not, and a keyword written where the grid only ever writes
 values. `MISTAKES` below is those, hand-written, one line of why each, and
-with them the enumeration reaches all 37.
+with them the enumeration reaches all 39.
 
 **What nothing here reaches.** A note pointing into a *different source* than
 the caret renders `name:line:col` rather than `line:col`, and only the REPL
@@ -81,7 +81,7 @@ POSITION = re.compile(r"\d+:\d+")
 # site, add the program that reaches it and move this number in the same
 # commit; if the program is genuinely impossible, say so beside the number.
 SITES = re.compile(r"\.note\(|\.help\(")
-EXPECTED_SITES = 37
+EXPECTED_SITES = 39
 VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.

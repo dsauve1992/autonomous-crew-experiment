@@ -5,6 +5,7 @@ import re
 
 from .errors import RuntimeError_
 from .rules import (
+    CONVERT_DEFAULT_RULE,
     COUNT_RULE,
     FINITE_RULE,
     FIXED_DIGITS_RULE,
@@ -143,7 +144,99 @@ def revealed_note(error, value):
 
 
 
-@builtin("int", 1, 1)
+class NotANumber(Exception):
+    """Text `int` or `float` cannot read, carrying the report it would raise.
+
+    The whole of the difference between `int(s)` and `int(s, default)` is
+    what happens here, which is why it is an exception and not a second
+    reading of the grammar. There is one matcher, one set of messages, and a
+    two-argument form that cannot drift from the one-argument form because it
+    *is* the one-argument form with this raise answered instead of re-raised.
+    A hand-written `is_number` in Vine is the same rule spelled twice, and the
+    two spellings had already disagreed on `"1e5"` -- see section 1 of
+    `docs/writing-a-program.md`, which is what asked for this.
+
+    A value of the wrong *type* never raises it. That is a category mistake
+    and not a failed read, and a default does not cover one -- the same line
+    `get` draws when it refuses a list. See **Conversions** in `docs/spec.md`.
+    """
+
+    def __init__(self, error):
+        self.error = error
+
+
+def defaulted(args, failed):
+    """The default, or the report `failed` carries.
+
+    Called only from the string branch of `int` and `float`. The report is
+    built before it is known whether anyone wants it, notes and all, and
+    thrown away on the two-argument form: a wasted message on a path that
+    already failed, in exchange for the two forms having one implementation.
+    """
+    if len(args) == 2:
+        return args[1]
+    raise failed.error from None
+
+
+def refuse_value(interp, pos, args, message):
+    """The failure for a value `int` or `float` does not read at all.
+
+    It carries the rule about defaults when the caller passed one, because a
+    reader who supplied a default and got an error anyway is asking exactly
+    what that rule answers, and by **Errors**' standard that is what a help
+    is for.
+    """
+    error = RuntimeError_(message, pos, interp.source)
+    if len(args) == 2:
+        error.help(CONVERT_DEFAULT_RULE)
+    raise error
+
+
+def read_int(interp, pos, value):
+    """`int` of a string: the number, or `NotANumber` carrying its report."""
+    text = value.strip(SPACE)
+    if INT_TEXT.fullmatch(text):
+        return int(text)
+    error = RuntimeError_(
+        f"cannot convert {to_repr(value)} to an int", pos, interp.source
+    )
+    try:
+        int(text)
+    except ValueError:
+        raise NotANumber(error) from None  # not a number by anyone's reading
+    # Python reads it and Vine does not, so every character in it is one
+    # somebody meant as part of a number and the headline looks wrong.
+    raise NotANumber(revealed_note(error, value).help(NUMBER_RULE)) from None
+
+
+def read_float(interp, pos, value):
+    """`float` of a string: the number, or `NotANumber` carrying its report."""
+    text = value.strip(SPACE)
+    error = RuntimeError_(
+        f"cannot convert {to_repr(value)} to a float", pos, interp.source
+    )
+    if FLOAT_TEXT.fullmatch(text):
+        result = float(text)
+        if result != result or result in (INFINITY, -INFINITY):
+            # "1e400": the shape of a number, and past every float there
+            # is. Same headline as text that is not a number at all,
+            # because the answer is the same: no float here.
+            raise NotANumber(error.help(FINITE_RULE))
+        return result
+    try:
+        result = float(text)
+    except ValueError:
+        raise NotANumber(error) from None  # not a number by anyone's reading
+    # Past the ValueError, Python read it and Vine did not -- the same
+    # branch `int` notes, and it reaches "inf" spelled with a trailing
+    # non-breaking space as well as digits that are not 0 to 9.
+    revealed_note(error, value)
+    if result != result or result in (INFINITY, -INFINITY):
+        raise NotANumber(error.help(FINITE_RULE))  # "inf" and "nan"
+    raise NotANumber(error.help(NUMBER_RULE))  # a number, spelled a way Vine does not
+
+
+@builtin("int", 1, 2)
 def _int(interp, pos, args):
     value = args[0]
     kind = type_name(value)
@@ -158,23 +251,14 @@ def _int(interp, pos, args):
     if kind == "bool":
         return 1 if value else 0
     if kind == "string":
-        text = value.strip(SPACE)
-        if INT_TEXT.fullmatch(text):
-            return int(text)
-        error = RuntimeError_(
-            f"cannot convert {to_repr(value)} to an int", pos, interp.source
-        )
         try:
-            int(text)
-        except ValueError:
-            raise error  # not a number by anyone's reading
-        # Python reads it and Vine does not, so every character in it is one
-        # somebody meant as part of a number and the headline looks wrong.
-        raise revealed_note(error, value).help(NUMBER_RULE)
-    interp.fail(f"cannot convert {article(kind)} to an int", pos)
+            return read_int(interp, pos, value)
+        except NotANumber as failed:
+            return defaulted(args, failed)
+    refuse_value(interp, pos, args, f"cannot convert {article(kind)} to an int")
 
 
-@builtin("float", 1, 1)
+@builtin("float", 1, 2)
 def _float(interp, pos, args):
     value = args[0]
     kind = type_name(value)
@@ -182,34 +266,20 @@ def _float(interp, pos, args):
         try:
             return float(value)
         except OverflowError:  # an int with more digits than a float can hold
-            raise RuntimeError_(
+            error = RuntimeError_(
                 "int is too large to convert to a float", pos, interp.source
-            ).help(FLOAT_CEILING) from None
+            ).help(FLOAT_CEILING)
+            if len(args) == 2:
+                # The argument is already a number. Nothing read any text, so
+                # this is not the failure a default answers for.
+                error.help(CONVERT_DEFAULT_RULE)
+            raise error from None
     if kind == "string":
-        text = value.strip(SPACE)
-        error = RuntimeError_(
-            f"cannot convert {to_repr(value)} to a float", pos, interp.source
-        )
-        if FLOAT_TEXT.fullmatch(text):
-            result = float(text)
-            if result != result or result in (INFINITY, -INFINITY):
-                # "1e400": the shape of a number, and past every float there
-                # is. Same headline as text that is not a number at all,
-                # because the answer is the same: no float here.
-                raise error.help(FINITE_RULE)
-            return result
         try:
-            result = float(text)
-        except ValueError:
-            raise error  # not a number by anyone's reading
-        # Past the ValueError, Python read it and Vine did not -- the same
-        # branch `int` notes, and it reaches "inf" spelled with a trailing
-        # non-breaking space as well as digits that are not 0 to 9.
-        revealed_note(error, value)
-        if result != result or result in (INFINITY, -INFINITY):
-            raise error.help(FINITE_RULE)  # "inf" and "nan", which Python reads
-        raise error.help(NUMBER_RULE)  # a number, spelled a way Vine does not
-    interp.fail(f"cannot convert {article(kind)} to a float", pos)
+            return read_float(interp, pos, value)
+        except NotANumber as failed:
+            return defaulted(args, failed)
+    refuse_value(interp, pos, args, f"cannot convert {article(kind)} to a float")
 
 
 # -- numbers --------------------------------------------------------------

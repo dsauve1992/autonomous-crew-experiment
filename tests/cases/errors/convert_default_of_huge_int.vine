@@ -1,0 +1,6 @@
+# An int with no float is not a failed read of text -- nothing here read any
+# text -- so a default does not cover it either. Two helps, in the order a
+# reader needs them: why the conversion failed, then why the default they
+# passed did not catch it.
+let huge = reduce(range(100), fn(a, i) { a * 10000000 }, 1)
+float(huge, 0.0)

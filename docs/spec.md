@@ -569,7 +569,8 @@ ago.
 
 Output: `print(...)` `repr(x)`
 
-General: `type(x)` `len(x)` `str(x)` `int(x)` `float(x)`
+General: `type(x)` `len(x)` `str(x)` `int(x)` `int(s, default)` `float(x)`
+`float(s, default)`
 
 Numbers: `fixed(x, digits)` `pow(x, y)`
 
@@ -737,6 +738,117 @@ true message can leave a reader with nowhere to go. `int("café")` gets
 neither line: it is refused before that branch, and a reader who can already
 see the value has nothing to gain from `"caf\u{e9}"`. `int("1_000")` gets the
 help and not the note, because writing it out shows the same five characters.
+
+### When the text is not a number
+
+`int(s, default)` and `float(s, default)` answer the default instead of
+failing:
+
+```
+let field = "n/a"
+int(field)                 # error: cannot convert "n/a" to an int
+int(field, nil)            # nil
+float("2.5", nil)          # 2.5
+float("1e400", nil)        # nil — the shape of a number, and no float
+float([1], 0)              # error: cannot convert a list to a float
+```
+
+**Why a default and not a predicate.** The two-argument form is the
+one-argument form with its failure answered, so there is one reading of the
+grammar in the implementation and there can only ever be one. The obvious
+alternative — `is_number(s)` and `is_int(s)` as builtins — puts the grammar in
+two places and asks somebody to keep them equal. That is not a hypothetical
+cost: `examples/timesheet.vine` had to write the predicate by hand, and the
+hand-written one and `float` had *already* disagreed about `"1e5"`, which
+`float` reads as `100000.0` and the copy called not a number. Section 1 of
+`docs/writing-a-program.md` is the measurement, and this feature is its
+answer.
+
+The predicate is not lost, because it composes:
+
+```
+let is_number = fn(s) { float(s, nil) != nil }
+["1", "x", "1e5", "1.", "1_0"] |> filter(is_number)    # ["1", "1e5", "1."]
+```
+
+which pipes and maps like any other function, and is the same reading of the
+grammar rather than a second one. `tests/properties/conversion_default.py`
+enumerates that equality — `float(s, nil) != nil` is exactly *`float(s)`
+answers* — over every string of three characters or fewer built from the
+thirteen characters that decide the question, because a composition a refusal
+rests on is owed its domain and not an example.
+
+**What a default covers.** Text that is not a number, and nothing else. Every
+failure of the one-argument form over a *string* becomes the default —
+`"abc"`, `""`, `"١٢٣"`, `"1_000"`, `"2.5"` asked of `int`, and `"1e400"` asked
+of `float`, which has the shape of a number and is past every float there is.
+
+Every other failure stays a failure, with or without a default:
+
+```
+let huge = reduce(range(100), fn(a, i) { a * 10000000 }, 1)
+float([1], 0)              # error: cannot convert a list to a float
+int(nil, 0)                # error: cannot convert a nil to an int
+float(huge, 0.0)           # error: int is too large to convert to a float
+```
+
+This is the line **Looking up a key** already draws for `get`: a list offered
+where a map belongs is a mistake worth naming rather than a lookup that
+missed, and a list offered where text belongs is the same mistake. A default
+says *this data may be wrong*; it does not say *this program may be wrong*. A
+conversion that hid a category error behind a default would hide it forever,
+because the value a list converts to is a value the program then goes on to
+use.
+
+A call that passes a default and fails anyway carries the rule as a help,
+because that reader has asked for exactly the question it answers:
+
+```
+runtime error: cannot convert a list to a float
+ --> report.vine:3:12
+  |
+3 | print(float(row, 0.0))
+  |            ^
+  = help: a default answers for text that is not a number, and for nothing else
+```
+
+**A default never changes an answer that exists.** `int("17", 0)` is `17`,
+`int(2.9, 0)` is `2`, `int(true, 0)` is `1`. The second argument is reached
+only where the first form raises, which is what makes adding one to a working
+call a no-op rather than a hazard.
+
+**The default is a value, of any type, and it is always evaluated.** It is an
+ordinary argument, like `get`'s: `float(s, nil)` answers `nil`, which is not a
+float, and that is the caller's choice and not a promise `float` broke. The
+type a conversion returns is `int` or `float` *or whatever you said*.
+
+**Prefer `nil`.** A plausible default is worse than no default at all. The
+program this feature was written for exists to name the line that was wrong,
+and `float(field, 0.0)` would have logged zero hours and said nothing —
+a number that is wrong is indistinguishable from a number that is right, while
+`nil` is the one default that can be tested:
+
+```
+let hours = float(f[3], nil)
+if hours == nil { return complaint(n, "hours is not a number") }
+```
+
+Those two lines replace eleven of hand-written grammar. The cost is real and
+worth stating: a default discards the report, and the report was good. `int("١٢٣")`
+explains that those are digits and not the digits `int` reads, and
+`int("١٢٣", nil)` says nothing at all. A program that converts with a default
+takes on the job of complaining, and that is the trade — which is why both
+forms exist, and why the one that fails is still the one to reach for when the
+data is supposed to be right.
+
+**What was refused: a catchable failure.** The general answer — an error a
+program can catch, or a conversion that returns a result value carrying
+success beside the number — was considered and is not here. It changes what an
+error *is* in this language, everywhere, to solve a problem two arguments
+solve; nothing in `examples/timesheet.vine` wanted it; and it would leave
+`get`'s four spellings and this one saying different things about the same
+question. If it is argued again, the argument is not conversions. See **Not in
+v0.2**.
 
 ## Text
 
@@ -1994,22 +2106,23 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Fourteen rules, and every help is one of them. Thirteen live in
+Fifteen rules, and every help is one of them. Fourteen live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
 listed against the section that states it at length, because a help is a
 reminder of this document and never a replacement for it.
 
-The fourteenth is the command line's, and it is elsewhere because a problem
+The fifteenth is the command line's, and it is elsewhere because a problem
 with the command line has no position and so no report to hang a help on —
 `vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
-it. It is a rule offered for the same reason as the other thirteen, so it is on
+it. It is a rule offered for the same reason as the other fourteen, so it is on
 the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
 - `every float is finite; the largest float is about 1.8e308` — **repr and str**
 - `the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them` — **Conversions**
+- `a default answers for text that is not a number, and for nothing else` — **Conversions**
 - `the smallest float is 5e-324, which has 1074 decimal places; nothing has more` — **Formatting**
 - `there is no exponent operator; x to the power y is pow(x, y)` — **Operators, loosest binding first**
 - `only a function body may return; a block's value is its last statement` — **Early return**

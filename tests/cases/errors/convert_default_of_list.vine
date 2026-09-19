@@ -1,0 +1,6 @@
+# A default says *this data may be wrong*. It does not say *this program may
+# be wrong*: a list offered where text belongs is the mistake `get` refuses
+# for the same reason, and a default that hid it would hide it for the rest
+# of the run. The help is offered only because a default was passed -- with
+# no default the headline is the whole report, as it always was.
+float([1], 0.0)

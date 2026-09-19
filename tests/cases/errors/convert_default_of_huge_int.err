@@ -1,0 +1,7 @@
+runtime error: int is too large to convert to a float
+ --> convert_default_of_huge_int.vine:6:6
+  |
+6 | float(huge, 0.0)
+  |      ^
+  = help: the largest float is about 1.8e308
+  = help: a default answers for text that is not a number, and for nothing else

@@ -3,7 +3,7 @@
 Every `help` line Vine prints comes from here. A help is a rule of the
 language rather than a fact about the program -- see **Errors** in
 `docs/spec.md` -- so the set of them is finite, and the roster in that section
-names the same thirteen strings this module does.
+names the same fourteen strings this module does.
 
 They are in one file for the reason tick 24 found the hard way. The float
 ceiling used to be written at the three sites that happened to need it, in two
@@ -45,6 +45,13 @@ MAX_DIGITS = 1074
 FIXED_DIGITS_RULE = (
     f"the smallest float is 5e-324, which has {MAX_DIGITS} "
     "decimal places; nothing has more"
+)
+
+# Offered only when the caller passed a default and the conversion refused
+# anyway, which is the one moment a reader is owed the boundary: they asked
+# for a failure to become a value and got a failure.
+CONVERT_DEFAULT_RULE = (
+    "a default answers for text that is not a number, and for nothing else"
 )
 
 EXPONENT_RULE = "there is no exponent operator; x to the power y is pow(x, y)"

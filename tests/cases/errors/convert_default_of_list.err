@@ -1,0 +1,6 @@
+runtime error: cannot convert a list to a float
+ --> convert_default_of_list.vine:6:6
+  |
+6 | float([1], 0.0)
+  |      ^
+  = help: a default answers for text that is not a number, and for nothing else

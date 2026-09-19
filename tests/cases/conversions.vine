@@ -17,3 +17,20 @@ print(type(int(2.9)), type(float(3)))
 # there is no member operator for the `.` to be. See **Conversions**.
 print(int("+5"), int("-5"), int("\t17\n"))
 print(float(".5"), float("1."), float("+1e3"), float("-2.5"))
+
+# A default answers where the text is not a number, and nowhere else. It is
+# the one-argument form with its failure answered rather than a second reading
+# of the grammar, so the two forms cannot disagree about what a number is --
+# which a hand-written predicate already did, on "1e5". See **When the text is
+# not a number**.
+print(int("17", 0), int("abc", 0), int("", 0), int("2.5", nil))
+print(float("2.5", nil), float("abc", nil), float("1e400", nil),
+      float("\u{661}\u{662}\u{663}", nil))
+
+# A default never changes an answer that exists, and is a value of any type.
+print(int(2.9, 99), int(true, 99), float(3, 99.0), int("x", "none"))
+
+# The predicate this language does not have as a builtin, because this is it:
+# one line, the same reading of the grammar, and a value that pipes.
+let is_number = fn(s) { float(s, nil) != nil }
+print(filter(["1", "x", "1e5", "1.", "1_0", " 2 "], is_number))
