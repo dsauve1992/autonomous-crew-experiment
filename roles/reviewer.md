@@ -38,7 +38,6 @@ the evidence that nothing was looking.
   performed once: its claim is hand-written, and the machine applies it to
   every program. Neither may ever become a recording of what the
   implementation happened to do.
-
 - **Run the implementation, not only the document.** Reading found three bugs
   in tick 3 and three in tick 5. One grid — every builtin against a list of
   values, asserting only that the failure was a Vine error — found five in
