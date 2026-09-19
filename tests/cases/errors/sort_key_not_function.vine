@@ -1,0 +1,4 @@
+# A field name is not a key function. There is no string shorthand: the key
+# is an expression over the element, which is what lets it be -o.qty or
+# len(o.item) and not only a name.
+print(sort([{qty: 1}], "qty"))

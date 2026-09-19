@@ -1,0 +1,5 @@
+runtime error: sort key function must be a function, got string
+ --> sort_key_not_function.vine:4:11
+  |
+4 | print(sort([{qty: 1}], "qty"))
+  |           ^

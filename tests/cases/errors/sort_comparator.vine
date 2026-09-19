@@ -1,0 +1,7 @@
+# The mistake every other language's sort makes easy: a comparator over two
+# elements. Vine's sort takes a key function and calls it with one element at
+# a time, so a two-parameter function is an arity error -- which names the
+# function and the place it was written, and is the same error map and filter
+# give. See Lists in docs/spec.md.
+let orders = [{qty: 2}, {qty: 1}]
+print(sort(orders, fn(a, b) { a.qty < b.qty }))

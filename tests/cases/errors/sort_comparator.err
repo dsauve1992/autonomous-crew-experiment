@@ -1,0 +1,6 @@
+runtime error: <anonymous> expects 2 arguments, got 1
+ --> sort_comparator.vine:7:11
+  |
+7 | print(sort(orders, fn(a, b) { a.qty < b.qty }))
+  |           ^
+  = note: <anonymous> is defined at 7:20

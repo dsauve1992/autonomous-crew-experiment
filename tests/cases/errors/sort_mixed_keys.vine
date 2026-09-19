@@ -1,0 +1,5 @@
+# A key function answering with two kinds of value. sort orders by '<', and
+# '<' relates numbers with numbers and strings with strings, so keys holding
+# both cannot be ordered against each other at all.
+let rows = [{v: 1}, {v: "two"}]
+print(sort(rows, fn(r) { r.v }))

@@ -35,6 +35,14 @@ def article(kind):
     return f"an {kind}" if kind[0] in "aeiou" else f"a {kind}"
 
 
+def listing(names):
+    """`int`, `int and string`, `int, string and nil`. For a message that has
+    to name every kind it found rather than the first one it tripped on."""
+    if len(names) < 2:
+        return "".join(names)
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
 def want(interp, pos, value, kind, what):
     if type_name(value) != kind:
         interp.fail(f"{what} must be {article(kind)}, got {type_name(value)}", pos)
@@ -252,13 +260,51 @@ def _reverse(interp, pos, args):
     interp.fail(f"reverse expects a list or string, got {type_name(value)}", pos)
 
 
-@builtin("sort", 1, 1)
+def unorderable(values):
+    """The type names in `values`, in the order they first appear, if they
+    cannot all be ordered against each other -- otherwise None.
+
+    `sort` orders by `<`, and `<` relates numbers with numbers and strings
+    with strings, so sort's reach is exactly `<`'s and no wider. An empty list
+    has nothing to order and is fine.
+    """
+    kinds = []
+    for value in values:
+        kind = type_name(value)
+        if kind not in kinds:
+            kinds.append(kind)
+    if set(kinds) <= {"int", "float"} or kinds in ([], ["string"]):
+        return None
+    return kinds
+
+
+@builtin("sort", 1, 2)
 def _sort(interp, pos, args):
     items = want(interp, pos, args[0], "list", "sort argument")
-    kinds = {type_name(x) for x in items}
-    if kinds <= {"int", "float"} or kinds <= {"string"} or not kinds:
+    if len(args) == 1:
+        kinds = unorderable(items)
+        if kinds:
+            interp.fail(
+                "sort expects a list of numbers or a list of strings, got a "
+                f"list holding {listing(kinds)}",
+                pos,
+            )
         return sorted(items)
-    interp.fail("sort expects a list of numbers or a list of strings", pos)
+    fn = want_callable(interp, pos, args[1], "sort key function")
+    # Every key first, in list order, and then one comparison-free pass over
+    # them: a key function is ordinary Vine and may print, so when it runs has
+    # to be a promise rather than whatever the sort algorithm happens to do.
+    keys = [interp.call(fn, [item], pos) for item in items]
+    kinds = unorderable(keys)
+    if kinds:
+        interp.fail(
+            f"sort keys must be all numbers or all strings, got {listing(kinds)}",
+            pos,
+        )
+    # Sorting the positions rather than the items is what makes the sort
+    # stable without asking Python's sort to compare two records: equal keys
+    # leave in the order their positions did, which is the order they arrived.
+    return [items[i] for i in sorted(range(len(items)), key=lambda i: keys[i])]
 
 
 @builtin("contains", 2, 2)

@@ -1,0 +1,47 @@
+# sort(xs, f) orders anything by a key. `f` takes one element and answers the
+# value to order it by; sort is stable, so equal keys leave in the order they
+# arrived. See Lists in docs/spec.md.
+
+let orders = [
+  {item: "bolt",    region: "north", qty: 12},
+  {item: "nut",     region: "south", qty: 40},
+  {item: "washer",  region: "north", qty: 12},
+  {item: "bracket", region: "east",  qty: 3},
+  {item: "screw",   region: "south", qty: 5},
+]
+let items = fn(xs) { xs |> map(fn(o) { o.item }) |> join(" ") }
+
+# bolt and washer tie on 12 and stay in input order. It pipes, like everything
+# that takes its collection first.
+print(items(sort(orders, fn(o) { o.qty })))
+print(items(orders |> sort(fn(o) { o.qty })))
+
+# Descending on a number: negate the key. Ties still keep their order.
+print(items(sort(orders, fn(o) { -o.qty })))
+
+# Descending any other way: reverse afterwards, which flips the ties too.
+print(items(sort(orders, fn(o) { o.qty }) |> reverse))
+
+# Two keys are two stable passes, least significant first.
+print(items(orders |> sort(fn(o) { o.qty }) |> sort(fn(o) { o.region })))
+
+# A string key, and a builtin as the key.
+print(items(sort(orders, fn(o) { o.item })))
+print(sort(["ccc", "a", "bb"], len))
+
+# Every key is computed once, in list order, before anything is compared.
+let noisy = fn(n) {
+  print("key of {n}")
+  n
+}
+print(sort([30, 10, 20], noisy))
+
+# 1 and 1.0 are different values and neither is less than the other, so they
+# are a tie and hold their positions.
+print(sort([1, 1.0]))
+print(sort([1.0, 1]))
+print(sort([2, 1.0, 1, 2.0]))
+
+# Nothing to order.
+print(sort([], fn(o) { o.qty }))
+print(sort([]))

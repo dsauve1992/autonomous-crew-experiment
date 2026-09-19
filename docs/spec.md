@@ -310,7 +310,7 @@ Numbers: `fixed(x, digits)`
 
 Lists: `range(n)` `range(a, b)` `map(xs, f)` `filter(xs, f)` `reduce(xs, f, init)`
 `push(xs, x)` `concat(a, b)` `first(xs)` `rest(xs)` `reverse(xs)` `sort(xs)`
-`contains(xs, x)`
+`sort(xs, key)` `contains(xs, x)`
 
 Maps: `keys(m)` `values(m)` `get(m, k)` `get(m, k, default)` `set(m, k, v)`
 
@@ -318,6 +318,117 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 `reverse(s)` `contains(s, sub)`
 
 `push` and `set` return new values; nothing in Vine mutates.
+
+## Sorting
+
+`sort(xs)` orders a list. `sort(xs, key)` orders it by a **key function** — one
+that takes an element and answers the value to order that element by. It is
+how a list of records is ranked:
+
+```
+let orders = [
+  {item: "bolt",   region: "north", qty: 12},
+  {item: "nut",    region: "south", qty: 40},
+  {item: "washer", region: "north", qty: 12},
+]
+orders |> sort(fn(o) { o.qty }) |> map(fn(o) { o.item })   # ["bolt", "washer", "nut"]
+```
+
+**What `sort` orders by is `<`.** `<` relates numbers with numbers and strings
+with strings (see **Operators**), so what `sort` can order is a list of
+numbers — ints and floats may mix — or a list of strings, and everything else
+is an error naming every kind the list held. With a key function the same rule
+applies to the keys rather than the elements: the elements may be anything at
+all. An empty list has nothing to order and is not an error.
+
+**`sort` is stable.** Two elements whose keys are neither less than nor greater
+than each other come out in the order they went in. That is a promise rather
+than a detail of the implementation, because two things depend on it:
+
+- **Two keys are two passes, least significant first.**
+  `xs |> sort(by_qty) |> sort(by_region)` is ordered by region, and by qty
+  within each region. This is how one key function reaches every ordering a
+  report wants, and it only works if each pass leaves the last one's work
+  alone.
+- **`1` and `1.0` are a tie.** They are different values — `1 == 1.0` is
+  `false` — and neither is `<` the other, so `sort([1, 1.0])` is `[1, 1.0]`
+  and `sort([1.0, 1])` is `[1.0, 1]`. Without stability those two answers
+  would be whatever the sort happened to do that day; with it they are the
+  rule, and the rule covers every pair of values `<` does not separate.
+
+**Descending has no flag.** Negate a numeric key — `sort(xs, fn(o) { -o.qty })`
+— which keeps ties in input order; or `sort(xs, key) |> reverse`, which works
+for any key and reverses the ties along with everything else. The two differ
+only where keys are equal, and which you wrote says which you meant.
+
+**The key function runs once per element, in list order, before anything is
+compared.** A key function is ordinary Vine and may print or fail, so when it
+runs is part of the contract and not a consequence of the algorithm. A key
+that fails reports at the place inside it that failed.
+
+### Why a key function and not a comparator
+
+`sort(xs, fn(a, b) { a.qty < b.qty })` — a comparator — is the more general of
+the two, and it is refused.
+
+- **Everything a report wants from a comparator, a stable key sort already
+  gives.** Descending is a negated key or a `reverse`; any number of keys is
+  that many passes. Generality reached by composing the smaller thing is
+  exactly what **Formatting** settled not to add: *add what cannot be
+  composed, refuse what can*.
+- **A comparator is a contract the caller can break without being told.** It
+  has to be consistent — if `a` sorts before `b` and `b` before `c` then `a`
+  must sort before `c` — and nothing checks that, so an inconsistent one does
+  not fail. It answers a list that is not in any order, and looks sorted. A
+  key function cannot be inconsistent: it hands back one value per element and
+  `<` does the rest.
+- **It would need two more answers Vine does not want to give**: whether a
+  comparator returns a bool or a number, and what a sort does when handed one
+  that contradicts itself.
+
+Writing the comparator by mistake is not silent. `sort` calls the key function
+with one element, so a two-parameter function is an arity error naming the
+function and where it was written — the same error `map` and `filter` give.
+See `tests/cases/errors/sort_comparator.vine`.
+
+There is no string shorthand for a field either — `sort(xs, "qty")` is an
+error. The key is an expression over the element, which is what lets it be
+`-o.qty` or `len(o.item)` and not only a name.
+
+### Why an argument and not a sort written in Vine
+
+`sort(xs)` alone cannot rank records, and the gap is not one a program can
+close. Ordering records means carrying each record alongside the value it is
+ordered by, *through* the sort, and nothing in Vine can: `sort` refuses a list
+of pairs, because a list is not ordered by `<`, and a map keyed on the sort key
+drops every record that shares a key.
+
+```
+let orders = [{n: "a", q: 3}, {n: "b", q: 1}, {n: "c", q: 3}]
+reduce(orders, fn(acc, o) { set(acc, o.q, o) }, {}) |> keys |> len   # 2
+```
+
+Three records in, two out, and nothing said about the one that went missing.
+
+The only route left is to stop using `sort` and build an ordering out of `<`.
+That is not composing the parts Vine hands you, it is replacing one of them —
+the same place `round(x, digits)` stood under **Formatting**. It is also worth
+knowing what it costs. Here is a sort by key written in Vine, six lines, and
+it is wrong:
+
+```
+let insert = fn(sorted, x, key) {
+  if len(sorted) == 0 { [x] }
+  else if key(x) <= key(first(sorted)) { concat([x], sorted) }
+  else { concat([first(sorted)], insert(rest(sorted), x, key)) }
+}
+let sort_by = fn(xs, key) { reduce(xs, fn(acc, x) { insert(acc, x, key) }, []) }
+```
+
+`<=` puts a new element ahead of the one it ties with, so ties come out
+backwards. The list is in order, every element is present, and the answer is
+not the one stability promises — which is the kind of mistake nobody writes a
+test for, because the output looks sorted.
 
 ## repr and str
 

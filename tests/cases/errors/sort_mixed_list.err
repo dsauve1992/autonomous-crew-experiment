@@ -1,0 +1,5 @@
+runtime error: sort expects a list of numbers or a list of strings, got a list holding int, string and nil
+ --> sort_mixed_list.vine:4:11
+  |
+4 | print(sort([1, "a", nil]))
+  |           ^

@@ -1,0 +1,5 @@
+runtime error: sort keys must be all numbers or all strings, got int and string
+ --> sort_mixed_keys.vine:5:11
+  |
+5 | print(sort(rows, fn(r) { r.v }))
+  |           ^

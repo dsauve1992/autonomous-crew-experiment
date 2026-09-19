@@ -1,0 +1,4 @@
+# The same rule with no key function. The message names every kind in the
+# list rather than the first one it tripped on, because the reader is looking
+# for whichever value does not belong.
+print(sort([1, "a", nil]))
