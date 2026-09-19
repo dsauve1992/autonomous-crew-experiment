@@ -1,0 +1,4 @@
+# The sibling of concat_of_string.vine. docs/spec.md said twice that concat
+# names the side that was not a list, and until tick 17 both sides printed
+# the same sentence. Two cases, because one of them cannot show a difference.
+concat("a", [1])

@@ -965,9 +965,9 @@ dedupe([1, 2, 1, 3, 2])    # [1, 2, 3]
 strings join with `+`, and there is no element of a string for `push` to add
 one to — see **Text** for why a string is not a list of characters in Vine.
 `concat` names the side that was not a list, so `concat([1], "a")` says
-`concat argument must be a list, got string`. `push` names its first argument
-only, because its second is deliberately any value at all: `push(xs, nil)` and
-`push(xs, [1])` are both ordinary.
+`concat right argument must be a list, got string`. `push` names its first
+argument only, because its second is deliberately any value at all:
+`push(xs, nil)` and `push(xs, [1])` are both ordinary.
 
 This is the same shape as **Taking and dropping**, where `first` and `rest`
 stay beside the `take` and `drop` that generalise them. A special case that

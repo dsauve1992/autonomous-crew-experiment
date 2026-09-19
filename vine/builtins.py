@@ -325,8 +325,10 @@ def _push(interp, pos, args):
 
 @builtin("concat", 2, 2)
 def _concat(interp, pos, args):
-    a = want(interp, pos, args[0], "list", "concat argument")
-    b = want(interp, pos, args[1], "list", "concat argument")
+    # Named sides, because the two are otherwise indistinguishable in the
+    # report and docs/spec.md promises the reader is told which.
+    a = want(interp, pos, args[0], "list", "concat left argument")
+    b = want(interp, pos, args[1], "list", "concat right argument")
     return a + b
 
 
