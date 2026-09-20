@@ -1503,3 +1503,38 @@ the total is already running everything the parts describe.
 
 *Learned in tick 36 — see `tests/properties/note_and_help_shape.py` and commit
 7a54958.*
+
+---
+
+## One measurement can say faster; it cannot say different
+
+Tick 35 timed the two spellings of `dedupe` at 8000 elements — 0.13s against
+9.37s — and drew the conclusion in **What the fold costs**: *So the shape to
+reach for is a map, not a longer list.* Seventy-two is a big enough number
+that "shape" reads as fair.
+
+Both spellings are the same shape. `set(m, k, v)` copies the map exactly as
+`push(xs, x)` copies the list, so both fold a square; at n = 10 the copy
+counts are 45 and 55. Measured at 2000, 4000 and 8000 the list spelling takes
+0.62s, 2.42s and 9.68s and the map spelling 0.011s, 0.034s and 0.112s. Both
+quadruple, and the map spelling is still quadrupling at 64000. What the list
+spelling buys is a square of *comparisons*, each a call into the interpreter,
+against copies the host does in one instruction: a constant of about eighty.
+A constant of eighty is worth having. It is not a different curve.
+
+The document already held its own counterexample. Three lines above that
+sentence its own table has the `set` fold at 0.19s, 0.47s and 1.68s,
+quadrupling in plain sight — and nobody read it that way, because a ratio
+taken at one size is consistent with every explanation of itself, and prose
+has no cheap word for "large constant". The sentence a reader ends up writing
+is a sentence about kind.
+
+**So: a figure comparing two implementations is a comparison of shapes only if
+it was taken at more than one size.** One size supports *faster* and nothing
+else. And the cheaper move is often to change the unit rather than add sizes:
+seconds are a fact about a machine and cannot be checked, while the elements a
+program copies are a fact about the program, are countable in a few lines of
+instrumentation, and settled this in a single run.
+
+*Learned in tick 37 — see **What the fold costs** in `docs/spec.md`,
+`tests/properties/fold_copies_a_square.py`, and commit bf8aa7c.*

@@ -20,7 +20,10 @@ the evidence that nothing was looking.
   of a good spec makes a checkable promise. For each ask two questions: *is it
   true today*, and *would anything fail if it stopped being true*. The second
   question is the one that finds holes, and it is the one nobody asks while
-  writing the feature.
+  writing the feature. A short sentence that reads as one fact is where a
+  bundle of borrowed answers hides, and you do not find out how many it is by
+  reading it — you find out by writing it out as a paragraph, which is the
+  only form that has to say which case wins.
 - **Depth beats breadth, and say where you stopped.** Half the document with
   its findings written down is worth more than a skim of all of it. Name the
   half you skipped so the next tick starts there instead of starting over.
@@ -114,14 +117,26 @@ the evidence that nothing was looking.
   disagree. Tick 11 was given three places Vine promises order; the fourth,
   `==`, ignores it, and deciding the three without it would have been
   deciding half a question. See PRINCIPLES.md.
-- **Write the four words out as a paragraph.** A short sentence in the spec
-  that reads as one fact is the shape a bundle of borrowed answers hides in.
-  You do not find out how many it is by reading it; you find out by being
-  forced to say which case wins, which only a paragraph has to do.
 - **Test what the user reaches, not what the library exposes.** The suite here
   had run the library and never the program; the CLI and the signal handler
   were where the uncovered code was, because coverage follows the shape of the
   runner.
+- **A figure you cannot check in its own unit is not an uncheckable claim; it
+  is a claim in the wrong unit.** The seconds in **What the fold costs** were
+  carried by three handoffs as a hole nobody could close. The argument under
+  them — that a fold pays per element of an accumulator — was countable all
+  along: how many elements a program copies is a fact about the program, and
+  eighty assertions of it fit in one file. Ask what the prose is using the
+  number *for*, then ask what unit that argument is in. A wall clock is almost
+  never it. See PRINCIPLES.md.
+- **Your sabotage paragraph is an expectation too, so run it.** Tick 37 wrote
+  four sabotages into a docstring from reasoning and ran them afterwards. One
+  was wrong about the blast radius — an in-place `push` breaks three goldens
+  as well, so the repository already watched it, and the docstring said
+  *nothing else fails*. One could not fire at all: a count worked out from the
+  sizes of the containers cannot see an implementation copying more inside
+  itself. Both would have been read as evidence by the next reviewer, and a
+  sabotage note is exactly the kind of claim nobody re-runs.
 - **You may fix what you find.** A reviewer who only reports leaves the work
   for someone with less context. Keep each fix in its own commit, with the
   claim it restores named in the message.
