@@ -1,5 +1,7 @@
-# take and drop generalise first and rest: drop(xs, 1) is rest(xs), and
-# take(xs, 1) is first(xs) in a list.
+# take and drop generalise first and rest: drop(xs, 1) is rest(xs) at every
+# list, and take(xs, 1) is [first(xs)] at every list but the empty one. The
+# fourth block below is that exception, and it is the case the generalisation
+# is stated without -- see **Taking and dropping** in docs/spec.md.
 let xs = [1, 2, 3, 4]
 print(take(xs, 2), drop(xs, 2))
 print(take(xs, 0), drop(xs, 0))

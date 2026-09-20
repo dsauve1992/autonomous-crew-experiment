@@ -2174,8 +2174,12 @@ one expecting it to be fixed.
 
 `take(xs, n)` is the first `n` elements of a list and `drop(xs, n)` is the
 ones after them. They are the generalisation of `first` and `rest`, not a
-second convention beside them: `drop(xs, 1)` is `rest(xs)`, and `take(xs, 1)`
-is `first(xs)` in a list.
+second convention beside them: `drop(xs, 1)` is `rest(xs)` at every list, and
+`take(xs, 1)` is `first(xs)` in a list at every list but the empty one. There
+the two part, and on purpose: `take([], 1)` is `[]` where `[first([])]` is
+`[nil]`. That single disagreement is what **`first` keeps its single argument**
+below is built on, and without it `take` would answer nothing `first` does not
+already.
 
 ```
 let xs = [1, 2, 3, 4]

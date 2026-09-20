@@ -59,6 +59,23 @@ the document treats as separate can be comparing one thing (tick 13):
   than against another run. It is also the one clause with a stated exception,
   an empty `from`, so it checks that too rather than skipping it: the
   exception being exactly one case is the part of the refusal that could rot.
+- **take and drop.** **Taking and dropping** opens by saying the two are the
+  generalisation of `first` and `rest` -- `drop(xs, 1)` is `rest(xs)`, and
+  `take(xs, 1)` is `first(xs)` in a list -- and then promises that
+  `concat(take(xs, n), drop(xs, n))` is `xs` at every count either accepts.
+  Three sentences of the same shape as the four above, and unchecked until
+  tick 42. The first is an equality everywhere. The second is not, and the
+  counterexample is four paragraphs further down the same section:
+  `take([], 1)` is `[]` where `first([])` in a list is `[nil]`, which is the
+  whole of why `take` is said to answer the ambiguity `first` cannot. So it is
+  pinned as a stated exception rather than skipped, the way `replace`'s empty
+  needle is. What is shared is real and small -- all four builtins end in a
+  Python slice or index -- so what the clause tests is the boundary
+  arithmetic, where one of the pair stops and the other starts, and the third
+  sentence is the only thing here that makes them agree about it. The negative
+  counts are in the same loop because the section's rule is *a count* and it
+  is demonstrated on `take` alone; a `drop` that answered `[]` for `-1` would
+  leave every sentence above true.
 """
 
 import io
@@ -67,9 +84,10 @@ from vine import run
 from vine.errors import VineError
 
 CLAIM = (
-    "print's separator, push, concat, the map spelling of dedupe and the "
-    "split/join spelling of replace each answer exactly what docs/spec.md "
-    "says they are the same as"
+    "print's separator, push, concat, the map spelling of dedupe, the "
+    "split/join spelling of replace and the three equalities take and drop "
+    "are offered under each answer exactly what docs/spec.md says they are "
+    "the same as"
 )
 
 from no_traceback import VALUES
@@ -101,6 +119,16 @@ TEXTS = [""]
 for _n in (1, 2, 3):
     _prev = [t for t in TEXTS if len(t) == _n - 1]
     TEXTS += [t + c for t in _prev for c in TEXT_ALPHABET]
+# The lists the take/drop clause runs over, and the counts it asks for. LISTS
+# is six and not one of them is `[nil]`, which is the single list the
+# first/take sentence turns on -- so this set is written out here rather than
+# borrowed, and the two that carry the claim are named. The counts run one
+# past the longest list, so every list meets a count above its own length;
+# -1 is in the list because the section's refusal of a negative count is
+# demonstrated on `take` and stated about both.
+TAKE_LISTS = LISTS + ["[nil]", "[nil, nil]", "[[1], {a: 2}, nil]"]
+TAKE_COUNTS = [-1, 0, 1, 2, 3, 4, 99]
+
 # An empty needle is the stated exception, not an omission, so it is in here.
 NEEDLES = ["a", ",", RS, "a,", ",,", ""]
 REPLACEMENTS = ["", "x", ",,", RS]
@@ -289,6 +317,74 @@ def check():
                     f"spelling answered {folded!r}",
                 )
             )
+
+    # drop(xs, 1) is rest(xs), take(xs, 1) is first(xs) in a list, and the
+    # two halves are the whole list -- Taking and dropping.
+    for xs in TAKE_LISTS:
+        checked += 1
+        dropped = answer(f"print(repr(drop({xs}, 1)))")
+        rested = answer(f"print(repr(rest({xs})))")
+        if dropped != rested:
+            failures.append(
+                (
+                    f"drop({xs}, 1)",
+                    f"answered {dropped!r}; rest({xs}) answered {rested!r}",
+                )
+            )
+
+        checked += 1
+        taken = answer(f"print(repr(take({xs}, 1)))")
+        firsted = answer(f"print(repr([first({xs})]))")
+        if xs == "[]":
+            # The stated exception, pinned from both sides rather than
+            # skipped. `take` answering `[]` and `first` answering `nil` is
+            # what the section leans on two paragraphs later to say `first`
+            # needs no default; a `take` that answered `[nil]` here would make
+            # the sentence above true and that argument false.
+            if taken != answer("print(repr([]))"):
+                failures.append(
+                    ("take([], 1)", f"answered {taken!r} rather than an empty list")
+                )
+            if firsted != answer("print(repr([nil]))"):
+                failures.append(
+                    (
+                        "[first([])]",
+                        f"answered {firsted!r} rather than a list holding nil",
+                    )
+                )
+        elif taken != firsted:
+            failures.append(
+                (
+                    f"take({xs}, 1)",
+                    f"answered {taken!r}; [first({xs})] answered {firsted!r}",
+                )
+            )
+
+        for n in TAKE_COUNTS:
+            checked += 1
+            halves = answer(f"print(repr(concat(take({xs}, {n}), drop({xs}, {n}))))")
+            whole = answer(f"print(repr({xs}))")
+            if n < 0:
+                # Not a count either accepts, so the sentence is not about it
+                # -- what is, is the rule one line below it, and it is stated
+                # about a count rather than about `take`.
+                for name in ("take", "drop"):
+                    one = answer(f"print(repr({name}({xs}, {n})))")
+                    if not one.startswith("error: "):
+                        failures.append(
+                            (
+                                f"{name}({xs}, {n})",
+                                f"answered {one!r} for a count that is not a "
+                                "quantity",
+                            )
+                        )
+            elif halves != whole:
+                failures.append(
+                    (
+                        f"concat(take({xs}, {n}), drop({xs}, {n}))",
+                        f"answered {halves!r}; the list is {whole!r}",
+                    )
+                )
 
     # replace(s, from, to) is join(split(s, from), to) -- Text. For a non-empty
     # `from` the two are the same function; for an empty one they part, and
