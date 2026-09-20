@@ -11,7 +11,7 @@ text was ever right. `spec_examples_run.py` is the one property that reads the
 document, and it compares the **first line** of a report; a note is never on
 the first line.
 
-Five clauses, each broken on its own, on a committed tree.
+Six clauses, each broken on its own, on a committed tree.
 
 1. **Every extra line is labelled `note` or `help`, and nothing else.** This
    is the one the reader parses by eye, and it is the whole of what tells a
@@ -40,6 +40,14 @@ Five clauses, each broken on its own, on a committed tree.
    one. What can fail is the text, so what is checked is the text -- a help
    whose words quote a `line:col` is a fact about this program wearing a
    rule's label.
+6. **No note comes after a help.** Facts about this program, then rules of
+   the language: **Errors** says so and every report has read that way. It
+   held by arithmetic until tick 36 -- one note added before one help -- and
+   the call-depth report is the first whose help is attached before its notes
+   exist. `note_lines()` orders by what a line is rather than by when it was
+   written, and this is what says it still does. Order by insertion there and
+   one program fails here on three lines -- the mutual recursion, which is the
+   only one in the enumeration whose help arrives before its notes.
 
 **What the grid reaches, and what it does not.** `no_traceback.py` enumerates
 75,167 programs by varying *types* -- every builtin against every value, every
@@ -87,8 +95,9 @@ from vine.errors import VineError
 CLAIM = (
     "every extra line under a caret is a note or a help; a note's position is "
     "never the caret's; no extra line repeats the one above it; a {pos} in "
-    "the text and a position come together; no help quotes a position; and "
-    "vine/ holds the number of sites this file claims to reach"
+    "the text and a position come together; no help quotes a position; no "
+    "note comes after a help; and vine/ holds the number of sites this file "
+    "claims to reach"
 )
 
 # A position as note_lines() writes one: `3:7`, or `<repl:1>:3:7`.
@@ -210,6 +219,7 @@ def check():
         checked += 1
         rendered = error.render()
         previous = None
+        helped = False
         for line in rendered.splitlines():
             stripped = line.lstrip()
             if not stripped.startswith("= "):
@@ -222,6 +232,10 @@ def check():
                 failures.append((source, f"extra line labelled {label!r}: {stripped}"))
             if label == "help" and POSITION.search(stripped):
                 failures.append((source, f"a help quotes a position: {stripped}"))
+            if label == "help":
+                helped = True
+            elif helped:
+                failures.append((source, f"a note comes after a help: {stripped}"))
         for label, text, pos in error.notes:
             if "{pos}" in text and pos is None:
                 failures.append((source, f"{label} says {{pos}} and has none: {text}"))
