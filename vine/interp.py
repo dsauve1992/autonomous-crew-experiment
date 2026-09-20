@@ -24,6 +24,7 @@ from .nodes import (
 )
 from .rules import (
     CALL_DEPTH_RULE,
+    FAIL_RULE,
     FLOAT_CEILING,
     KEY_RULE,
     MAX_DEPTH,
@@ -404,8 +405,28 @@ class Interpreter:
         program's own sentence and there is no second way to write a value
         down. Rendering under this walk is what gives a value too deep to
         render a positioned report instead of a traceback out of `cli.py`.
+
+        A message that says nothing is refused, and it is the parser's rule
+        arriving at the second place it applies. The grammar turns down a
+        bare `fail` because a 1 whose stderr does not say what went wrong is
+        the one ending **Errors** forbids -- and `fail ""` reaches that
+        ending just as surely, past a grammar that cannot see values. So the
+        rule is offered here too, with the same help, and the difference is
+        only which of them can be known when.
+
+        Whitespace is nothing here for the reason it is nothing in `trim`:
+        a line of spaces is a blank line to whoever is reading the terminal,
+        and Vine already has one answer to what counts as no text. Rejecting
+        is right rather than substituting a sentence of our own -- what a
+        program says is the program's, and inventing words for it would be
+        Vine putting a message in a reader's mouth.
         """
-        raise FailSignal(to_display(self.eval(node.value, env)))
+        text = to_display(self.eval(node.value, env))
+        if not text.strip():
+            raise RuntimeError_(
+                "'fail' needs a message that says something", node.pos, self.source
+            ).note(f"the message rendered to {to_repr(text)}").help(FAIL_RULE)
+        raise FailSignal(text)
 
     def eval_fn(self, node, env):
         return Function(node.params, node.body, env, node.name, node.pos)

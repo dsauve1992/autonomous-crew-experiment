@@ -1,0 +1,8 @@
+# A `fail` the grammar approved and the terminal cannot read. The rule that
+# refuses a bare `fail` is about the *ending* -- a 1 whose stderr does not say
+# what went wrong -- and a message assembled out of data reaches that ending
+# past a grammar that can only see source. So the rule is offered a second
+# time, here, where the value is known. The caret is on the `fail` and not on
+# the expression: what is wrong is the refusal, not the join.
+let missing = []
+fail join(missing, ", ")

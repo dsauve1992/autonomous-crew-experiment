@@ -16,7 +16,9 @@ from the run itself, so there is no table to keep in step with the code.
 
   - the status is one of the three, and never anything else
   - 0 means stderr is empty; the run had nothing to report
-  - 1 means stderr is not empty, in one of its two voices: a Vine report --
+  - 1 means stderr carries a visible character -- not merely a byte, which
+    is what `fail ""` produced past this clause until tick 42 -- in one of
+    its two voices: a Vine report --
     a `<kind> error:` headline *and* a position line -- or a refusal, which
     is the program's own sentence and carries neither. Half of either is the
     failure this catches: a headline with no position under it is a report
@@ -112,6 +114,11 @@ EXPRESSIONS = [
     "fail 1 / 0",                 # the message's own expression failing first
     'let f = fn() { fail "out through a call" }\nf()',
     'map([1], fn(x) { fail "out through a builtin" })',
+    # A message the grammar cannot see is missing. The rule that refuses a
+    # bare `fail` is about the ending, not about the source, so it has to
+    # reach these two as well -- and until tick 42 it did not.
+    'fail ""',
+    'fail "   "',
 ]
 
 # Files under tests/fixtures/, which exist in the repository.
@@ -217,8 +224,16 @@ def broken_by(argv, done):
         if err:
             return f"exit 0, but stderr says {err.splitlines()[0]!r}"
     elif done.returncode == 1:
-        if not err:
-            return "exit 1 with nothing on stderr: a failure it did not report"
+        if not err.strip():
+            # `not err` was the test until tick 42, and `fail ""` walked
+            # through it: a 1 whose stderr is one newline is the ending
+            # **Errors** forbids, arriving with a byte in it. What the
+            # document promises is "something on stderr saying so", and a
+            # blank line says nothing to the person reading the terminal.
+            return (
+                f"exit 1 with nothing on stderr saying so ({err!r}): a "
+                "failure it did not report"
+            )
         head = err.splitlines()[0]
         if REPORT_HEAD.match(head):
             if "\n --> " not in err:

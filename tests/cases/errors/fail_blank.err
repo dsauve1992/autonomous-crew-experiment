@@ -1,0 +1,7 @@
+runtime error: 'fail' needs a message that says something
+ --> fail_blank.vine:8:1
+  |
+8 | fail join(missing, ", ")
+  | ^
+  = note: the message rendered to ""
+  = help: 'fail' ends the program with its message on stderr and a status of 1; a failure that says nothing cannot be acted on

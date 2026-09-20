@@ -705,14 +705,40 @@ cheap way to a 1, and it would hand a reader a caret aimed at the guard that
 was working correctly.
 
 **The message is a value, rendered as `print` renders one.** Usually a string,
-and nothing checks that: `fail 2` writes `2`, `fail nil` writes `nil`, and
-`fail ""` writes an empty line. Those are poor messages rather than errors, and
-the reason Vine does not refuse them is the reason it does not refuse
-`print(nil)` — what a program chooses to say is the program's. The one shape
-the grammar does refuse is having nothing to say at all. `fail("no rows")` is
-also legal and identical to `fail "no rows"`; the parentheses are grouping an
-expression, not a call, which is the one place this reads as a function and is
-not one — `fail("no rows", 1)` is a syntax error about the comma.
+and nothing checks that: `fail 2` writes `2` and `fail nil` writes `nil`. Those
+are poor messages rather than errors, and the reason Vine does not refuse them
+is the reason it does not refuse `print(nil)` — what a program chooses to say
+is the program's. `fail("no rows")` is also legal and identical to
+`fail "no rows"`; the parentheses are grouping an expression, not a call, which
+is the one place this reads as a function and is not one —
+`fail("no rows", 1)` is a syntax error about the comma.
+
+**A message that says nothing is refused**, and that is the rule above
+arriving at the second place it applies. `fail ""` would exit 1 with a blank
+line on standard error — the ending the bare form exists to prevent, reached
+past a grammar that can only see source. The interesting spelling is not the
+literal but the assembled one:
+
+```
+let missing = []
+fail join(missing, ", ")
+```
+
+```report
+runtime error: 'fail' needs a message that says something
+ --> report.vine:2:1
+  |
+2 | fail join(missing, ", ")
+  | ^
+  = note: the message rendered to ""
+  = help: 'fail' ends the program with its message on stderr and a status of 1; a failure that says nothing cannot be acted on
+```
+
+Whitespace counts as nothing for the reason it counts as nothing in `trim`: a
+line of spaces is a blank line to whoever is reading the terminal. This is a
+`runtime error` and not a refusal, because what is wrong is the program rather
+than its data — and Vine refuses rather than substituting a sentence of its
+own, which would be the language putting words in a program's mouth.
 
 **Whatever was printed stays printed.** `fail` does not undo the standard
 output before it, so a program that prints half a report and then refuses has

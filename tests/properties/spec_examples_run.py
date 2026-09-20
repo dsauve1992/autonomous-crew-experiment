@@ -113,7 +113,7 @@ RESULT = re.compile(r"\S\s+#\s*(\S.*)$")
 EXPECTED = 128
 # The same claim for report blocks, and it is the tighter of the two: a report
 # that loses its tag stops being read and starts being parsed as a program.
-REPORTS = 18
+REPORTS = 19
 
 REPORT = "report"
 HEADLINE = re.compile(r"^(syntax error|runtime error|error): ")
