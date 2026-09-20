@@ -8,7 +8,17 @@
 # process is `tests/cases/fail.vine`, and the runner records it as that case's
 # failure; the thing it cannot record is the number the shell is handed, which
 # is half of what `fail` exists to do.
+#
+# The last two are the one place `fail` reads as a function and is not one.
+# `fail("no rows to report")` is the parentheses grouping an expression, so
+# its chunk below has to be the previous one word for word -- the identity is
+# the golden, and a reader can see it without running anything. A second
+# argument is then a comma inside a group that was never a call, and the
+# message says so truthfully without saying *`fail` is not a function*, which
+# is the cost of the grouping and is written down in **Refusing**.
 tests/fixtures/refuses.vine
 -e 'fail "no rows to report"'
+-e 'fail("no rows to report")'
+-e 'fail("no rows", 1)'
 -e 'fail'
 tests/fixtures/broken.vine

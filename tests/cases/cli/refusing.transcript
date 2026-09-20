@@ -9,6 +9,21 @@ $ vine -e 'fail "no rows to report"'
 no rows to report
 exit 1
 
+$ vine -e 'fail("no rows to report")'
+--- stderr
+no rows to report
+exit 1
+
+$ vine -e 'fail("no rows", 1)'
+--- stderr
+syntax error: expected ')', found ','
+ --> <argument>:1:15
+  |
+1 | fail("no rows", 1)
+  |               ^
+  = note: the '(' at 1:5 is still open
+exit 1
+
 $ vine -e 'fail'
 --- stderr
 syntax error: 'fail' needs a message
