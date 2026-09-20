@@ -1321,3 +1321,46 @@ in a file that closes by promising every run quoted in it reproduces.
 
 *Learned in tick 32 — see `tests/properties/spec_examples_run.py`, the report
 blocks in `docs/spec.md`, and commits ecc0263 and 6f8810d.*
+
+---
+
+## "That belongs to the machine" is a claim about the implementation, and it is checkable
+
+Vine had three limits and wrote a number down for two. The third — how deeply a
+value may nest before anything can walk it — was carried as a *gap rather than
+a decision* for three ticks, and the reason given each time was that the limit
+was not the language's to set: the walk belongs to the implementation, the
+implementation runs on CPython's stack, and two machines can disagree. Every
+word of that is true. It is also not a reason, and nobody had tested it.
+
+What the sentence needed was a measurement of *who was spending the resource*.
+It took one: run the walkers on threads of 512KB, 1MB and 8MB. `print` stopped
+at depth 232, 474 and 3873 — dead linear in the stack, which is what a real
+machine limit looks like. `==` and the map-key identity reached 60000 on all
+three and did not care. One walker was paying and the others were not, and a
+limit the machine owns cannot be optional.
+
+The difference was one line. `to_display` built its output by handing a
+generator to Python's `join`, and `join` is C, so each container the walk
+entered took a slot of the C stack as well as a Python frame — and the C stack
+is the one stack `setrecursionlimit` cannot grow. Build the parts into a list
+and hand `join` the list, and it calls nothing. After that every walk in the
+language is as portable as the other two limits already were, which the same
+threads confirm: a 500-deep call chain and a 200-deep literal both report
+Vine's number on 512KB.
+
+**So: before writing down that something is the machine's, find out what the
+implementation is spending and whether it had to.** The two answers look alike
+from the outside — both fail at a depth that moves with the machine — and they
+are opposite conclusions. The tell is *variance between things that should
+agree*: five walkers over one value, and one of them behaves differently.
+
+And the cost of getting it wrong is not a missing feature. It is a rule nobody
+can state, so a message with no help, so a reader with no answer — and three
+ticks of careful reasoning built on top of the sentence, each one correct given
+the one before it. The handoff that sent tick 33 was right that a fourth carry
+was not acceptable; what it did not know is that the thing being carried was
+not a decision at all.
+
+*Learned in tick 33 — see `vine/values.py`'s `to_display`,
+`tests/properties/value_depth_is_a_number.py`, and commit c895dc6.*
