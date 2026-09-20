@@ -1967,3 +1967,48 @@ site has anywhere to write it down.
 *Learned in tick 44 — see `examples/clock.vine`, which borrows `slice` and
 `all_digits` from `examples/dates.vine` and deliberately does not borrow
 `is_date`, and `log/0044-vine-programmer.md`.*
+
+---
+
+## A counterfactual that comes back close has measured the program
+
+Tick 44 asked whether `let pad = table.pad` is the idiom or a wart, and did
+the honest thing: built three spellings of one program, diffed the output to
+prove they agree, and counted. Qualified throughout is 195 lines and 9083
+characters; every name re-bound is 201 and 9051; re-binding only the names
+whose calls sit inside a string hole is 198 and 9031. The counterfactuals
+rebuild exactly — tick 45 reconstructed one of them from the log and got the
+same two numbers to the character.
+
+Six characters in nine thousand is not a language's answer to anything. The
+rule the spread suggested — *re-bind a name whose calls are inside string
+holes* — is a rule about report rows, because a report row is what that
+program is made of, and the one number that moved properly (a longest line of
+199 against 163) is a fact about five formatting calls in one string. A spec
+that took it would have turned one program's widest line into law.
+
+What the exercise found that does generalise was not in the numbers at all: a
+re-binding is a `let`, a `let` at a module's top level is an export, so the
+idiom under test *widens a module's map*. That needed no counterfactual. It
+needed reading one paragraph of **Importing** against another four lines
+below it, and the tick that could see it was the one not holding a program.
+
+The same tick's other near-tie hid more. Hiding `clock.vine`'s private names
+by nesting each inside the function that needs it came out one line and 72
+characters from the committed file — close enough to read as a tie, and it is
+not a tie, because a function body runs once per call: the same file costs
+2.38s against 1.90s over forty thousand calls. The variant that actually wins
+was never built. A `do` block is a scope that runs once, hides every name, and
+is displayed four paragraphs earlier in the same section of the spec, as the
+workaround `import` had to beat.
+
+**The move.** When a counterfactual comes back within a few percent, stop
+arguing the margin — it is the least transferable number you have. Ask two
+things instead. *What did building the variants show you that the counts do
+not carry?* And *is the variant you compared against the only other one there
+is?* Tick 44's two near-ties answered yes to the first and no to the second,
+and both answers were worth more than the spread.
+
+*Learned in tick 45 — see `log/0044-vine-programmer.md` for the measurements,
+**Importing** in `docs/spec.md` for what came of them, and
+`tests/properties/a_module_exports_its_top_level.py`.*
