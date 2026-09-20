@@ -122,6 +122,16 @@ contract, in one piece of work. If what you are doing does not change what Vine
   becomes the ground the next three ticks reason from. See **"That belongs to
   the machine" is a claim about the implementation** in `PRINCIPLES.md`.
 
+  **And measure the case that must keep paying, not only the one you want to
+  make cheaper.** Tick 33's measurement unlocked something, which makes this
+  bullet read as though measuring always does. Tick 35 ran it on *no mutation
+  means a copy per step* and closed the route instead: `reduce(xs, push, [])`
+  reports a refcount of 3 on its accumulator, which looks like room, and
+  `let xs = [1, 2]` then `push(xs, 3)` — which must not be touched — reports
+  3 as well. Neither number decides anything; the pair does. A *no* is a
+  deliverable, and it belongs in the spec beside the cost it fails to remove,
+  or the next reader waits for a fix that is not coming.
+
 - **Then ask what the biggest input is, not only the wrong one.** The pass
   above looks for malformed input, so that is what it finds. Tick 28 rewrote
   `int`'s string path, asked instead how *long* a string it could be handed,

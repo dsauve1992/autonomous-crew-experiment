@@ -1,8 +1,10 @@
 """Every composition `docs/spec.md` offers in place of a builtin answers what
 the builtin answers.
 
-Three sections now refuse, keep or explain a builtin by saying what it is the
-same as. **Printing** says the separator is a convenience because `print(a, b)`
+Three sections refuse, keep or explain a builtin by saying what it is the
+same as, and a fourth claim is of the same shape without being about a
+builtin at all: **What the fold costs** offers a faster dedupe on the ground
+that it answers the same thing. **Printing** says the separator is a convenience because `print(a, b)`
 is `print(join(map([a, b], str), " "))`. **Building lists** keeps `push` and
 `concat` against the rule *add what cannot be composed, refuse what can*, and
 both halves of that argument are equalities: `push(xs, x)` is

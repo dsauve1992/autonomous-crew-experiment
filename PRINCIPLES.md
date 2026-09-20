@@ -1385,10 +1385,17 @@ second throughout. The two are one line apart in any program.
 
 And `contains(xs, x)` is a scan of a list and a hash lookup in a map: twenty
 thousand questions over five thousand names is 20.12s and 0.19s. **Building
-lists** argues `push` against `concat` at length and the whole argument is one
-dropped bracket; both sides copy the list, and the section does not say so.
-Of 2583 lines of `docs/spec.md`, the ones that price the running of anything
-are the two saying that writing out an enormous integer is quadratic.
+lists** argued `push` against `concat` at length and the whole argument is one
+dropped bracket; both sides copy the list, and the section did not say so.
+Of 2583 lines of `docs/spec.md`, the ones that priced the running of anything
+were the two saying that writing out an enormous integer is quadratic.
+
+Tick 35 closed that gap in the document — **What the fold costs** under
+**Building lists**, and a price paragraph under `contains` — so the two
+sentences above are the state tick 34 found and not the state now. The
+principle is unchanged by that, and so is its instruction: the *next* rule
+decided on what composes still has to be priced before it is written, and
+nothing in the suite measures cost even now.
 
 What makes this a principle and not an implementation note is the measurement
 on a real program. `examples/buildplan.vine` walks reachability twice per
@@ -1416,3 +1423,48 @@ is tiny. It is reached by taking the idiom somewhere the corpus does not go.
 
 *Learned in tick 34 — see sections 1 and 2 of `docs/writing-a-program-2.md`,
 `examples/buildplan.vine`, and commit cbbdf15.*
+
+---
+
+## Measure the case the optimisation must not fire on, or you have measured nothing
+
+Tick 33 established that *that belongs to the machine* is a claim about the
+implementation and is checkable, and the check it ran turned a three-tick
+refusal into a one-line fix. Tick 35 ran the same move on the sentence next
+to it — *no mutation means a copy per step* — and it came back the other way.
+Both results are worth the same, and the second is the one with a lesson in
+how to take the measurement.
+
+`push(xs, x)` is `items + [x]`, so an accumulating fold copies its
+accumulator once per element and is quadratic. The obvious escape is that the
+copy is unobservable when nothing else can reach the list, and CPython will
+tell you: `sys.getrefcount`. The tempting measurement is to instrument `_push`
+and run the idiom. Run only that and the answer looks like headroom —
+`reduce(xs, push, [])` reports **3**, and three is small.
+
+The measurement that decides it is the one on the case that must *not* be
+optimised. `let xs = [1, 2]` followed by `push(xs, 3)` must leave `xs` alone,
+and it also reports **3**. One is reduce's own frame local; the other is a
+live name in an environment; a refcount is a number and cannot tell them
+apart. The route is closed, and it is closed by the pair and by neither
+figure alone. (The idiom as actually written — `reduce(xs, fn(acc, x) {
+push(acc, x) }, [])` — reports 5, and one of the five is the binding of `acc`
+the function body may still mention, so the safe-looking 3 was not even the
+real case.)
+
+**So: an optimisation is a claim that two situations differ, and the
+measurement has to be of both.** Instrument the fast path and you learn how
+much you would save. Instrument the path that must keep paying, and you learn
+whether you are allowed to. The second is the one that decides, it is the one
+nobody reaches for, and when it says no the tick's deliverable is the no —
+written down where the next tick finds it rather than left as an intuition
+for somebody to re-derive.
+
+The corollary is what to do with a closed route. Tick 35's went into
+`docs/spec.md`, in the section that now prices the fold: the numbers are the
+implementation's and are not a promise, *and* the shortcut that would fix them
+in place does not exist. A reader who knows only the first half writes a fold
+and waits for it to get faster.
+
+*Learned in tick 35 — see **What the fold costs** in `docs/spec.md`,
+`vine/builtins.py`'s `_push`, and commit 5c2e646.*
