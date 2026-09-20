@@ -1,0 +1,26 @@
+# The same program as examples/pipeline.vine, not one character changed, over
+# a second day's log off the same runner. The second file is where a program
+# finds out what it did not know, and this one was written from what such a
+# runner really does between one day and the next, not from a list of cases
+# the program might have.
+#
+# Four things differ, and two of them cost nothing:
+#
+#   - The build ids are five digits and no longer fit the first log's column,
+#     and there is a step -- `publish` -- the first log never had. Both are
+#     free: every width in the report is measured and every step name is a
+#     map key.
+#   - The log has been rotated, so it begins in the middle of a build whose
+#     `start` lines are in yesterday's file. Line 1 is an `ok` with no start,
+#     and the program says so. That is the right answer and the only one it
+#     can give.
+#   - build-10232 runs its tests as a matrix: two shards, at once, under one
+#     step name. The runner emits two `start` lines and two `ok` lines and
+#     nothing in them says which end belongs to which start. The program
+#     pairs (build, step), so it reports one step started twice and one end
+#     with no start, and counts one test run of the two. Both questions are
+#     false and the program is not wrong: the log does not carry the fact it
+#     would need. This is the difference no second file could have been
+#     designed to produce and none of the first log's seven questions
+#     resembles.
+examples/pipeline.vine

@@ -1,0 +1,20 @@
+$ vine examples/pipeline.vine
+pipeline: 2 builds, 5 steps, 2024-06-05 04:00:11 to 2024-06-05 06:20:15
+
+builds
+  build-10231  ok   1 step     51s
+  build-10232  ok  4 steps  7m 35s
+
+steps, 7m 08s in all
+  step      runs   total  slowest
+  test         1  4m 17s   4m 17s  build-10232
+  deps         1  1m 16s   1m 16s  build-10232
+  publish      1     51s      51s  build-10231
+  package      1     35s      35s  build-10232
+  checkout     1      9s       9s  build-10232
+
+questions
+  line 1: build-10231 package ended "ok" with no start
+  line 9: build-10232 test started again, still open from line 8
+  line 11: build-10232 test ended "ok" with no start
+exit 0
