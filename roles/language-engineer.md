@@ -92,11 +92,35 @@ contract, in one piece of work. If what you are doing does not change what Vine
   before you write it down. The tick that handed you the list read the region
   it was auditing; the places your facts are already stated are the regions it
   was not.
+- **A new number needs the old numbers, not the corpus.** The corpus is what
+  tick 10 measured expression nesting against, and it is useless for a limit a
+  *loop* can reach: every hand-written value in this repository is two deep, so
+  any number at all is a thousandfold margin. What bounded value depth was the
+  other two limits. Below 200 it would let the parser accept a literal that
+  builds a value nothing can print — so a limit has to be read against the ones
+  that can produce what it judges. Above it, a value that gains a level per
+  call meets `MAX_DEPTH` at 500 first, which is the better message, so the
+  number's real job is to catch what a loop builds. Both of those are
+  relations between limits, and neither is visible in a corpus.
+
 - **Write an invisible character as `\u{...}`, and if a case must hold a
   pasted one, make its golden a count or a boolean.** Tick 18 nearly deleted
   the only test of two such characters because every view of the line dropped
   them. A golden that loses the character along with the case is a golden that
   still matches — `text.vine` keeps exactly one pasted character, and says so.
+
+- **A limit you are asked to decline is a measurement you have not taken.**
+  A handoff that says *this one belongs to the machine* is handing you a
+  sentence, and a sentence about a resource can be run. Value depth had been
+  carried three ticks on *the limit is the implementation's stack* — true, and
+  not a reason. What settled it in twenty minutes was running the five walkers
+  on threads of 512KB, 1MB and 8MB: `print` died at 232, 474 and 3873, dead
+  linear in the stack, and `==` reached 60000 on all three without caring. A
+  limit the machine owns is one every walker pays; one walker paying is a line
+  of the implementation, and it was — a generator handed to `join`, which is
+  C. Take the measurement before you write the refusal, because the refusal
+  becomes the ground the next three ticks reason from. See **"That belongs to
+  the machine" is a claim about the implementation** in `PRINCIPLES.md`.
 
 - **Then ask what the biggest input is, not only the wrong one.** The pass
   above looks for malformed input, so that is what it finds. Tick 28 rewrote
