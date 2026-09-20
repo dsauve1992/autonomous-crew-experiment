@@ -1710,7 +1710,31 @@ costs.
 `len(xs) + 1`, `concat(a, b)` one of `len(a) + len(b)`, `set(m, k, v)` a map
 of `len(m) + 1`. That is not an oversight; it is what *nothing in Vine
 mutates* means, and it is what makes a list safe as a map key — see
-**Composite keys**. One copy is a copy. One copy per element is the square:
+**Composite keys**. One copy is a copy. One copy per element is the square.
+
+**The square is countable, and counted.** How many elements a program copies
+is a fact about the program; how many seconds it takes is a fact about a
+machine, and only one of those can be checked. What
+`tests/properties/fold_copies_a_square.py` counts is the first — every element
+of a container a builtin was handed that ends up in the container it answers,
+over the eleven builtins that carry one:
+
+```text
+                                            n = 10    20    40
+reduce(xs, fn(a, x) { push(a, x) }, [])          45   190   780
+reduce(xs, fn(m, x) { set(m, x, x) }, {})        45   190   780
+reduce(map(xs, fn(i) { [i] }), concat, [])       55   210   820
+filter(xs, fn(x) { true })                       10    20    40
+map(xs, fn(x) { x })                              0     0     0
+```
+
+The first three are `n(n-1)/2`, and doubling `n` quadruples them. `filter` is
+`n`: it carries the elements it keeps, and carries each of them once. `map` is
+**none at all**, because every element of its answer is a call's result rather
+than an element of its input, so the length of the list never enters.
+
+**In seconds, on one machine** — the figure that does not travel, kept here
+because a reader wants to know whether the square is a square that matters:
 
 ```text
 reduce(xs, fn(a, x) { push(a, x) }, [])       0.15s  0.30s  1.06s  3.89s
@@ -1726,25 +1750,57 @@ one-element lists.
 
 **`map` and `filter` are flat because they have no accumulator.** Each builds
 its answer in one pass and never holds a partial one. A fold does hold one, by
-construction — that is what a fold is — and Vine has no loop, so a fold is the
-only way to build a container whose shape is not one-to-one with its input.
-The cost lands exactly where there is no alternative spelling.
+construction — that is what a fold is — and the copy is what holding it costs.
 
-**So the shape to reach for is a map, not a longer list.** `dedupe` above asks
-`contains(acc, x)` of a list that is growing, which is a scan inside a copy;
-the same answer folded into a map is a hash lookup inside a copy, and the list
-comes back out with `keys`:
+**A fold is not the only shape that pays it.** This section used to say that a
+fold was the only way to build a container whose shape is not its input's, and
+that is false: `take`, `drop`, `filter` and `concat` each build one and copy
+once, and `examples/report.vine` writes `ranked |> take(3)` without a fold in
+sight. What is true is narrower, and it is the thing the price is actually
+attached to — **a container rebuilt once per element is copied once per
+element**, whoever is holding it. A fold rebuilds an accumulator that grows.
+A recursion rebuilds a tail that shrinks, and pays the same square:
+
+```
+let walk = fn(xs) {
+  if len(xs) == 0 { return 0 }
+  return 1 + walk(rest(xs))
+}
+```
+
+`rest` copies the tail, so that is `n(n-1)/2` copies for a function with no
+accumulator anywhere in it. It sits in the property above beside the folds, at
+the same numbers.
+
+**So the shape to reach for is a map, and not because the curve changes.**
+`dedupe` above asks `contains(acc, x)` of a list that is growing, which is a
+scan inside a copy; the same answer folded into a map is a hash lookup inside
+a copy, and the list comes back out with `keys`:
 
 ```
 let dedupe = fn(xs) { keys(reduce(xs, fn(m, x) { set(m, x, true) }, {})) }
 ```
 
-Over 8000 distinct elements that is **0.13s against 9.37s** — the same list,
-in the same order, seventy-two times faster. The order survives because a map's
+Over 8000 distinct elements that is **0.11s against 9.68s** — the same list,
+in the same order, eighty-six times faster. The order survives because a map's
 keys are in the order they first appeared, which **Map order** already
 promises and `set` on a key already present does not disturb. The two spellings agree on every pair and triple of the
 value list in `tests/properties/no_traceback.py`, which
 `tests/properties/composition_holds.py` enumerates.
+
+**What that eighty-six is, is a constant.** Both spellings copy the same
+square — `set` copies a map the way `push` copies a list — and the counts
+above say so: 45 against 55 at `n = 10`, and `keys` is the ten. What the list
+spelling *adds* is `n(n-1)/2` **comparisons**, one per element scanned, and
+a comparison is a call into the interpreter where a copy is something the host
+does in a single instruction. Measured across 2000, 4000 and 8000 the list
+spelling takes 0.62s, 2.42s and 9.68s and the map spelling 0.011s, 0.034s and
+0.112s: both quadruple, and the map spelling is still quadrupling at 64000,
+where it takes 5.92s. The ratio climbs from 56 to 86 over those three sizes
+because the map spelling has not finished paying its linear terms, and what
+it climbs towards is a number rather than infinity, because the two curves are
+one curve. Reach for the map for the large constant, and do not reach for it
+expecting a different shape.
 
 **What the map spelling costs is a list holding a function.** A function may
 not be a key, so `dedupe([fn() { 1 }, 1])` fails where the `contains` spelling
@@ -1756,7 +1812,10 @@ this page instead of one.
 the language fixes is that `push` answers a new list; how much of the old one
 gets copied to do it is `vine/builtins.py`'s business, and a representation
 with a cheaper append would change every figure above without changing a
-single answer. What is closed is the shortcut that keeps the current
+single answer. That is why the counts are checked and the seconds are not:
+the check is not there to hold the numbers still, it is there so that the day
+they move, the paragraph that describes them fails with them instead of
+standing over an implementation that stopped matching it. What is closed is the shortcut that keeps the current
 representation: appending in place when nothing else can see the list. The
 accumulator of `reduce(xs, fn(acc, x) { push(acc, x) }, [])` is held by five
 references at the moment `push` runs, one of them the binding of `acc` in the
