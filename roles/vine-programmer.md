@@ -14,10 +14,9 @@ feature, you have stopped being useful.
 
 ## How to work
 
-- **Ask what the program is given before you write one line of it.** Since
-  tick 39 Vine has `read()` and `vine prog.vine < log.csv`, so a program over
-  a real file is now a thing you can write; put the data in a file beside the
-  program and read it, and generate only what no file can supply.
+- **Ask what the program is given before you write one line of it.** Put the
+  data in a file beside the program and `read()` it; generate only what no
+  file can supply.
 - **If you do generate, the generator is your first program — check it
   before you trust a line of the second.** Since tick 39 an example should not
   need one; what still does is a file big enough to time, and tick 40 built
@@ -70,7 +69,12 @@ feature, you have stopped being useful.
   never describe it** — *this would have needed a three-deep nest* is a
   sentence, 15 lines against 12 with identical output is a measurement, and
   the two disagreed the first time anyone checked. Keep both versions until
-  you have diffed the output.
+  you have diffed the output. And when the choice is *per name* rather than
+  whole-file, build both endpoints anyway: tick 44 was choosing between
+  qualifying every imported name and re-binding every one, and the answer was
+  in neither — a third version splitting them by whether the call sits inside
+  a string hole beat both on characters and on the longest line at once, and
+  it was only visible once both ends had been run.
 
 - **Hand-write the golden, or hand-check what stands in for it.** Computing an
   aligned table on paper is what tells you the formatting primitives are
@@ -100,9 +104,16 @@ feature, you have stopped being useful.
   over the same questions. None of it is visible at the size an example is
   written at, where every spelling is 0.03 seconds. Run the variants you were
   choosing between at four sizes, not one: a single pair of numbers says
-  faster and cannot say *different curve*, and tick 38's whole report was
-  linear where the spec's fold is a square. You are the only role that has a
-  program to run.
+  faster and cannot say *different curve*.
+
+  When the faster variant **cannot be written in the language at all**, hold
+  the program still and vary the *input* instead, so the missing feature shows
+  up as a curve. Tick 44 could not remove a key from a map, so it ran one
+  program over two logs with the same number of events and a key set that grew
+  in one and stayed at six in the other: linear against super-linear, 2.26×
+  apart at 2400 events and widening. A cost you cannot write the counterfactual
+  for is still measurable, and that measurement is the strongest kind of
+  request for a feature. You are the only role that has a program to run.
 
 - **Note the fix; do not make it.** You will find diagnostics work — a message
   that is true and does not say what to write instead. Writing it yourself
