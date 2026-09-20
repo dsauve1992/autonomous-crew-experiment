@@ -2,16 +2,27 @@
 
 **Types** says two keys are the same key when they are `==`, and since tick 30
 that sentence covers lists and maps as well as scalars. It is a promise about
-two mechanisms that do not share a line of code: `equal` in `vine/values.py`
-decides `==` by walking the two values, and `canonical` builds the hashable
-form a Python dict compares. Two statements of one rule, which is the shape
-**Consistency is not correctness** in `PRINCIPLES.md` is about -- except that
-here they are not consistent by construction, and a disagreement between them
-is not an error. It is a map that answers the wrong value, or reports a key
-absent that it holds. That is the failure this whole feature exists to remove,
-so it is the one thing worth a property.
+two mechanisms: `equal` in `vine/values.py` decides `==` by walking the two
+values, and `canonical` builds the hashable form a Python dict compares. Two
+statements of one rule, which is the shape **Consistency is not correctness**
+in `PRINCIPLES.md` is about -- except that here they are not consistent by
+construction, and a disagreement between them is not an error. It is a map
+that answers the wrong value, or reports a key absent that it holds. That is
+the failure this whole feature exists to remove, so it is the one thing worth
+a property.
 
-Three clauses, each broken on its own.
+**Where the two mechanisms are one.** Until tick 31 this file said they "do
+not share a line of code", and that was false at the place it mattered.
+`equal`'s map branch reads `all(k in b and ...)`, and `k` is a `Key`, so
+`k in b` is `Key.__eq__`, which is `canonical`. *Every* map comparison in
+Vine therefore asks `canonical` about its keys -- `{a: 1} == {a: 1}` as much
+as `{[1]: 2} == {[1]: 2}`. Clause 1 compares `==` against a map lookup, so
+wherever a key is a map, both of its sides go through the same function and
+it is checking one mechanism twice. That is **A delegation makes two answers
+one** in `PRINCIPLES.md`, and clause 4 is the second side it takes back: the
+promise the delegation makes, written where it can be seen to fail.
+
+Four clauses, each broken on its own.
 
 1. **A map holds `B` exactly when `A == B`**, for every ordered pair of values
    below. This is the whole claim, written the way a Vine program can ask it:
@@ -40,9 +51,24 @@ Three clauses, each broken on its own.
    time. Widening `key_for` for `set` alone would pass every other check in
    the suite.
 
+4. **A map wrapping a key is `==` exactly when the keys are.**
+   `{A: 1} == {B: 1}` and `A == B` are the same boolean. The spec prints one
+   instance of this, `{{a: 1, b: 2}: "x"} == {{b: 2, a: 1}: "x"}`, and
+   `spec_examples_run.py` runs that one line; this is the same claim over
+   every pair. It is the clause that fails when `equal` and `canonical` part
+   *in key position*, which is the one place clause 1 cannot look. Making
+   `equal`'s map branch compare keys by `repr` rather than by identity --
+   the plausible mistake, since `repr` is source and looks like an identity
+   -- breaks 8 pairs here, and in the suite as tick 30 left it, exactly one
+   other thing: the single `{{a: 1, b: 2}: "x"} == {{b: 2, a: 1}: "x"}` line
+   in **Composite keys**, which `spec_examples_run.py` runs. Against tick
+   30's value list clause 1 caught none of it at all, and two of the eight
+   are `0.0` against `-0.0` -- the borrowed answer that had no entry in key
+   position before this tick.
+
 The values include ones holding a function, which is the only refusal left,
-so clause 3 has both answers to agree about and clause 1 skips them -- a value
-no map can hold is not a pair of anything.
+so clause 3 has both answers to agree about and clauses 1 and 4 skip them --
+a value no map can hold is not a pair of anything.
 """
 
 import io
@@ -53,8 +79,8 @@ from vine.errors import VineError
 
 CLAIM = (
     "a map holds a key exactly when == says it is the same key, hands it "
-    "back as the value that was put in, and the five spellings that take a "
-    "key agree about which values are keys"
+    "back as the value that was put in, agrees with == about a key it is "
+    "wrapped around, and is refused by all five spellings or by none"
 )
 
 # Values chosen for where `equal` and `canonical` could part: the type-strict
@@ -67,6 +93,13 @@ VALUES = [
     "[[1]]", "[[1.0]]", "[1, [2]]", "[[1], 2]",
     "{}", "{a: 1}", "{a: 1.0}", "{b: 1}", "{a: 1, b: 2}", "{b: 2, a: 1}",
     "{a: {b: 1}}", "{a: [1]}", "[{a: 1}]", "[{a: 1, b: 2}]", "[{b: 2, a: 1}]",
+    # Tick 31. Nothing above puts a composite key *inside* a value, so
+    # `canonical`'s list and map branches were reached only from the top --
+    # and `-0.0`, the fourth answer this feature borrows from Python, had no
+    # entry one level down at all. A grid reaches exactly what is in its
+    # value list.
+    "[0.0]", "[-0.0]", "{[1]: 1}", "{[1.0]: 1}",
+    "{{a: 1, b: 2}: 1}", "{{b: 2, a: 1}: 1}",
 ]
 
 # Values that are not keys at all. Clause 3's other answer.
@@ -119,6 +152,22 @@ def check():
         want = answer(f"repr([{source}])")
         if back != want:
             failures.append((source, f"comes back out as {back} and went in as {want}"))
+
+    # Clause 4: a map wrapping a key is `==` exactly when the keys are. The
+    # only clause that reaches `canonical` and `equal` where they disagree
+    # about a *key*, which is where clause 1 asks one mechanism twice.
+    for a, b in itertools.product(VALUES, repeat=2):
+        checked += 1
+        same = answer(f"({a}) == ({b})")
+        wrapped = answer(f"({{({a}): 1}}) == ({{({b}): 1}})")
+        if isinstance(same, VineError) or isinstance(wrapped, VineError):
+            failures.append(((a, b), "did not run"))
+        elif wrapped is not same:
+            failures.append((
+                (a, b),
+                f"== says {same} and a map holding each under one key "
+                f"says {wrapped}",
+            ))
 
     # Clause 3: the five spellings agree, both ways.
     for source in VALUES + NOT_KEYS:
