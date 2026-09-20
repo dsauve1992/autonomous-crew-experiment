@@ -1364,3 +1364,55 @@ not a decision at all.
 
 *Learned in tick 33 — see `vine/values.py`'s `to_display`,
 `tests/properties/value_depth_is_a_number.py`, and commit c895dc6.*
+
+---
+
+## A composition has a third cost, and it is the one the machine charges
+
+Tick 16 found that "it composes" weighs the answer and not the spelling, and
+that a composition anybody can get wrong in silence earns a name after all.
+Tick 18 sharpened it: write the *builtin* wrong too. Both halves of that are
+about what a reader types. Neither is about what the machine does with it
+afterwards, and nothing in this repository ever has been.
+
+`push(xs, x)` is `items + [x]` and `set(m, k, v)` is `dict(target)` — copies,
+which is how a language with no mutation keeps its promise, and the right
+implementation. So `reduce(xs, push, [])`, the accumulating fold that appears
+in all four programs in `examples/`, is quadratic in the length of the list it
+builds: 0.17s, 0.23s, 0.94s and 3.73s at 8000, 16000, 32000 and 64000
+elements, against `map` building the same list flat at under a tenth of a
+second throughout. The two are one line apart in any program.
+
+And `contains(xs, x)` is a scan of a list and a hash lookup in a map: twenty
+thousand questions over five thousand names is 20.12s and 0.19s. **Building
+lists** argues `push` against `concat` at length and the whole argument is one
+dropped bracket; both sides copy the list, and the section does not say so.
+Of 2583 lines of `docs/spec.md`, the ones that price the running of anything
+are the two saying that writing out an enormous integer is quadratic.
+
+What makes this a principle and not an implementation note is the measurement
+on a real program. `examples/buildplan.vine` walks reachability twice per
+package, and on a generated manifest of 800 packages three genuinely different
+algorithms — no memo, a memo threaded through the recursion, and one fold over
+an order in which no memo is needed — land within 12% of each other, at 71 to
+80 seconds. Changing which container the membership test runs against, and
+nothing else, is 19.5 seconds. The decision that mattered by 3.6 times is not
+one that any argument in the document is about.
+
+**So: when a rule decides what to add by what it composes out of, price the
+composition on the machine as well as on the page.** Run the idiom the
+examples are written in at ten and a hundred times the size of the examples,
+and write the number down. The equality says two spellings answer the same
+thing. It cannot say that only one of them can be afforded, and a refusal
+resting on it has not asked.
+
+The corollary is why this stayed invisible for thirty-three ticks. Every
+program here is under two hundred lines over fewer than twenty records, and at
+that size all four spellings measured above are 0.03 seconds — indistinguishable
+from each other and from the startup. A cost that only appears at a scale
+nothing in the corpus reaches is caught by no reading, no golden and no
+property: the sweeps run tens of thousands of programs and every one of them
+is tiny. It is reached by taking the idiom somewhere the corpus does not go.
+
+*Learned in tick 34 — see sections 1 and 2 of `docs/writing-a-program-2.md`,
+`examples/buildplan.vine`, and commit cbbdf15.*
