@@ -1,9 +1,10 @@
 """How `python3 -m vine` ends says truthfully what happened.
 
 `docs/spec.md` promises three endings and nothing else: 0 when the program
-ran, 1 when it failed with the report on stderr, and 2 when the command line
-itself was the problem, reported as `error: ...` with no position. Each is
-checkable from outside the process, which is the point of this file -- the CLI
+ran, 1 when it failed with something on stderr saying so, and 2 when the
+command line itself was the problem, reported as `error: ...` with no
+position. Each is checkable from outside the process, which is the point of
+this file -- the CLI
 is the one entry path `tests/properties/` cannot reach in-process, because a
 property runs in-process and the CLI is a process per program. Its only guard
 before this was `tests/cases/cli/running_it.cli`, seven hand-written command
@@ -15,7 +16,12 @@ from the run itself, so there is no table to keep in step with the code.
 
   - the status is one of the three, and never anything else
   - 0 means stderr is empty; the run had nothing to report
-  - 1 means a Vine report -- a `<kind> error:` headline and a position line
+  - 1 means stderr is not empty, in one of its two voices: a Vine report --
+    a `<kind> error:` headline *and* a position line -- or a refusal, which
+    is the program's own sentence and carries neither. Half of either is the
+    failure this catches: a headline with no position under it is a report
+    that lost one, and a position under a sentence that names no kind of
+    error is a report that lost its head.
   - 2 means one `error: ...` line and no position, because nothing was parsed
   - no `Traceback (most recent call last)` on either stream, ever
 
@@ -23,6 +29,13 @@ and one rule read off the command line rather than the run: a command line
 naming more than one program to run -- two files, or `-e` and a file -- must
 be a 2. It named two things and can do one; vine used to run the first and
 exit 0 on the rest, which is a success status for half of what was asked.
+
+The 1 clause tells the two voices apart by the headline, and that is a reading
+of the command lines below rather than a law about every program there could
+be: `fail "runtime error: x"` is legal Vine and would be read here as a
+report. That is the scope this file has always had -- a few dozen chosen
+command lines, not a sweep -- and the alternative is a clause that asks a
+program what it meant to write.
 
 This property spawns a process per command line, so it is a few seconds where
 its neighbours are milliseconds. That is the reason it enumerates a few dozen
@@ -32,6 +45,7 @@ plus both sides of every boundary `vine/cli.py` has.
 
 import os
 import pathlib
+import re
 import shlex
 import subprocess
 import sys
@@ -40,12 +54,16 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 
 CLAIM = (
-    "every vine command line exits 0 in silence, 1 with a positioned report, "
-    "or 2 with a bare 'error:' line -- never a traceback, and never a success "
-    "for a command line that names more than one program to run"
+    "every vine command line exits 0 in silence, 1 with either a positioned "
+    "report or a refusal carrying no position, or 2 with a bare 'error:' "
+    "line -- never a traceback, and never a success for a command line that "
+    "names more than one program to run"
 )
 
 TRACEBACK = "Traceback (most recent call last)"
+# What a Vine report opens with. `error: ` alone is the command line's shape
+# and belongs to a 2; anything else on a failing run's stderr is a refusal.
+REPORT_HEAD = re.compile(r"^(syntax|runtime) error: ")
 # Long enough that a hang is what it catches, short enough that a hung suite
 # still finishes. Every command line below is milliseconds of real work.
 TIMEOUT = 30
@@ -66,6 +84,16 @@ EXPRESSIONS = [
     'print("a")\nundefined_thing',
     "[" * 5000,
     "print(fixed(3 * 0.1, 2))",
+    # The refusal, and the ways out of one. A `fail` leaves through whatever
+    # is above it -- nothing, a call, a builtin calling back into Vine -- and
+    # the last two are the paths that would be swallowed by a handler that
+    # was written for `return`.
+    'fail "no rows to report"',
+    'print("half a report")\nfail "and no more"',
+    "fail",                       # the one statement with no bare form
+    "fail 1 / 0",                 # the message's own expression failing first
+    'let f = fn() { fail "out through a call" }\nf()',
+    'map([1], fn(x) { fail "out through a builtin" })',
 ]
 
 # Files under tests/fixtures/, which exist in the repository.
@@ -155,10 +183,14 @@ def broken_by(argv, done):
         if not err:
             return "exit 1 with nothing on stderr: a failure it did not report"
         head = err.splitlines()[0]
-        if "error: " not in head:
-            return f"exit 1, but the report opens {head!r}, which names no kind of error"
-        if "\n --> " not in err:
-            return f"exit 1, but the report carries no position: {err!r}"
+        if REPORT_HEAD.match(head):
+            if "\n --> " not in err:
+                return f"exit 1, but the report carries no position: {err!r}"
+        elif " --> " in err:
+            return (
+                f"exit 1 with a position under {head!r}, which names no kind "
+                f"of error: {err!r}"
+            )
     else:
         if not err.startswith("error: "):
             return f"exit 2, but stderr opens {err.splitlines()[0]!r} rather than 'error: '"
