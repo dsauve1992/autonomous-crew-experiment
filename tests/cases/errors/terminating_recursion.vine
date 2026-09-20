@@ -1,0 +1,11 @@
+# A recursion that is correct and terminating, which dies on the call limit
+# anyway: the list is longer than 500 and each call shortens it by one. The
+# two goldens beside this one are genuinely infinite, so until tick 36 wrote
+# this file the headline's guess -- it ended "(infinite recursion?)" -- had
+# only ever been seen where it happened to be right. Met in a real program
+# first: docs/writing-a-program-2.md, section 3.
+let last = fn(xs) {
+  if len(xs) == 1 { return first(xs) }
+  last(rest(xs))
+}
+print(last(range(502)))

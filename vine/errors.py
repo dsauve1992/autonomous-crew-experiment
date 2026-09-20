@@ -148,7 +148,15 @@ class VineError(Exception):
         )
 
     def note_lines(self, pad, source):
-        out = []
+        # Every fact about this program first, then every rule of the
+        # language. Twelve reports had that order by arithmetic -- their one
+        # note was added before their one help -- and the thirteenth would
+        # not have: the call-depth help is attached where the failure is
+        # raised and its notes are added by the five hundred calls it leaves
+        # through. Order by what the line *is* rather than by when it was
+        # written, and the reader meets the same shape every time. See
+        # **Errors** in docs/spec.md.
+        notes, helps = [], []
         for label, text, pos in self.notes:
             if pos is not None:
                 where = f"{pos.line}:{pos.col}"
@@ -157,7 +165,7 @@ class VineError(Exception):
                     # against the wrong text. See Pos, and PRINCIPLES.md.
                     where = f"{pos.source.name}:{where}"
                 text = text.replace("{pos}", where)
-            out.append(f"{pad} = {label}: {text}")
+            (helps if label == "help" else notes).append(f"{pad} = {label}: {text}")
         hidden = self.frames - len(self.named)
         if hidden:
             # Counted rather than named: too deep, at the caret already, or
@@ -165,8 +173,8 @@ class VineError(Exception):
             # the lines would say nothing -- a failure two hundred calls down
             # reads exactly like one at the top without it.
             calls = "call is" if hidden == 1 else "calls are"
-            out.append(f"{pad} = note: {hidden} more {calls} not shown")
-        return out
+            notes.append(f"{pad} = note: {hidden} more {calls} not shown")
+        return notes + helps
 
 
 class SyntaxError_(VineError):

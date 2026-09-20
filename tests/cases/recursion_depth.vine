@@ -1,0 +1,7 @@
+# The other side of the call limit. Three goldens watch it refuse, and until
+# tick 36 nothing watched it allow -- an implementation that refused every
+# call would have passed all three. `deepest(500)` is the deepest call Vine
+# permits; 501 is errors/terminating_recursion.vine. What it answers is the
+# depth it reached, so the number below is the limit itself.
+let deepest = fn(n) { if n == 1 { 1 } else { 1 + deepest(n - 1) } }
+print(deepest(500))

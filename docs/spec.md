@@ -163,7 +163,19 @@ so that a closure keeps seeing the binding it captured. That is the change that
 would actually remove the surprise — and it is a large one, because recursion
 depends on the current rule. See `log/0002` and `log/0003`.
 
-Calls nested more than 500 deep are reported as runaway recursion.
+Calls nested more than 500 deep are a runtime error, reported at the call that
+went too far. The report does not say whether the recursion was runaway,
+because nothing here can tell: a recursion that is correct and terminating
+reaches this limit too, as soon as what it walks is longer than 500. Until
+tick 36 the headline ended `(infinite recursion?)`, and the only two programs
+that had ever printed it were both infinite.
+
+What the reader needs is the same either way, so the report offers it as a
+help. `map`, `filter` and `reduce` call their function once per element and
+each call returns before the next begins, so a fold over a million records is
+one call deep, and the limit is not a bound on how long a list may be. What
+reaching for one costs is in **What the fold costs**: a fold cannot stop
+early, and the recursion that could is the one this limit refuses.
 
 A **value** nested more than 1000 deep is a runtime error as well, reported at
 the expression that walked it. Nothing has to recurse to reach it —
@@ -210,7 +222,7 @@ the other two limits. A literal at the parser's ceiling is 200 deep, so a
 number below that would let the parser accept a program that builds a value
 nothing can print. And a value that gains a level per *call* — which is the
 shape of every recursive builder — meets the call limit at 500 first, and
-`call depth exceeded 500 (infinite recursion?)` is the better message for it.
+`call nested more than 500 deep` is the better message for it.
 So what reaches 1000 is a value built by a loop, which is what this limit is
 for.
 
@@ -2400,6 +2412,14 @@ may want **next**, and it would be just as true had they made no mistake at
 all. That is why the float ceiling is a help on all seven messages that need
 it, and `pow converts both of its arguments to a float` is a note on one.
 
+Notes come first and helps last, however the report was built. Every report
+but one had that order by arithmetic — one note added before one help — and
+the call-depth report is the one that would not have: its help is attached
+where the failure is raised, and its notes by the five hundred calls it leaves
+through on the way out. The order a reader meets is a property of what a line
+*is* rather than of when the implementation happened to write it. The count of
+the calls a report did not name is the last of the notes.
+
 A help belongs on every message whose complaint the reader cannot check by
 eye. *Too large to be a float* is the case: seven messages say it — a
 literal past the ceiling, `float()` of an int or of `"1e400"`, `pow` on
@@ -2508,13 +2528,14 @@ loop(0)
 ```
 
 ```report
-runtime error: call depth exceeded 500 (infinite recursion?)
+runtime error: call nested more than 500 deep
  --> loop.vine:1:24
   |
 1 | let loop = fn(n) { loop(n + 1) }
   |                        ^
   = note: loop was called at 2:5
   = note: 499 more calls are not shown
+  = help: a call may nest 500 deep; map, filter and reduce walk a list of any length without nesting
 ```
 
 The count is of calls and not of dropped lines, so a failure two hundred
@@ -2595,17 +2616,17 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Eighteen rules, and every help is one of them. Seventeen live in
+Nineteen rules, and every help is one of them. Eighteen live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
 listed against the section that states it at length, because a help is a
 reminder of this document and never a replacement for it.
 
-The eighteenth is the command line's, and it is elsewhere because a problem
+The nineteenth is the command line's, and it is elsewhere because a problem
 with the command line has no position and so no report to hang a help on —
 `vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
-it. It is a rule offered for the same reason as the other seventeen, so it is on
+it. It is a rule offered for the same reason as the other eighteen, so it is on
 the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
@@ -2616,6 +2637,7 @@ the same list.
 - `there is no exponent operator; x to the power y is pow(x, y)` — **Operators, loosest binding first**
 - `a line ending in an operator continues onto the next; only '|>' continues from the left` — **Lexical structure**
 - `only a function body may return; a block's value is its last statement` — **Early return**
+- `a call may nest 500 deep; map, filter and reduce walk a list of any length without nesting` — **Bindings**
 - `a negative index counts from the end, but a count does not` — **Taking and dropping**
 - `to give a key a new value, use set(m, k, v)` — **Map order**
 - `a key may be any value that holds no function` — **Composite keys**

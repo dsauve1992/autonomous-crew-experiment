@@ -44,19 +44,29 @@ Five clauses, each broken on its own, on a committed tree.
 **What the grid reaches, and what it does not.** `no_traceback.py` enumerates
 75,167 programs by varying *types* -- every builtin against every value, every
 operator between every pair, every pair and triple of source fragments. That
-reaches 28 of the 45 `.note(`/`.help(` sites in `vine/`. The seventeen it
+reaches 29 of the 46 `.note(`/`.help(` sites in `vine/`. The seventeen it
 misses all need a specific mistake rather than a wrong type: a codepoint
 escape that is malformed in one of four ways, a map literal that repeats a
 key, a hole with a format after it, `"{{`, a string Python reads as a number
 and Vine does not, a keyword written where the grid only ever writes values,
 a call that fails inside a function the program itself wrote, a key with
-a function nested inside it rather than being one, and a value built deeper
-than anything will walk -- which the grid cannot reach because every value
-in it is written out, and this one takes a loop to build.
+a function nested inside it rather than being one, a value built deeper
+than anything will walk -- which the grid cannot reach because every value in
+it is written out, and this one takes a loop to build -- and a call nested
+five hundred deep, which the grid never nests a call at all to reach.
 `MISTAKES` below is those, hand-written, one line of why each, and with them
-the enumeration reaches all 45. Its last entry reaches no new site: it is
-there for a *shape* rather than a site, because clause 4 is about two lines
-and every other program here prints at most one that could repeat.
+the enumeration reaches all 46. The mutual recursion among them reached no
+site of its own until tick 36 gave the call limit a help: it was there for a
+*shape* rather than a site, because clause 4 is about two lines and every
+other program here prints at most one that could repeat, and it is still the
+only program here that checks that clause.
+
+The pair of numbers above was `28` and `seventeen` from tick 26 until tick 36,
+which adds to 45 and was wrong at the first: the grid reached 29 even then.
+Only their sum was ever checked, by `EXPECTED_SITES` and by nothing else.
+Measured, this tick, by recording the line each `.note(` and `.help(` call
+came from while the grid and `MISTAKES` ran -- the dynamic set and the static
+one this file greps for are the same 46 lines.
 
 **What nothing here reaches.** A note pointing into a *different source* than
 the caret renders `name:line:col` rather than `line:col`, and only the REPL
@@ -93,7 +103,7 @@ POSITION = re.compile(r"\d+:\d+")
 # site, add the program that reaches it and move this number in the same
 # commit; if the program is genuinely impossible, say so beside the number.
 SITES = re.compile(r"\.note\(|\.help\(")
-EXPECTED_SITES = 45
+EXPECTED_SITES = 46
 VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.

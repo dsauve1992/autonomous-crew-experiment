@@ -22,8 +22,10 @@ from .nodes import (
     Unary,
 )
 from .rules import (
+    CALL_DEPTH_RULE,
     FLOAT_CEILING,
     KEY_RULE,
+    MAX_DEPTH,
     MAX_VALUE_DEPTH,
     SET_RULE,
     VALUE_DEPTH_RULE,
@@ -43,8 +45,6 @@ from .values import (
     type_name,
 )
 
-# How deep Vine calls may nest before we call it runaway recursion.
-MAX_DEPTH = 500
 # One Vine call costs several Python frames, so CPython's own limit would fire
 # long before MAX_DEPTH does -- and a RecursionError is a Python traceback, not
 # a Vine error. Raise the ceiling high enough that our own guard wins.
@@ -509,9 +509,20 @@ class Interpreter:
             self.depth += 1
             if self.depth > MAX_DEPTH:
                 self.depth -= 1
-                self.fail(
-                    f"call depth exceeded {MAX_DEPTH} (infinite recursion?)", pos
-                )
+                # The headline states the depth and stops there. It used to
+                # end `(infinite recursion?)`, which was the only thing in
+                # this report that was not a fact about the run and was
+                # printed in the voice of one -- and the two goldens that
+                # held it were both genuinely infinite, so the guess had
+                # only ever been seen where it happened to be right. A
+                # recursion that is correct and terminating reaches this
+                # line too, as soon as the list it walks is longer than 500;
+                # nothing here can tell the two apart, so nothing here says.
+                # What the reader needs is the same either way, and it is a
+                # rule of the language, so it is a help. See tick 36.
+                raise RuntimeError_(
+                    f"call nested more than {MAX_DEPTH} deep", pos, self.source
+                ).help(CALL_DEPTH_RULE)
             try:
                 return self.eval_stmts(callee.body, env)
             except ReturnSignal as signal:

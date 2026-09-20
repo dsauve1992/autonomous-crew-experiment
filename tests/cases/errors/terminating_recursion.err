@@ -1,8 +1,8 @@
 runtime error: call nested more than 500 deep
- --> infinite_recursion.vine:1:24
+ --> terminating_recursion.vine:9:7
   |
-1 | let loop = fn(n) { loop(n + 1) }
-  |                        ^
-  = note: loop was called at 2:5
+9 |   last(rest(xs))
+  |       ^
+  = note: last was called at 11:11
   = note: 499 more calls are not shown
   = help: a call may nest 500 deep; map, filter and reduce walk a list of any length without nesting

@@ -1,4 +1,4 @@
-runtime error: call depth exceeded 500 (infinite recursion?)
+runtime error: call nested more than 500 deep
  --> mutual_recursion.vine:8:24
   |
 8 | let pong = fn(n) { ping(n) }
@@ -6,3 +6,4 @@ runtime error: call depth exceeded 500 (infinite recursion?)
   = note: pong was called at 7:24
   = note: ping was called at 9:5
   = note: 498 more calls are not shown
+  = help: a call may nest 500 deep; map, filter and reduce walk a list of any length without nesting

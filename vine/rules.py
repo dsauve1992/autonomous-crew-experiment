@@ -3,7 +3,7 @@
 Every `help` line Vine prints comes from here. A help is a rule of the
 language rather than a fact about the program -- see **Errors** in
 `docs/spec.md` -- so the set of them is finite, and the roster in that section
-names the same seventeen strings this module does.
+names the same eighteen strings this module does.
 
 They are in one file for the reason tick 24 found the hard way. The float
 ceiling used to be written at the three sites that happened to need it, in two
@@ -69,6 +69,23 @@ CONTINUATION_RULE = (
 RETURN_RULE = (
     "only a function body may return; "
     "a block's value is its last statement"
+)
+
+# How deep Vine calls may nest. Here rather than in `interp.py`, where it was
+# until tick 36, for this module's reason: the number is now in a rule, and a
+# limit spelled in one file and offered from another is the duplication the
+# float ceiling taught. `MAX_VALUE_DEPTH` is picked against it -- see below.
+MAX_DEPTH = 500
+
+# What the limit is, and the one walk it does not bound. Offered by every
+# report of it, because the implementation cannot tell a runaway recursion
+# from a correct one that is simply longer than 500, and this rule is the way
+# out of both. `map`, `filter` and `reduce` call their function once per
+# element and each call returns before the next begins, so a fold over a
+# million records is one call deep. See **Bindings** in docs/spec.md.
+CALL_DEPTH_RULE = (
+    f"a call may nest {MAX_DEPTH} deep; map, filter and reduce "
+    "walk a list of any length without nesting"
 )
 
 # -- lists and maps -------------------------------------------------------
