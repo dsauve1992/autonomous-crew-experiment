@@ -503,8 +503,11 @@ Statements after it do not run.
 are syntax errors, and so is `1 + return 2`. A `return` has no value to give
 the expression around it — it abandons that expression — and a grammar that
 says so costs one rule, where an expression that never yields costs every
-reader a special case to remember. What the refusal reads as is the message
-any keyword in that position gets:
+reader a special case to remember. `return(1)` is legal and identical to
+`return 1`, for the reason `fail("no rows")` is under **Refusing**: the
+parentheses are grouping an expression, not making a call, and that is the one
+place either keyword reads as a function and is not one. What the refusal
+reads as is the message any keyword in that position gets:
 
 ```
 let x = return 1
@@ -846,6 +849,13 @@ will want to say how a reader tells a warning from a report on the same stream.
   prompt comes back. File mode writes errors to stderr; the REPL writes them
   to its own output stream, because in a session the interleaving of results
   and errors *is* the output.
+- **A `fail` does end it**, with the status it asked for, and it is the one
+  thing an entry can do that an error cannot. At a prompt there is no process
+  but this one, so ending the program is ending the session; a session in
+  which `fail` ended only the entry would make *the program* mean one thing in
+  a file and another here. The refusal goes to stderr rather than to the
+  stream above, because by then the reader is the shell. See **Refusing**, and
+  `tests/cases/repl/refusing.repl`.
 - **Ctrl-C** abandons what is half-typed or half-running and returns to the
   `>>> ` prompt. **Ctrl-D** ends the session.
 - **The opening banner carries no version**; `vine --version` does. Settled in

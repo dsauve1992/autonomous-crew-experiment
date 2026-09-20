@@ -62,3 +62,9 @@ let fact = fn(n) {
   n * fact(n - 1)
 }
 print(fact(6))
+
+# `return(1)` is legal and is `return 1`: the parentheses group an expression,
+# they do not make a call. True since tick 26 and written down nowhere until
+# tick 42, where **Refusing** said the same thing about `fail("no rows")`.
+let parenthesised = fn() { return(1) }
+print(parenthesised())
