@@ -108,6 +108,18 @@ contract, in one piece of work. If what you are doing does not change what Vine
   number you can take, you have not found its argument yet; find it before you
   write the section, because that argument is what the section is.
 
+  **And ask what the workaround was reaching for, not what it is spelled
+  with.** Tick 41 was handed 136 lines wrapped in a function "to buy one
+  `return`", which reads as an argument for a top-level `return` and is not
+  one: that `return` was on the refusal path, so what the program wanted at
+  that line was a way to *fail*. One feature answered both halves of the
+  mission and the other half had no evidence behind it at all. A workaround is
+  written in the language there is, so it is named after the nearest tool that
+  could be made to do the job; go to the line it exists to reach and ask what
+  was wanted there. The reading is right when the workaround disappears — the
+  wrapper did. See **A workaround names the tool it reached for** in
+  `PRINCIPLES.md`.
+
 - **A handoff's list of what is undocumented is a reading, not an index.**
   Tick 16 was handed seven facts said to be "true today and promised nowhere",
   each with its evidence. Two were already in the spec: **Taking and dropping**
@@ -127,7 +139,14 @@ contract, in one piece of work. If what you are doing does not change what Vine
   that can produce what it judges. Above it, a value that gains a level per
   call meets `MAX_DEPTH` at 500 first, which is the better message, so the
   number's real job is to catch what a loop builds. Both of those are
-  relations between limits, and neither is visible in a corpus.
+  relations between limits, and neither is visible in a corpus. **For a
+  *name*, the corpus is the whole answer, and it is a grep.** Tick 41 reserved
+  `fail` and found nine sites in a committed example — after the lexer
+  changed, by `./check` going red. The same grep run first would have given
+  the cost and the argument together: the collision was with an abbreviation
+  of `fail_rate`, which is what made the word cheap. A keyword that collides
+  with what a program in this language would *call a column* is the expensive
+  kind, and only the corpus says which those are.
 
 - **Write an invisible character as `\u{...}`, and if a case must hold a
   pasted one, make its golden a count or a boolean.** Tick 18 nearly deleted
