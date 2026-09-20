@@ -704,6 +704,16 @@ because nothing about the program is wrong. Crashing on purpose would be the
 cheap way to a 1, and it would hand a reader a caret aimed at the guard that
 was working correctly.
 
+**The message is a value, rendered as `print` renders one.** Usually a string,
+and nothing checks that: `fail 2` writes `2`, `fail nil` writes `nil`, and
+`fail ""` writes an empty line. Those are poor messages rather than errors, and
+the reason Vine does not refuse them is the reason it does not refuse
+`print(nil)` — what a program chooses to say is the program's. The one shape
+the grammar does refuse is having nothing to say at all. `fail("no rows")` is
+also legal and identical to `fail "no rows"`; the parentheses are grouping an
+expression, not a call, which is the one place this reads as a function and is
+not one — `fail("no rows", 1)` is a syntax error about the comma.
+
 **Whatever was printed stays printed.** `fail` does not undo the standard
 output before it, so a program that prints half a report and then refuses has
 left half a report behind. Refuse before printing, which is where the decision
@@ -3053,6 +3063,17 @@ program is given one input and a program that wants two must be given them
 joined. `read(path)` would answer that and would also give Vine a second
 opinion about where files are, after the shell's; whoever reopens it should
 bring the program that wants two inputs, because there is not one yet.
+
+How a program *ends* was never on this list either, and it went the same way
+as input and for the same reason. `print` wrote and nothing read, so no program
+was ever handed something it could refuse; with no bad input there is no
+refusal, with no refusal there is nothing to stop early for, and forty ticks
+passed without anyone arguing either side. Tick 39 added `read()`, tick 40 wrote
+the first program given a file, and both holes were visible inside one program:
+a hundred and thirty-six lines wrapped in a function to buy one `return`, and a
+correct refusal that told the shell it had succeeded. See **Refusing**. That is
+the second absence this list has learned about by a program arriving rather than
+by anybody noticing, which is now a pattern and not an anecdote.
 
 Early `return` was the fifth, at the head of the list, from tick 1 until tick
 26 took it. What took it was not an argument: it was running the flattening
