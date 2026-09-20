@@ -1,0 +1,16 @@
+# Columns. Four programs here print a table and all four needed these; until
+# tick 43 all four held a copy, character for character identical, and there
+# was nothing to stop the fifth copy from being slightly different. This file
+# is what `import` is for -- see **Importing** in docs/spec.md.
+#
+# Its own golden is empty. A file that binds names and prints nothing is the
+# shape a module wants: its statements run when it is first imported, in the
+# middle of whatever the importing program was doing.
+
+# `spaces` is not re-bound by anything that imports this. It is here because
+# `pad` and `rjust` need it, and they close over *this* file's scope, so a
+# program that has its own `spaces` cannot change what they do.
+let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
+let pad = fn(s, w) { s + spaces(w - len(s)) }
+let rjust = fn(s, w) { spaces(w - len(s)) + s }
+let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }

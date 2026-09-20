@@ -90,20 +90,11 @@ let cell = fn(row, name) {
   if i < len(row) { row[i] } else { "" }
 }
 
-# `slice`, `digits`, `all_digits` and `is_date` are here character for
-# character as they are in examples/timesheet.vine. A date matters because
-# the report prints the range it covers, and one malformed date makes that
-# range a lie rather than an error.
-let slice = fn(s, from, count) { take(drop(split(s, ""), from), count) |> join("") }
-let digits = "0123456789"
-let all_digits = fn(s) {
-  len(s) > 0 and len(filter(split(s, ""), fn(c) { not contains(digits, c) })) == 0
-}
-let is_date = fn(s) {
-  if len(s) != 10 { return false }
-  if slice(s, 4, 1) != "-" or slice(s, 7, 1) != "-" { return false }
-  all_digits(slice(s, 0, 4)) and all_digits(slice(s, 5, 2)) and all_digits(slice(s, 8, 2))
-}
+# The date reader `examples/timesheet.vine` also needs. This program uses one
+# name out of it; `slice` and `all_digits` are how `is_date` is built and stay
+# in the file that builds it.
+let dates = import "dates.vine"
+let is_date = dates.is_date
 
 # A row that cannot be classified is still a row where money moved, so an
 # empty category is a bucket and a question, never a reason to drop the
@@ -159,10 +150,10 @@ let charges = reduce(spend, fn(acc, r) {
 }, {})
 let repeated = keys(charges) |> filter(fn(k) { get(charges, k) > 1 }) |> sort(fn(k) { k[0] })
 
-let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
-let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
-let pad = fn(s, w) { s + spaces(w - len(s)) }
-let rjust = fn(s, w) { spaces(w - len(s)) + s }
+let table = import "table.vine"
+let widest = table.widest
+let pad = table.pad
+let rjust = table.rjust
 let money = fn(x) { fixed(x, 2) }
 let plural = fn(n, one, many) { if n == 1 { one } else { many } }
 

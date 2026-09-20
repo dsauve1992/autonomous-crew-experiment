@@ -99,10 +99,10 @@ let mean = fn(xs) { if len(xs) == 0 { 0.0 } else { sum(xs) / len(xs) } }
 # five per cent short of the end. Nobody asks a latency for its mean alone.
 let p95 = fn(xs) { if len(xs) == 0 { 0 } else { sort(xs)[int(len(xs) * 95 / 100.0)] } }
 
-let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
-let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
-let pad = fn(s, w) { s + spaces(w - len(s)) }
-let rjust = fn(s, w) { spaces(w - len(s)) + s }
+let table = import "table.vine"
+let widest = table.widest
+let pad = table.pad
+let rjust = table.rjust
 
 let by_path = count_by(log, fn(r) { r.path })
 let accounts = count_by(log, fn(r) { r.acct })

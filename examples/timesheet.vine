@@ -32,21 +32,13 @@ let input = [
 
 let known_projects = ["vine-core", "docs", "infra"]
 
-let digits = "0123456789"
-
-# There is no s[a:b], so a few characters out of the middle of a string are a
-# list of codepoints, dropped, taken and joined back up.
-let slice = fn(s, from, count) { take(drop(split(s, ""), from), count) |> join("") }
-
-let all_digits = fn(s) {
-  len(s) > 0 and len(filter(split(s, ""), fn(c) { not contains(digits, c) })) == 0
-}
-
-let is_date = fn(s) {
-  if len(s) != 10 { return false }
-  if slice(s, 4, 1) != "-" or slice(s, 7, 1) != "-" { return false }
-  all_digits(slice(s, 0, 4)) and all_digits(slice(s, 5, 2)) and all_digits(slice(s, 8, 2))
-}
+# The date reader `examples/statement.vine` also needs. `slice` comes out of
+# it too: there is no s[a:b], so a few characters out of the middle of a
+# string are a list of codepoints, dropped, taken and joined back up, and this
+# program wants that for a comment marker as well as for a date.
+let dates = import "dates.vine"
+let slice = dates.slice
+let is_date = dates.is_date
 
 # Fields are separated by runs of spaces and tabs. `split` counts separators
 # rather than runs, so the empty pieces are dropped afterwards.
@@ -102,10 +94,10 @@ let grid = reduce(entries, fn(acc, r) {
   set(acc, r.who, set(row, r.project, get(row, r.project, 0.0) + r.hours))
 }, {})
 
-let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
-let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
-let pad = fn(s, w) { s + spaces(w - len(s)) }
-let rjust = fn(s, w) { spaces(w - len(s)) + s }
+let table = import "table.vine"
+let widest = table.widest
+let pad = table.pad
+let rjust = table.rjust
 let money = fn(x) { fixed(x, 2) }
 
 print("timesheet: {len(entries)} entries, {len(keys(grid))} people, {money(total)} hours")

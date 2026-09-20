@@ -1,0 +1,24 @@
+# Reading a date out of a field. Two programs here need it, and until tick 43
+# both held these nine lines character for character -- see **Importing** in
+# docs/spec.md, and `examples/table.vine`, which is the other half of the same
+# tidy-up.
+#
+# A date matters to both of them for the same reason: each prints the range of
+# dates it covers, and one malformed date makes that range a lie rather than
+# an error.
+
+# There is no s[a:b], so a few characters out of the middle of a string are a
+# list of codepoints, dropped, taken and joined back up.
+let slice = fn(s, from, count) { take(drop(split(s, ""), from), count) |> join("") }
+
+let digits = "0123456789"
+
+let all_digits = fn(s) {
+  len(s) > 0 and len(filter(split(s, ""), fn(c) { not contains(digits, c) })) == 0
+}
+
+let is_date = fn(s) {
+  if len(s) != 10 { return false }
+  if slice(s, 4, 1) != "-" or slice(s, 7, 1) != "-" { return false }
+  all_digits(slice(s, 0, 4)) and all_digits(slice(s, 5, 2)) and all_digits(slice(s, 8, 2))
+}

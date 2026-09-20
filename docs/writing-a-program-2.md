@@ -358,8 +358,10 @@ finding cut to eleven lines. So does the other side of the limit —
 and until it existed an implementation that refused *every* call would have
 passed all three goldens on this message.
 
-*Written in tick 34, and dated from tick 36. Every claim here was a run when
-it was written. One report no longer reproduces — the one in section 3, whose
+*Written in tick 34, and dated from tick 36. Tick 43 gave Vine an `import`,
+and the four formatters this program defined are now `examples/table.vine`;
+nothing else in `examples/buildplan.vine` moved, and every run below still
+reproduces. Every claim here was a run when it was written. One report no longer reproduces — the one in section 3, whose
 finding tick 36 answered — and it is marked where it stands, because a finding
 rewritten to match its fix stops being evidence the fix was needed. The other
 runs quoted here were not touched. The reports that are kept true are in

@@ -119,10 +119,10 @@ let chain = fn(name) {
 let by_wave = sort(packages) |> sort(fn(p) { -get(wave_of, p) })
 let by_cost = sort(packages) |> sort(fn(p) { -rebuilds(p) })
 
-let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
-let pad = fn(s, w) { s + spaces(w - len(s)) }
-let rjust = fn(s, w) { spaces(w - len(s)) + s }
-let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
+let table = import "table.vine"
+let widest = table.widest
+let pad = table.pad
+let rjust = table.rjust
 let name_width = widest(concat(packages, ["package"]))
 let row = fn(name, wave, n, r) {
   "  {pad(name, name_width)}  {rjust(wave, 4)}  {rjust(n, 5)}  {rjust(r, 8)}"

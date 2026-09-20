@@ -510,9 +510,16 @@ about seventeen times rather than nearly thirty. The sentence has been
 corrected in the same commit as this file, which is the whole of what this
 tick changed outside `examples/`.
 
-*Written in tick 27, and dated from tick 32. Every run quoted here was
-reproduced from `examples/timesheet.vine` and the fragments in this file when
-it was written. Four of the five reports no longer reproduce, because tick 29
+*Written in tick 27, and dated from tick 32, and the program has moved since:
+tick 43 gave Vine an `import`, and `examples/timesheet.vine` is 157 lines
+because the date reader quoted in section 2 and the four formatters quoted in
+section 5 now live in `examples/dates.vine` and `examples/table.vine`. The
+fragments below are as they were run, which is the convention this file keeps
+for everything else; where one is a definition, the definition is now in the
+module and the program holds a line naming it.*
+
+*Every run quoted here was reproduced from `examples/timesheet.vine` and the
+fragments in this file when it was written. Four of the five reports no longer reproduce, because tick 29
 answered the two findings they are evidence for: three of them gain a call
 note and one gains a help. They are left as they were run — a finding
 rewritten to match its fix stops being evidence that the fix was needed — and
