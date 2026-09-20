@@ -1,0 +1,4 @@
+let rows = []
+1 + 1
+fail "nothing to report: the input had no rows"
+print("this entry is never read")

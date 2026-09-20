@@ -1,0 +1,6 @@
+vine — ^D to exit, blank line to abandon an unfinished entry
+>>> let rows = []
+>>> 1 + 1
+2
+>>> fail "nothing to report: the input had no rows"
+nothing to report: the input had no rows
