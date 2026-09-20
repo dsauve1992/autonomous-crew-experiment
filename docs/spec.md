@@ -942,9 +942,11 @@ requires every element to be a string and names the one that was not.
 substring, the needle must be a string, and `contains(s, "")` is `true`
 because every string holds the empty one. In a list it looks for an element by
 `==`, so a needle of any type is a fair question and `false` is a real answer.
-In a map it looks for a *key*, so a needle no key could be — a list, a map, a
-function — is an error rather than `false`: that is a category mistake and not
-a lookup that missed. Absence is what `get(m, k, default)` is for.
+In a map it looks for a *key*, so a needle no key could be — a function, or
+anything holding one — is an error rather than `false`: that is a category
+mistake and not a lookup that missed. A list and a map are keys (see
+**Composite keys**), so those are fair questions with real answers. Absence is
+what `get(m, k, default)` is for.
 
 ### Why there is no `replace`
 

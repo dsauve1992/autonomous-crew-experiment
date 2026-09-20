@@ -71,7 +71,7 @@ DUPLICATES = [
 
 # Pairs that read as one key and are two. Each was sabotaged into a duplicate
 # to check it guards something: `1`/`1.0` and `1`/`true` fall to dropping the
-# type tag from `to_key`, the two strings to normalising with NFKC, and
+# type tag from `canonical`, the two strings to normalising with NFKC, and
 # `"1"`/`1` to keying on `to_display`. `a`/`b` is the control -- two keys
 # nothing sane collapses -- and is here to say so out loud.
 DISTINCT = [

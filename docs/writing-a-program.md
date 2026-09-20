@@ -228,6 +228,7 @@ Hours are totalled per person per day. The key is a person and a day.
 ```
 set({}, ["alice", "2024-03-12"], 1)
 # runtime error: map key must be a string, number or bool, got list
+# (tick 30: this is now a key. See the note at the end of this section.)
 ```
 
 So the pair is spelled as text on the way in and taken apart on the way out:

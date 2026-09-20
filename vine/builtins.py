@@ -542,9 +542,10 @@ def _contains(interp, pos, args):
         return any(equal(x, needle) for x in target)
     if kind == "map":
         # A needle that cannot be a key gets the same answer the string branch
-        # gives a needle that is not a string: an error, not `false`. Asking
-        # whether a list is a key is a category mistake, not a lookup that
-        # missed -- absence is what `get(m, k, default)` is for.
+        # gives a needle that is not a string: an error, not `false`. Since
+        # tick 30 that is a function and nothing else -- asking whether a
+        # function is a key is a category mistake, not a lookup that missed,
+        # and absence is what `get(m, k, default)` is for.
         return interp.key_for(needle, pos) in target
     if kind == "string":
         return want(interp, pos, needle, "string", "contains needle") in target
