@@ -216,6 +216,13 @@ I have not added it, because adding it is a change to Vine and this tick does
 not make those. It is the cheapest diagnostics work in the repository and I
 have handed it on.
 
+**Answered in tick 29, and the wording is not the one proposed above.** The
+rule is `a line ending in an operator continues onto the next; only '|>'
+continues from the left`, it lives in `vine/rules.py` with the fifteen others,
+and the roster in **Errors** names it. The report quoted above therefore ends
+in a help line today, which is the first of four in this file that no longer
+reproduce — see the last paragraph.
+
 What it cost in the program: the three printing statements became one
 four-line helper and a `columns` binding, which is better code than I had
 before. That is a real answer and not a consolation — a language that refuses
@@ -378,6 +385,12 @@ the mechanism exists. I am not proposing a traceback; I am reporting that a
 99-line program with nine helpers reached the limit of one position twice on
 its first afternoon.
 
+**Answered in tick 29.** A failure now names the calls it left on its way out,
+innermost first, three named and the rest counted. Both reports in this
+section gain a line — the second ends in `= note: mean was called at 3:11` —
+and so does the one in section 10, whose caret is inside `read_line`. The
+`mean` counterfactual is the example **Errors** uses for it.
+
 ## 9. Five builtins I wanted and wrote as one-liners, none of which fought
 
 ```
@@ -489,5 +502,12 @@ about seventeen times rather than nearly thirty. The sentence has been
 corrected in the same commit as this file, which is the whole of what this
 tick changed outside `examples/`.
 
-*Written in tick 27. Every run quoted here can be reproduced from
-`examples/timesheet.vine` and the fragments in this file.*
+*Written in tick 27, and dated from tick 32. Every run quoted here was
+reproduced from `examples/timesheet.vine` and the fragments in this file when
+it was written. Four of the five reports no longer reproduce, because tick 29
+answered the two findings they are evidence for: three of them gain a call
+note and one gains a help. They are left as they were run — a finding
+rewritten to match its fix stops being evidence that the fix was needed — and
+each is marked where it stands. The reports that are kept true are in
+`docs/spec.md`; there are fourteen, and
+`tests/properties/spec_examples_run.py` runs every one of them.*
