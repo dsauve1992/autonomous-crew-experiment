@@ -1,0 +1,7 @@
+runtime error: this map literal gives the key {"b": 2, "a": 1} twice
+ --> duplicate_map_key_spelling.vine:8:19
+  |
+8 | {{a: 1, b: 2}: 1, {b: 2, a: 1}: 2}
+  |                   ^
+  = note: the key is first given at 8:2
+  = help: to give a key a new value, use set(m, k, v)

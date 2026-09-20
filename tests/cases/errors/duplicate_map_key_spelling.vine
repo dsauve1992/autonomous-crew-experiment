@@ -1,0 +1,8 @@
+# A literal that gives one key under two spellings. The headline quotes the
+# duplicate with `repr`, and the duplicate is the one at the caret, so the
+# value it prints is the *second* spelling -- while the key a map built with
+# `set` would hold is the first. Before a key could be a list or a map this
+# was nearly invisible: `duplicate_map_key_lookalike.vine` is this message
+# where the two spellings render alike. Pinned here rather than changed: the
+# two positions are what disambiguate the report, and both are in it.
+{{a: 1, b: 2}: 1, {b: 2, a: 1}: 2}

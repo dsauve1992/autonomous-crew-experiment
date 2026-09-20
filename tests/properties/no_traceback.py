@@ -24,8 +24,11 @@ found nothing: the grid went from 61874 programs to 74204 and stayed quiet.
 They are here anyway, because the next thing to touch `len`, `upper`, `split`
 or a conversion will be checked against them without anyone remembering to.
 
-The last value in VALUES is the one boundary here that has never caught
-anything: a list holding a float beside an int no float can hold. Tick 7's
+`[1.7e308, 10**400]` is the one boundary here that has never caught
+anything: a list holding a float beside an int no float can hold. It was
+described as *the last value in VALUES* until tick 31 added two after it,
+which is what a sentence that locates something rather than naming it is
+worth. Tick 7's
 `huge + 2.5` bug was arithmetic converting the int and Python raising where it
 could not; tick 10 added `sort(xs, key)`, which puts those two values on
 either side of a `<` instead, and wanted the same boundary watched from then
@@ -56,6 +59,12 @@ VALUES = [
     '"\\n"', "[[1]]", '[1, "a"]', "{1: 2}", "print", "[1, 2, 3]",
     "[1.7e308, " + "1" + "0" * 400 + "]",
     '"e\u0301"', '"stra\u00dfe"', '"\u00a0"', '"\u0661\u0662\u0663"', '"1_0"',
+    # Tick 31. Tick 30 made a list or a map a key, and this grid -- the
+    # widest in the suite -- had no map with a composite key in it, so
+    # `canonical`'s list and map branches and `function_path`'s map branch
+    # were reached from nowhere here. They are quiet, which is the answer
+    # this file exists to keep getting.
+    "{[1]: 2}", "{{a: 1}: 2}",
 ]
 
 BINARY = ["+", "-", "*", "/", "%", "==", "!=", "<", "<=", ">", ">=",

@@ -1,0 +1,19 @@
+# Two `==` keys can be spelled two ways, and one rule covers both halves of
+# what then happens: the spelling that arrived first keeps its place *and*
+# its spelling, because an update is not a rewrite of what the data first
+# said. Until tick 31 no case could see both halves at once. `map_order.vine`
+# repeats a key in the middle of three and spells it the same way both times,
+# so only the place is observable; `composite_keys.vine` spells a key two
+# ways in a map of one key, which has no middle, so only the spelling is.
+let m = set(set(set({x: 0}, {a: 1, b: 2}, "first"), "z", 9), {b: 2, a: 1}, "second")
+print(keys(m))
+print(values(m))
+print(m)
+
+# The other place where two spellings are one key, and it is older than
+# composite keys: `0.0` and `-0.0` are `==`, so they are one key, and no case
+# anywhere had spelled a key two ways without a container around it.
+let z = set(set(set({}, -0.0, "first"), "after", 1), 0.0, "second")
+print(keys(z))
+print(values(z))
+print(-0.0 == 0.0, contains(set({}, -0.0, "x"), 0.0), get(set({}, 0.0, "x"), -0.0, "miss"))
