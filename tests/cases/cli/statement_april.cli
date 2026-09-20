@@ -11,3 +11,9 @@
 # case's `.in` after the case: a second input for one program needs a second
 # file to name it.
 examples/statement.vine
+
+# And the carriage returns are really there. Nothing above can see them --
+# the program trims every field, which is the point -- so this line is the
+# only thing in the suite that would go red if the CRs stopped arriving,
+# whether git normalised them or the runner did.
+-e 'print(repr(take(split(read(), "\n"), 1)))'

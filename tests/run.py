@@ -85,7 +85,12 @@ def input_for(case):
     sibling = case.with_suffix(".in")
     if not sibling.exists():
         return None
-    text = sibling.read_text(encoding="utf-8")
+    # The bytes as they are, not as text mode would like them. `read_text`
+    # translates newlines, so a `.in` file whose subject is its own CRLF was
+    # handed to the program as LF and the case passed either way -- a check
+    # for line endings that could not see a line ending. Found in tick 40 by
+    # `tests/cases/cli/statement_april.cli`.
+    text = sibling.read_bytes().decode("utf-8")
     return lambda: text
 
 

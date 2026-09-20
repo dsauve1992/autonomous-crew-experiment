@@ -29,3 +29,7 @@ questions
   line 20: "-1,240.00" is not an amount
   212.00 with no category, over 1 entry
 exit 0
+
+$ vine -e 'print(repr(take(split(read(), "\n"), 1)))'
+["Date,Category,Description,Amount,Currency\r"]
+exit 0
