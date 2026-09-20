@@ -78,17 +78,25 @@ def values():
         yield f"[{source}, {source}]"
         yield f"{{k: {source}}}"
         yield f'[[{source}], {{k: [{source}]}}]'
-    # Every scalar as a map key beside every other, since map keys are the one
+    # Every scalar as a map key beside every other -- `nil` included since
+    # tick 30 -- since map keys are the one
     # place where two values that are not `==` must stay two entries. Pairs
     # that ARE `==` are dropped rather than listed: three of them were in here
     # -- `0.0` with `-0.0`, `2.5` with `10 / 4`, `1e16` with `1e15 * 10` --
     # written as distinct because they are spelt differently, and they were
     # invisible for as long as a literal quietly kept the last of two.
-    keyable = [s for s in SCALARS if s not in ("nil",)]
+    keyable = list(SCALARS)
     for a, b in itertools.combinations(keyable, 2):
         if equal(evaluate(a), evaluate(b)):
             continue
         yield f"{{{a}: 1, {b}: 2}}"
+    # And every scalar inside a composite key, both shapes. A key that is a
+    # list or a map is a value `repr` has to write on the left of a colon,
+    # where a map literal's own grammar is what has to read it back -- the
+    # place the round trip could hold for every value and fail for every key.
+    for source in keyable:
+        yield f"{{[{source}]: 1}}"
+        yield f"{{{{k: {source}}}: 1}}"
 
 
 def evaluate(source):
@@ -105,7 +113,7 @@ def key_order(value):
     from the one `==` can answer.
     """
     if isinstance(value, dict):
-        return [to_repr(k[1]) for k in value] + [key_order(v) for v in value.values()]
+        return [to_repr(k.value) for k in value] + [key_order(v) for v in value.values()]
     if isinstance(value, list):
         return [key_order(x) for x in value]
     return []

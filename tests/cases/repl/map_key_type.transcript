@@ -1,31 +1,39 @@
 vine — ^D to exit, blank line to abandon an unfinished entry
->>> {[1]: "x"}
-runtime error: map key must be a string, number or bool, got list
- --> <repl:1>:1:2
+>>> {(trim): "x"}
+runtime error: a map key may not be a function
+ --> <repl:1>:1:3
   |
-1 | {[1]: "x"}
-  |  ^
->>> set({}, [1], "x")
-runtime error: map key must be a string, number or bool, got list
+1 | {(trim): "x"}
+  |   ^
+  = help: a key may be any value that holds no function
+>>> set({}, [trim], "x")
+runtime error: a map key may not hold a function, got list
  --> <repl:2>:1:4
   |
-1 | set({}, [1], "x")
+1 | set({}, [trim], "x")
   |    ^
->>> get({}, [1])
-runtime error: map key must be a string, number or bool, got list
+  = note: the function is at [0] inside the key
+  = help: a key may be any value that holds no function
+>>> get({}, {a: trim})
+runtime error: a map key may not hold a function, got map
  --> <repl:3>:1:4
   |
-1 | get({}, [1])
+1 | get({}, {a: trim})
   |    ^
->>> {a: 1}[[1]]
-runtime error: map key must be a string, number or bool, got list
+  = note: the function is at ["a"] inside the key
+  = help: a key may be any value that holds no function
+>>> {a: 1}[[[print]]]
+runtime error: a map key may not hold a function, got list
  --> <repl:4>:1:7
   |
-1 | {a: 1}[[1]]
+1 | {a: 1}[[[print]]]
   |       ^
->>> contains({a: 1}, [1])
-runtime error: map key must be a string, number or bool, got list
+  = note: the function is at [0][0] inside the key
+  = help: a key may be any value that holds no function
+>>> contains({a: 1}, fn(x) { x })
+runtime error: a map key may not be a function
  --> <repl:5>:1:9
   |
-1 | contains({a: 1}, [1])
+1 | contains({a: 1}, fn(x) { x })
   |         ^
+  = help: a key may be any value that holds no function

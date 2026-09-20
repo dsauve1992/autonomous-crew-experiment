@@ -73,7 +73,7 @@ RESULT = re.compile(r"\S\s+#\s*(\S.*)$")
 # blindness is the realistic way a document-reading check goes wrong, and only
 # an exact number sees it. A tick that adds or removes an example edits this
 # line in the same commit, which is the point: the count is a claim too.
-EXPECTED = 107
+EXPECTED = 122
 
 
 def vine_blocks():

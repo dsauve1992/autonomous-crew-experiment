@@ -44,14 +44,15 @@ Five clauses, each broken on its own, on a committed tree.
 **What the grid reaches, and what it does not.** `no_traceback.py` enumerates
 75,167 programs by varying *types* -- every builtin against every value, every
 operator between every pair, every pair and triple of source fragments. That
-reaches 27 of the 41 `.note(`/`.help(` sites in `vine/`. The fourteen it
+reaches 28 of the 44 `.note(`/`.help(` sites in `vine/`. The sixteen it
 misses all need a specific mistake rather than a wrong type: a codepoint
 escape that is malformed in one of four ways, a map literal that repeats a
 key, a hole with a format after it, `"{{`, a string Python reads as a number
 and Vine does not, a keyword written where the grid only ever writes values,
-and a call that fails inside a function the program itself wrote.
+a call that fails inside a function the program itself wrote, and a key with
+a function nested inside it rather than being one.
 `MISTAKES` below is those, hand-written, one line of why each, and with them
-the enumeration reaches all 41. Its last entry reaches no new site: it is
+the enumeration reaches all 44. Its last entry reaches no new site: it is
 there for a *shape* rather than a site, because clause 4 is about two lines
 and every other program here prints at most one that could repeat.
 
@@ -90,7 +91,7 @@ POSITION = re.compile(r"\d+:\d+")
 # site, add the program that reaches it and move this number in the same
 # commit; if the program is genuinely impossible, say so beside the number.
 SITES = re.compile(r"\.note\(|\.help\(")
-EXPECTED_SITES = 41
+EXPECTED_SITES = 44
 VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.
@@ -126,6 +127,11 @@ MISTAKES = [
     # the guard out of `frame()` and clause 4 fails here -- without this
     # program it passes, and the guard is one nothing has watched fire.
     "let ping = fn(n) { pong(n) }\nlet pong = fn(n) { ping(n) }\nping(0)",
+    # A key with a function *inside* it. The grid offers every value to every
+    # builtin, so it reaches a key that IS a function; a key that merely holds
+    # one is a list whose element is a function, which is a value the grid
+    # never builds. The note it reaches is the one that says where.
+    "set({}, [print], 1)",
 ]
 
 

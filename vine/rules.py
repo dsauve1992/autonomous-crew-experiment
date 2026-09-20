@@ -3,7 +3,7 @@
 Every `help` line Vine prints comes from here. A help is a rule of the
 language rather than a fact about the program -- see **Errors** in
 `docs/spec.md` -- so the set of them is finite, and the roster in that section
-names the same fifteen strings this module does.
+names the same sixteen strings this module does.
 
 They are in one file for the reason tick 24 found the hard way. The float
 ceiling used to be written at the three sites that happened to need it, in two
@@ -76,6 +76,11 @@ RETURN_RULE = (
 COUNT_RULE = "a negative index counts from the end, but a count does not"
 
 SET_RULE = "to give a key a new value, use set(m, k, v)"
+
+# What may be a key. Stated as the permission rather than the refusal,
+# because the refusal is one type out of eight and the reader who has just
+# been refused is holding the other seven.
+KEY_RULE = "a key may be any value that holds no function"
 
 # -- strings --------------------------------------------------------------
 

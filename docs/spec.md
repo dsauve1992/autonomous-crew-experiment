@@ -57,13 +57,15 @@ name. See **Errors** for what each way of ending means.
 `int` and `float` are distinct types and are never equal to each other: `1 == 1.0`
 is `false`. `type(x)` returns the type name as a string.
 
-Map keys may be strings, numbers or booleans, and two keys are the same key on
-the same type-strict terms: `{1: "a", 1.0: "b", true: "c"}` has three entries.
-A map's keys are in an order — see **Map order** below. Anything else offered as a key is an error
-wherever a key is expected — in a literal, in `set`, in `get`, in `contains`
-and in `m[k]` — rather than a lookup that quietly misses, because a list can
-never be a key and asking is a different mistake from asking for one that is
-absent. `get(m, k, default)` is for absence.
+A map key may be any value that holds no function, and two keys are the same
+key when they are `==` — which is type-strict, so
+`{1: "a", 1.0: "b", true: "c"}` has three entries, and structural, so a list
+or a map may be one. See **Composite keys**. A map's keys are in an order —
+see **Map order** below. A function offered as a key is an error wherever a
+key is expected — in a literal, in `set`, in `get`, in `contains` and in
+`m[k]` — rather than a lookup that quietly misses, because a function is `==`
+to nothing but itself and asking is a different mistake from asking for a key
+that is absent. `get(m, k, default)` is for absence.
 
 ### Map order
 
@@ -1134,6 +1136,170 @@ which is `==` to `m` and in `m`'s own key order. `keys({})` and `values({})`
 are both `[]`, and `len(m)` is `len(keys(m))`. Neither builtin takes anything
 but a map; for the values of a list there is nothing to ask.
 
+### Composite keys
+
+A key may be **any value that holds no function**: `["mary", "2026-01-05"]` is
+a key, so is `{who: "mary", day: 5}`, so is `nil`. `print` is not, and neither
+is `[print]`.
+
+The line is drawn by `==` rather than by a list of types, because `==` is what
+decides whether two keys are one key, and `equal` already answers that
+question structurally for every value there is — except a function, which it
+answers by identity. Two closures written the same way are not `==`, so a key
+holding one could be found again only by a program still holding that exact
+closure, and every other lookup would miss. A key that can only miss is the
+thing this section exists to remove, so it is the one thing refused:
+
+```
+set({}, print, 1)        # error: a map key may not be a function
+set({}, [print], 1)      # error: a map key may not hold a function, got list
+```
+
+Both reports offer the rule; the second also says *where*, on a note reading
+`the function is at [0] inside the key`. A key is one expression and the part
+of it that is wrong may be several fields down a record assembled somewhere
+else, which a caret cannot point at and a note can.
+
+**What makes this safe is that Vine has no way to change a value.** `set`,
+`push` and `concat` all answer new values — see `tests/cases/immutability.vine`
+— so a list handed to `set` as a key cannot afterwards become a different
+list. Composite keys are absent from most languages because there they would
+be a hazard; here there is nothing to guard.
+
+**What it replaces, measured.** A total per person per day has a pair for a
+key. Three spellings, one program, all three run:
+
+```
+let rows = [
+  {who: "mary jane", date: "2026-01-05", hours: 13.0},
+  {who: "ada", date: "2026-01-05", hours: 4.0},
+  {who: "mary jane", date: "2026-01-06", hours: 13.0}
+]
+
+let flat = reduce(rows, fn(m, r) {
+  set(m, "{r.who} {r.date}", get(m, "{r.who} {r.date}", 0.0) + r.hours)
+}, {})
+map(keys(flat), fn(k) {
+  let p = split(k, " ")
+  "{p[0]} on {p[1]}"
+})      # ["mary on jane", "ada on 2026-01-05", "mary on jane"]
+
+let nested = reduce(rows, fn(m, r) {
+  let row = get(m, r.who, {})
+  set(m, r.who, set(row, r.date, get(row, r.date, 0.0) + r.hours))
+}, {})
+reduce(keys(nested), fn(out, who) {
+  concat(out, map(keys(nested[who]), fn(d) { "{who} on {d}" }))
+}, [])  # ["mary jane on 2026-01-05", "mary jane on 2026-01-06", "ada on 2026-01-05"]
+
+let pairs = reduce(rows, fn(m, r) {
+  set(m, [r.who, r.date], get(m, [r.who, r.date], 0.0) + r.hours)
+}, {})
+map(keys(pairs), fn(k) {
+  "{k[0]} on {k[1]}"
+})      # ["mary jane on 2026-01-05", "ada on 2026-01-05", "mary jane on 2026-01-06"]
+```
+
+**The first is wrong and the run exits 0.** *mary jane* has become a person
+called *mary* on a day called *jane*, and her two different days now read as
+one line printed twice. The separator is not the bug — no separator works,
+because the program cannot check that the data does not contain it, and a
+name is data. This is the answer that looks least broken and is least
+correct.
+
+**The second was always available and always correct.** A map of maps needs
+no separator and tells no lie. What it costs is in its output: `ada` has moved
+to the end. `keys(nested)` is people in the order they first appeared and
+`keys(nested[who])` is that person's days, so the reading is by person and
+then by day, and the order in which the *pairs* first appeared is gone — it
+was never stored. The second cost is the `reduce` with a `concat` in it:
+every question about all the pairs has to descend two levels to reach them,
+so a filter over pairs is four lines where the flat one is one. Neither cost
+shows up in a type, and `examples/timesheet.vine` used this spelling for one
+of its two tables and the string for the other.
+
+**The third is the pair, kept as a pair.** It is the first spelling's length
+with the second spelling's truth, and `k[0]` and `k[1]` are the parts back
+without a `split` that can be wrong.
+
+**Equality is `==`, at every depth.**
+
+```
+set({}, [1], "int")[[1.0]]                      # error: a map of 1 key has no key [1.0]
+{{a: 1, b: 2}: "x"} == {{b: 2, a: 1}: "x"}      # true
+```
+
+`[1]` and `[1.0]` are two keys for the reason `1` and `1.0` are: `==` is
+type-strict one level down as well. `{a: 1, b: 2}` and `{b: 2, a: 1}` are one
+key, because **Map order** says `==` does not compare a map's order — so a map
+used as a key has an order for printing and none for identity, which is what
+it already had as a value.
+
+**Which spelling comes back out.** When two `==` keys are spelled differently,
+`keys(m)` hands back the one that arrived first. That is **Map order**'s rule
+for a key's *place*, one level down, and for the same reason: an update is not
+a rewrite of what the data first said.
+
+```
+let m = set({}, {a: 1, b: 2}, "first")
+set(m, {b: 2, a: 1}, "second")      # {{"a": 1, "b": 2}: "second"}
+```
+
+**`repr` is still source.** The promise in **repr and str** holds over keys of
+every shape, which is checked by `tests/properties/repr_is_source.py`:
+
+```
+repr({["a", "b"]: 1, nil: 2})       # {["a", "b"]: 1, nil: 2}
+```
+
+**Two mistakes the syntax now makes possible.** A bare identifier in a map
+literal is still shorthand for its own name as a string, and inside brackets
+it is not:
+
+```
+{a: 1}        # {"a": 1}
+let a = 9
+{[a]: 1}      # {[9]: 1}
+```
+
+So `{[who]: 1}` is a key built from the variable `who`, and `{who: 1}` is the
+key `"who"`; the two look alike and are two different programs. The shorthand
+is not extended into a list, because a list literal is an expression
+everywhere else in the language and one place where its elements meant
+something different would be worse than the resemblance. Second, a two-part
+key is indexed with two brackets:
+
+```
+let m = {["a", "b"]: 1}
+m["a", "b"]   # error: expected ']', found ','
+m[["a", "b"]] # 1
+```
+
+**`nil` became a key, and that has a price worth naming.** It was refused
+before, and the refusal was catching something: a field read with `get` and
+used as a key. That catch is gone.
+
+```
+let rec = {name: "x"}
+set({}, get(rec, "who"), 1)   # {nil: 1}
+```
+
+The spelling that still catches it is the one that was always the right one
+for a field the program requires, and it names the field rather than the key
+rule:
+
+```
+let rec = {name: "x"}
+set({}, rec.who, 1)           # error: a map of 1 key has no key "who"
+```
+
+`get(rec, "who")` is the spelling that *asked* for absence to be tolerated —
+see **Looking up a key** — so a program that writes it and is then surprised
+by a `nil` key has been answered by the function it called. `nil` is a key
+because the rule is `==` and `nil == nil`; carving it out would also have to
+carve out `[nil]`, and a list with a hole in it is exactly the data a
+composite key is for.
+
 ## Range
 
 `range(n)` is the integers from 0 up to but not including `n`, and
@@ -2167,17 +2333,17 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Sixteen rules, and every help is one of them. Fifteen live in
+Seventeen rules, and every help is one of them. Sixteen live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
 listed against the section that states it at length, because a help is a
 reminder of this document and never a replacement for it.
 
-The sixteenth is the command line's, and it is elsewhere because a problem
+The seventeenth is the command line's, and it is elsewhere because a problem
 with the command line has no position and so no report to hang a help on —
 `vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
-it. It is a rule offered for the same reason as the other fifteen, so it is on
+it. It is a rule offered for the same reason as the other sixteen, so it is on
 the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
@@ -2190,6 +2356,7 @@ the same list.
 - `only a function body may return; a block's value is its last statement` — **Early return**
 - `a negative index counts from the end, but a count does not` — **Taking and dropping**
 - `to give a key a new value, use set(m, k, v)` — **Map order**
+- `a key may be any value that holds no function` — **Composite keys**
 - `the escapes are \n \t \r \" \\ \{ \} and \u{...}` — **Lexical structure**
 - `a codepoint is written '\u{1e}' -- hex digits in braces` — **Strings**
 - `'\u{d800}' to '\u{dfff}' are reserved and are not text; a string holding one could not be printed` — **Strings**

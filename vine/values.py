@@ -74,20 +74,114 @@ def equal(a, b):
     return a == b
 
 
-def to_key(v):
-    """The internal identity of a map key.
+def holds_function(v):
+    """Whether `v` is a function or has one somewhere inside it.
+
+    The one thing a map key may not be -- see `Composite keys` in
+    docs/spec.md. Every other value is allowed, because key identity is `==`
+    and `equal` decides `==` for every other value structurally. It decides
+    it for a function with `is`, so two closures that read alike are two
+    keys, and a key nothing can write down twice is a key that can only miss.
+    """
+    if isinstance(v, (Function, Builtin)):
+        return True
+    if isinstance(v, list):
+        return any(holds_function(x) for x in v)
+    if isinstance(v, dict):
+        # A key already passed this test on its way in, so only the values
+        # can be carrying one.
+        return any(holds_function(x) for x in v.values())
+    return False
+
+
+def function_path(v, path=""):
+    """Where the function inside `v` is, written as Vine indexing.
+
+    `[trim]` answers `[0]` and `{a: [trim]}` answers `["a"][0]`. A note can
+    say this and the caret cannot: the key is one expression, and the part of
+    it that is wrong may be six fields down a record written somewhere else.
+    """
+    if isinstance(v, (Function, Builtin)):
+        return path
+    if isinstance(v, list):
+        for i, x in enumerate(v):
+            if holds_function(x):
+                return function_path(x, f"{path}[{i}]")
+    if isinstance(v, dict):
+        for k, x in v.items():
+            if holds_function(x):
+                return function_path(x, f"{path}[{to_repr(from_key(k))}]")
+    return path  # pragma: no cover - only called where one was found
+
+
+def canonical(v):
+    """A hashable form of `v` in which two values are equal exactly when
+    `equal(v, w)` says they are.
 
     Vine's equality is type-strict: `1`, `1.0` and `true` are three different
     values. Python's is not -- all three are equal to each other and hash
     alike -- so a dict keyed on them directly collapses the three into one
-    entry, and `{1: "a", true: "b"}` would answer `{1: "b"}`. Keys are stored
-    tagged with their type name, and untagged on the way back out.
+    entry, and `{1: "a", true: "b"}` would answer `{1: "b"}`. Hence the type
+    tag, at every depth.
+
+    A list becomes a tuple of its elements' canonical forms, in order, since
+    `equal` compares lists element for element. A map becomes a *frozenset*
+    of its pairs, because `equal` does not compare a map's order and
+    **Map order** says so by name: `{a: 1, b: 2}` and `{b: 2, a: 1}` are one
+    key, and an order-sensitive form would make them two.
+
+    This and `equal` are two statements of one rule, so they can disagree --
+    and a disagreement is a map that answers the wrong value rather than an
+    error. `tests/properties/key_identity_is_equality.py` is what holds them
+    to each other.
     """
+    if isinstance(v, list):
+        return ("list", tuple(canonical(x) for x in v))
+    if isinstance(v, dict):
+        return ("map", frozenset((k.canon, canonical(x)) for k, x in v.items()))
     return (type_name(v), v)
 
 
+class Key:
+    """A map key's slot in the dict underneath: its identity, and itself.
+
+    The identity is `canonical(value)`, which is what the dict hashes and
+    compares. The value is kept beside it so `keys(m)` can hand back the list
+    or the map that was offered, in its own order, rather than a rebuilt one
+    -- a frozenset has no order to rebuild from.
+
+    Which of two `==` keys is kept is then decided by Python's dict, which
+    keeps the key it already had: `set(m, k, v)` on a key the map has keeps
+    that key's place *and* its spelling. That is **Map order**'s rule one
+    level down, and it is the same answer for the same reason.
+    """
+
+    __slots__ = ("value", "canon", "_hash")
+
+    def __init__(self, value):
+        self.value = value
+        self.canon = canonical(value)
+        self._hash = hash(self.canon)
+
+    def __hash__(self):
+        return self._hash
+
+    def __eq__(self, other):
+        if not isinstance(other, Key):
+            return NotImplemented
+        return self.canon == other.canon
+
+    def __repr__(self):  # pragma: no cover - for a Python debugger only
+        return f"Key({self.value!r})"
+
+
+def to_key(v):
+    """The internal identity of a map key. See `Key`."""
+    return Key(v)
+
+
 def from_key(k):
-    return k[1]
+    return k.value
 
 
 # What `repr` writes in place of a character, and everything not in here is

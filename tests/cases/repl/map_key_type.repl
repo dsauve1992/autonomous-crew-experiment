@@ -1,5 +1,5 @@
-{[1]: "x"}
-set({}, [1], "x")
-get({}, [1])
-{a: 1}[[1]]
-contains({a: 1}, [1])
+{(trim): "x"}
+set({}, [trim], "x")
+get({}, {a: trim})
+{a: 1}[[[print]]]
+contains({a: 1}, fn(x) { x })

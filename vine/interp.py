@@ -18,12 +18,14 @@ from .nodes import (
     StrLit,
     Unary,
 )
-from .rules import FLOAT_CEILING, SET_RULE
+from .rules import FLOAT_CEILING, KEY_RULE, SET_RULE
 from .values import (
     Builtin,
     Function,
     INFINITY,
     equal,
+    function_path,
+    holds_function,
     is_truthy,
     to_display,
     to_key,
@@ -98,17 +100,24 @@ class Interpreter:
     def key_for(self, value, pos):
         """A map key's slot in the dict underneath, or an error.
 
-        Only a string, number or bool can be one. `to_key` tags the value and
-        hands it to a Python dict, so a list or a map reaches `hash()` and
-        used to leave through it as a traceback -- from `set`, from `get` and
-        from `m[k]`. The map literal was the one place that checked, and no
-        case had ever printed even that message.
+        Any value but a function may be one -- see `Composite keys` in
+        docs/spec.md. The test is not the key's own type: a list of strings
+        is a key and a list holding `print` is not, so what is asked is
+        whether a function is anywhere inside it.
         """
-        if type_name(value) not in ("string", "int", "float", "bool"):
-            self.fail(
-                f"map key must be a string, number or bool, got {type_name(value)}",
+        if type_name(value) == "function":
+            raise RuntimeError_(
+                "a map key may not be a function", pos, self.source
+            ).help(KEY_RULE)
+        if holds_function(value):
+            err = RuntimeError_(
+                f"a map key may not hold a function, got {type_name(value)}",
                 pos,
+                self.source,
             )
+            err.note(f"the function is at {function_path(value)} inside the key")
+            err.help(KEY_RULE)
+            raise err
         return to_key(value)
 
     def overflowed(self, op, pos):
