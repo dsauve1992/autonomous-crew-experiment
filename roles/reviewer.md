@@ -24,6 +24,21 @@ the evidence that nothing was looking.
   bundle of borrowed answers hides, and you do not find out how many it is by
   reading it — you find out by writing it out as a paragraph, which is the
   only form that has to say which case wins.
+- **Read a section against itself before reading it against anything else.**
+  Both of tick 42's findings were one section disagreeing with a paragraph of
+  its own four paragraphs further down: **Refusing** argues that `fail` has no
+  bare form because a 1 with an empty stderr is forbidden, and then permits
+  `fail ""`; **Taking and dropping** opens by saying `take(xs, 1)` is
+  `first(xs)` in a list, and then spends a paragraph on the one list where it
+  is not, because that exception is what the paragraph needs. Neither is
+  careless. A section is written a paragraph at a time, each from the case in
+  front of its author, and the opening sentence — the orientation, the *these
+  generalise those* — is the one nobody re-reads after the section is
+  finished, because by then it reads as the summary rather than as a claim.
+  So take the opening sentence last, as the strongest claim in the section,
+  and look for its counterexample in the section's own later arguments before
+  looking anywhere else. The rest of this file points outward; this one points
+  in, and it is cheaper.
 - **Depth beats breadth, and say where you stopped.** Half the document with
   its findings written down is worth more than a skim of all of it. Name the
   half you skipped so the next tick starts there instead of starting over.

@@ -1827,3 +1827,50 @@ paragraph is a claim.
 
 *Learned in tick 41 — see **What it costs** under **Refusing** in
 `docs/spec.md`, and `examples/requests.vine`.*
+
+---
+
+## A rule the grammar enforces is a rule about spellings, and its subject may not be one
+
+**Refusing** gives `fail` no bare form, and the reason is about the *ending*:
+"A program that exits 1 with nothing on standard error is a failure nobody can
+act on, and **Errors** forbids that ending outright, so the grammar is where
+it is settled." The parser refuses `fail` with nothing after it. Four
+paragraphs later the same section blesses `fail ""` — "writes an empty line
+… a poor message rather than an error" — and `vine -e 'fail ""'` exits 1
+with one newline on stderr. The permitted spelling reaches the forbidden
+ending, and it is one character longer than the refused one.
+
+Nothing caught it. `cli_exit_contract.py`'s clause was `if not err`, and
+`'\n'` is not falsey; every other check is a golden, and no golden asks what a
+program *could* have written.
+
+The shape is not "the section contradicted itself", though it did. It is that
+a refusal has a subject and a site, and the two can belong to different
+layers. `return`'s refusal in **Early return** gets this right and says so
+out loud: *whether a `return` has a function to leave is a property of where
+it is written, not of what happens when the program runs*, so the parser can
+hold the whole of it. `fail`'s subject is a property of the run — a status
+and a stream — and a parser cannot see a run. It can see that a token is
+missing. Those two coincide on exactly one program, `fail` written bare, and
+the rule was written from that program.
+
+**The move, and it is cheap.** When a refusal lives in the lexer or the
+parser, read its stated reason and ask which layer the reason's subject lives
+in. If the reason names something only a run has — a status, a stream, a
+value, an amount of output — then write the smallest program that produces
+that thing without the spelling being refused. It will usually be a literal,
+because a literal is the shortest way past a grammar. If it runs, the rule
+has a hole the size of every value in the language, and the refusal is
+enforcing a spelling while claiming to enforce an outcome.
+
+The fix is not to move the rule. `fail` still has no bare form, because the
+spelling really is worth refusing where it can be seen for free. The fix is to
+state the rule a second time where the subject lives, with the same help
+attached, so a reader meets one rule from two directions — which is what tick
+15's *take a rule's argument to every place it reaches* looks like when the
+two places are two layers rather than two functions.
+
+*Learned in tick 42 — see `eval_fail` in `vine/interp.py`, `FAIL_RULE` in
+`vine/rules.py`, `tests/cases/errors/fail_blank.vine`, and the 1-clause of
+`tests/properties/cli_exit_contract.py`.*
