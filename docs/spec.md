@@ -2440,6 +2440,30 @@ it climbs towards is a number rather than infinity, because the two curves are
 one curve. Reach for the map for the large constant, and do not reach for it
 expecting a different shape.
 
+**And an accumulator cannot shrink, so the square is over every key the input
+ever mentioned.** `set` is the only way into a map and nothing takes a key out
+of one, so a fold that holds *what is currently open* cannot let go: a key
+that is finished with is held as `nil`, `contains` is true of it forever, and
+the accumulator grows to the whole input rather than staying at the handful
+that are live. `examples/pipeline.vine` is the program this is about — it
+pairs a CI runner's `start` and `ok` lines, a few steps are open at any moment,
+and its map ends up holding every (build, step) pair the log ever named. The
+two shapes, counted: 2n events over n keys, and the same 2n events over one.
+
+```text
+                                            n = 10    20    40
+a fold over a map that cannot forget            100   400  1600
+the same fold over one key                       19    39    79
+```
+
+`n²` against `2n - 1`, from the same number of events, and the program is the
+same program — what differs is the log. In seconds on one machine, over 300,
+600, 1200 and 2400 events: 0.151, 0.334, 0.814 and 2.261 with the key set
+growing against 0.129, 0.252, 0.494 and 0.999 with it fixed at six, which is
+one curve doubling with its input and one not. There is no spelling that
+avoids it: rebuilding a map without one key is a fold over `keys`, which is
+the same square with a larger constant. See **Not in v0.2**.
+
 **What the map spelling costs is a list holding a function.** A function may
 not be a key, so `dedupe([fn() { 1 }, 1])` fails where the `contains` spelling
 answers. That is the whole of the difference, it is the rule **Looking up a
@@ -3371,8 +3395,9 @@ visible in a golden file, because a golden is a copy of the message it checks.
 
 ## Not in v0.2
 
-Deliberately absent, roughly in the order they look worth adding: a `match`
-expression, a second input, user-defined operators, and a bytecode compiler. Anything here is fair game for a later
+Deliberately absent, roughly in the order they look worth adding: a way to
+take a key out of a map, a `match` expression, a second input, user-defined
+operators, and a bytecode compiler. Anything here is fair game for a later
 tick — but adding one means adding its tests and updating this file in the
 same commit.
 
@@ -3401,6 +3426,25 @@ a hundred and thirty-six lines wrapped in a function to buy one `return`, and a
 correct refusal that told the shell it had succeeded. See **Refusing**. That is
 the second absence this list has learned about by a program arriving rather than
 by anybody noticing, which is now a pattern and not an anecdote.
+
+**The first entry above is the third of those, and it arrived one tick after
+that sentence was written.** Nothing takes a key out of a map, so a fold that
+holds what is currently open cannot let go of it and its accumulator grows to
+the whole input. Nobody listed the absence while every accumulator in the
+corpus only ever grew — which was every one of them until tick 44, when
+`examples/pipeline.vine` became the first program here whose state is meant to
+*shrink*. **What the fold costs** has the curve: a square over every key the
+log ever named, where the live set is six. Whoever reopens this already has
+the program, which is the part this list keeps saying is expensive.
+
+It is also the first question **add what cannot be composed** does not settle,
+and that is worth more than the entry. Removal composes: `keys` filtered and
+folded back into a map is four lines of ordinary Vine. What is wrong with the
+composition is not its length but its *curve* — it pays the square the removal
+was wanted to avoid — and the rule as **Formatting** wrote it is about
+spellings, where `round` was the cheap answer that did not reach `"5.00"` at
+all. A composition that reaches the answer by the wrong road is a case that
+rule has not met.
 
 A module system was the first entry from tick 1 until tick 43 took it, and it
 is the one item here that went the way this list says a question *should* go
