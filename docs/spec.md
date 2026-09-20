@@ -165,15 +165,49 @@ depends on the current rule. See `log/0002` and `log/0003`.
 
 Calls nested more than 500 deep are reported as runaway recursion.
 
-A **value** nested too deeply to walk is a runtime error as well, reported at
-the expression that walked it. Unlike the other two limits it has no number,
-and that is a gap rather than a decision: what is too deep depends on the
-machine, because the walk belongs to the implementation and the limit is its
-stack. Nothing has to recurse to reach it —
-`reduce(range(5000), fn(a, i) { [a] }, [])` is five thousand calls that each
-return before the next begins, and a value five thousand deep — and it fires
-the first time anything asks the whole value a question: `==`, `repr`, `str`,
-printing it, or offering it as a key.
+A **value** nested more than 1000 deep is a runtime error as well, reported at
+the expression that walked it. Nothing has to recurse to reach it —
+`reduce(range(1000), fn(a, i) { [a] }, [])` is a thousand calls that each
+return before the next begins, and a value a thousand and one deep — and it
+fires the first time anything asks the whole value a question: `==`, `repr`,
+`str`, printing it, or offering it as a key. Building it is not the error, and
+a program that builds one and never reads it runs.
+
+It is a limit on the **walk** rather than a property stamped on the value:
+what is counted is how many containers one question entered. So a map key is
+walked from the map when the map is printed, and from itself when it is first
+offered as a key, and the same number bounds both.
+
+**Why there is a number at all**, since for thirty-two ticks there was not
+one. The walk belongs to the implementation and the limit used to be its
+stack, which made *whether a program works* a fact about the machine and about
+the rest of the program rather than about the value. Measured on one machine
+in one process: `x == x` stopped at 3489 at the top level and at 1995 inside
+498 calls, and `print(x)` stopped at 2329. Two programs holding the same value
+disagreed about whether it was a program.
+
+The premise that this belonged to the machine was wrong, and one line of the
+implementation held it up. `print` built its output by handing a generator to
+Python's `join`, which calls back into Python from C — so every container the
+walk entered cost a slot of the C stack, the one stack no setting can grow. On
+a 512KB stack that walk stopped at depth 232, on 1MB at 474, on 8MB at 3873.
+`==` and the key identity, which recurse through ordinary frames only, reached
+60000 on all three. Build the parts into a list and hand *that* to `join`, and
+it calls nothing; every walk in the language is then as portable as the other
+two limits already were, which the same measurement confirms — a 500-deep call
+chain and a 200-deep literal both report Vine's limit on a 512KB stack.
+
+**Why 1000.** Not the corpus, which is the measure **Expressions** uses and is
+no use here: every hand-written value in this repository is **two** deep, and
+the only deeper ones are the two cases that test this limit. A value gets deep
+in a loop, and nobody writes that loop for the look of it. The constraints are
+the other two limits. A literal at the parser's ceiling is 200 deep, so a
+number below that would let the parser accept a program that builds a value
+nothing can print. And a value that gains a level per *call* — which is the
+shape of every recursive builder — meets the call limit at 500 first, and
+`call depth exceeded 500 (infinite recursion?)` is the better message for it.
+So what reaches 1000 is a value built by a loop, which is what this limit is
+for.
 
 ## Expressions
 
@@ -2276,14 +2310,29 @@ about the program, so each of them carries `the largest float is about
 1.8e308`. It is one string in `vine/rules.py`, because three of the seven
 used to say it in two different sentences and four said nothing at all.
 
-One message whose complaint cannot be checked by eye offers nothing, and that
-is a decision. `value nested too deeply to work with` would want the depth
-allowed, and the language has not got one: **Bindings** calls that a gap
-rather than a decision, because the limit is the implementation's stack and
-two machines can disagree. A help is a rule of the language, so *there is no
-fixed limit* would print a hole in the voice of a rule and settle in a report
-a question nobody has settled. The day the depth is counted and has a number,
-this message needs a help and the roster needs a line.
+Every message whose complaint cannot be checked by eye now offers a rule.
+One was the exception for thirty-two ticks, and the shape of the exception is
+worth keeping. `value nested too deeply to work with` wanted the depth
+allowed and the language had none: **Bindings** called that a gap rather than
+a decision, so a help reading *there is no fixed limit* would have printed a
+hole in the voice of a rule and settled in a report a question nobody had
+settled. Withholding it was right, and the fix was not to word it better. Tick
+33 counted the depth, and the message the same program prints now has a number
+in the headline and the rule under it:
+
+```
+let deep = reduce(range(1000), fn(a, i) { [a] }, [])
+print(deep)
+```
+
+```report
+runtime error: value nested more than 1000 deep
+ --> report.vine:2:6
+  |
+2 | print(deep)
+  |      ^
+  = help: a value may nest 1000 deep; building a deeper one is not an error until something reads it
+```
 
 That split is the contract, not decoration. The caret is where the failure
 was *detected*, which is not always where it was caused: a note may name the
@@ -2447,17 +2496,17 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Seventeen rules, and every help is one of them. Sixteen live in
+Eighteen rules, and every help is one of them. Seventeen live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
 listed against the section that states it at length, because a help is a
 reminder of this document and never a replacement for it.
 
-The seventeenth is the command line's, and it is elsewhere because a problem
+The eighteenth is the command line's, and it is elsewhere because a problem
 with the command line has no position and so no report to hang a help on —
 `vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
-it. It is a rule offered for the same reason as the other sixteen, so it is on
+it. It is a rule offered for the same reason as the other seventeen, so it is on
 the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
@@ -2476,6 +2525,7 @@ the same list.
 - `'\u{d800}' to '\u{dfff}' are reserved and are not text; a string holding one could not be printed` — **Strings**
 - `a literal brace is written '\{'` — **Strings**
 - `a hole holds one expression, with no format after it; for decimal places write "{fixed(x, 2)}"` — **Formatting**
+- `a value may nest 1000 deep; building a deeper one is not an error until something reads it` — **Bindings**
 - `vine's options are -e, -h/--help and -v/--version; any other argument is a file name` — **Running it**
 
 The list is exhaustive in both directions, and `tests/properties/help_roster.py`

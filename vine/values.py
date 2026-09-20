@@ -1,8 +1,28 @@
 """Runtime values: how they are represented, named, printed and compared."""
 
+from .rules import MAX_VALUE_DEPTH
+
 # Vine has no infinities and no nan -- see `repr and str` in docs/spec.md.
 # This exists so the three guards that keep them out can say so by name.
 INFINITY = float("inf")
+
+
+class TooDeep(Exception):
+    """A walk that reached `MAX_VALUE_DEPTH`.
+
+    Raised here and caught in `interp.py`, which is the only place that knows
+    a position to report it at: a walker is handed a value and never the
+    expression that asked the question. It carries nothing, for the same
+    reason the call-depth guard carries nothing -- everything the report needs
+    is on the stack it is unwinding past.
+
+    Every walk below counts the containers it has entered, rather than letting
+    CPython's stack decide. Before tick 33 the stack *was* the limit, and the
+    depth a value could reach was not a property of the value: measured on one
+    machine, in one process, `x == x` failed at 3489 at the top level and at
+    1995 inside 498 calls, and `print(x)` failed at 2329. Two programs holding
+    the same value disagreed about whether it was a program.
+    """
 
 
 class Function:
@@ -59,22 +79,33 @@ def is_truthy(v):
     return not (v is None or v is False)
 
 
-def equal(a, b):
-    """Structural equality. Types must match; 1 and 1.0 are not equal."""
+def equal(a, b, depth=0):
+    """Structural equality. Types must match; 1 and 1.0 are not equal.
+
+    `depth` is how many containers this walk has already entered; it never
+    compares two keys, because `k in b` is `Key.__eq__` and that is a hash
+    lookup on an identity computed when the key was made.
+    """
     if type_name(a) != type_name(b):
         return False
     if isinstance(a, list):
-        return len(a) == len(b) and all(equal(x, y) for x, y in zip(a, b))
+        if depth >= MAX_VALUE_DEPTH:
+            raise TooDeep
+        return len(a) == len(b) and all(
+            equal(x, y, depth + 1) for x, y in zip(a, b)
+        )
     if isinstance(a, dict):
         if len(a) != len(b):
             return False
-        return all(k in b and equal(v, b[k]) for k, v in a.items())
+        if depth >= MAX_VALUE_DEPTH:
+            raise TooDeep
+        return all(k in b and equal(v, b[k], depth + 1) for k, v in a.items())
     if isinstance(a, (Function, Builtin)):
         return a is b
     return a == b
 
 
-def holds_function(v):
+def holds_function(v, depth=0):
     """Whether `v` is a function or has one somewhere inside it.
 
     The one thing a map key may not be -- see `Composite keys` in
@@ -86,11 +117,15 @@ def holds_function(v):
     if isinstance(v, (Function, Builtin)):
         return True
     if isinstance(v, list):
-        return any(holds_function(x) for x in v)
+        if depth >= MAX_VALUE_DEPTH:
+            raise TooDeep
+        return any(holds_function(x, depth + 1) for x in v)
     if isinstance(v, dict):
         # A key already passed this test on its way in, so only the values
         # can be carrying one.
-        return any(holds_function(x) for x in v.values())
+        if depth >= MAX_VALUE_DEPTH:
+            raise TooDeep
+        return any(holds_function(x, depth + 1) for x in v.values())
     return False
 
 
@@ -100,6 +135,12 @@ def function_path(v, path=""):
     `[trim]` answers `[0]` and `{a: [trim]}` answers `["a"][0]`. A note can
     say this and the caret cannot: the key is one expression, and the part of
     it that is wrong may be six fields down a record written somewhere else.
+
+    The one walk here with no depth of its own, because it cannot need one.
+    It is reached only after `holds_function(v)` answered True, which means
+    every branch it skipped was walked to the bottom inside the limit and the
+    branch it takes found a function inside it. This descends the same
+    branches in the same order, so it stops where that walk stopped.
     """
     if isinstance(v, (Function, Builtin)):
         return path
@@ -114,7 +155,7 @@ def function_path(v, path=""):
     return path  # pragma: no cover - only called where one was found
 
 
-def canonical(v):
+def canonical(v, depth=0):
     """A hashable form of `v` in which two values are equal exactly when
     `equal(v, w)` says they are.
 
@@ -136,9 +177,16 @@ def canonical(v):
     to each other.
     """
     if isinstance(v, list):
-        return ("list", tuple(canonical(x) for x in v))
+        if depth >= MAX_VALUE_DEPTH:
+            raise TooDeep
+        return ("list", tuple(canonical(x, depth + 1) for x in v))
     if isinstance(v, dict):
-        return ("map", frozenset((k.canon, canonical(x)) for k, x in v.items()))
+        if depth >= MAX_VALUE_DEPTH:
+            raise TooDeep
+        return (
+            "map",
+            frozenset((k.canon, canonical(x, depth + 1)) for k, x in v.items()),
+        )
     return (type_name(v), v)
 
 
@@ -244,7 +292,7 @@ def to_reveal(s):
     return f'"{body}"'
 
 
-def to_repr(v):
+def to_repr(v, depth=0):
     """Vine source for a value -- see `repr and str` in docs/spec.md.
 
     Every escape here exists to keep `repr` output readable back in. `{` is on
@@ -263,10 +311,10 @@ def to_repr(v):
     if isinstance(v, str):
         body = "".join(REPR_ESCAPES.get(ch, ch) for ch in v)
         return f'"{body}"'
-    return to_display(v)
+    return to_display(v, depth)
 
 
-def to_display(v):
+def to_display(v, depth=0):
     """How a value looks when printed on its own."""
     if v is None:
         return "nil"
@@ -285,13 +333,31 @@ def to_display(v):
     if isinstance(v, str):
         return v
     if isinstance(v, list):
-        return "[" + ", ".join(to_repr(x) for x in v) + "]"
+        if depth >= MAX_VALUE_DEPTH:
+            raise TooDeep
+        # The parts are built into a list and *then* joined. `join` over a
+        # generator calls back into Python from C, so every container this
+        # walk entered cost a slot of the C stack as well as a Python frame
+        # -- and the C stack is the one thing `sys.setrecursionlimit` cannot
+        # grow. Measured in tick 33: printing died at depth 232 on a 512KB
+        # stack, 474 on 1MB and 3873 on 8MB, while `equal` and `canonical`,
+        # which recurse through Python frames only, reached 60000 on all
+        # three. That factor of sixteen was the whole of what made this limit
+        # "the machine's". With the list built first, `join` receives strings
+        # and calls nothing, and the depth a value may reach is Vine's number
+        # on every machine.
+        parts = [to_repr(x, depth + 1) for x in v]
+        return "[" + ", ".join(parts) + "]"
     if isinstance(v, dict):
-        return (
-            "{"
-            + ", ".join(f"{to_repr(from_key(k))}: {to_repr(x)}" for k, x in v.items())
-            + "}"
-        )
+        if depth >= MAX_VALUE_DEPTH:
+            raise TooDeep
+        # A key is walked from here, so its containers count from the map's
+        # level -- `{[[1]]: 1}` is three deep and reads as three deep.
+        parts = [
+            f"{to_repr(from_key(k), depth + 1)}: {to_repr(x, depth + 1)}"
+            for k, x in v.items()
+        ]
+        return "{" + ", ".join(parts) + "}"
     if isinstance(v, Function):
         return f"<fn {v.label}/{len(v.params)}>"
     if isinstance(v, Builtin):

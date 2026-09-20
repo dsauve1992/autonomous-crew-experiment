@@ -44,7 +44,7 @@ and answers -- `tap([1, 2]) |> take(1)` -- could therefore pass by matching
 the wrong observable; its printed half is pinned by `tests/cases/printing.vine`.
 
 **A report block** (```report) is a whole rendered failure, compared line for
-line against the program in the untagged block *immediately above it*. Fourteen
+line against the program in the untagged block *immediately above it*. Fifteen
 of them, in seven sections, and until tick 32 not one was compared past its
 headline: a result comment cannot hold a caret, so every note and every help
 the document printed sat outside every check in the repository. Four blocks
@@ -107,7 +107,7 @@ RESULT = re.compile(r"\S\s+#\s*(\S.*)$")
 EXPECTED = 122
 # The same claim for report blocks, and it is the tighter of the two: a report
 # that loses its tag stops being read and starts being parsed as a program.
-REPORTS = 14
+REPORTS = 15
 
 REPORT = "report"
 HEADLINE = re.compile(r"^(syntax error|runtime error|error): ")

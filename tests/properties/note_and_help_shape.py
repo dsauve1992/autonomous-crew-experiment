@@ -44,15 +44,17 @@ Five clauses, each broken on its own, on a committed tree.
 **What the grid reaches, and what it does not.** `no_traceback.py` enumerates
 75,167 programs by varying *types* -- every builtin against every value, every
 operator between every pair, every pair and triple of source fragments. That
-reaches 28 of the 44 `.note(`/`.help(` sites in `vine/`. The sixteen it
+reaches 28 of the 45 `.note(`/`.help(` sites in `vine/`. The seventeen it
 misses all need a specific mistake rather than a wrong type: a codepoint
 escape that is malformed in one of four ways, a map literal that repeats a
 key, a hole with a format after it, `"{{`, a string Python reads as a number
 and Vine does not, a keyword written where the grid only ever writes values,
-a call that fails inside a function the program itself wrote, and a key with
-a function nested inside it rather than being one.
+a call that fails inside a function the program itself wrote, a key with
+a function nested inside it rather than being one, and a value built deeper
+than anything will walk -- which the grid cannot reach because every value
+in it is written out, and this one takes a loop to build.
 `MISTAKES` below is those, hand-written, one line of why each, and with them
-the enumeration reaches all 44. Its last entry reaches no new site: it is
+the enumeration reaches all 45. Its last entry reaches no new site: it is
 there for a *shape* rather than a site, because clause 4 is about two lines
 and every other program here prints at most one that could repeat.
 
@@ -91,7 +93,7 @@ POSITION = re.compile(r"\d+:\d+")
 # site, add the program that reaches it and move this number in the same
 # commit; if the program is genuinely impossible, say so beside the number.
 SITES = re.compile(r"\.note\(|\.help\(")
-EXPECTED_SITES = 44
+EXPECTED_SITES = 45
 VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.
@@ -132,6 +134,10 @@ MISTAKES = [
     # one is a list whose element is a function, which is a value the grid
     # never builds. The note it reaches is the one that says where.
     "set({}, [print], 1)",
+    # A value deeper than any walk will go. Built by a loop rather than
+    # written, because the parser stops a literal at 200 -- so no program
+    # the grid can write reaches this site at all.
+    "print(reduce(range(1001), fn(a, i) { [a] }, []))",
 ]
 
 

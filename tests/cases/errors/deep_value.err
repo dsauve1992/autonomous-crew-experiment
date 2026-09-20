@@ -1,5 +1,6 @@
-runtime error: value nested too deeply to work with
-  --> deep_value.vine:15:6
+runtime error: value nested more than 1000 deep
+  --> deep_value.vine:14:6
    |
-15 | deep == deep
+14 | deep == deep
    |      ^
+   = help: a value may nest 1000 deep; building a deeper one is not an error until something reads it

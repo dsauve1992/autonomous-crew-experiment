@@ -1,6 +1,7 @@
-runtime error: value nested too deeply to work with
+runtime error: value nested more than 1000 deep
  --> deep_value_in_call.vine:5:25
   |
 5 | let show = fn(v) { print(v) }
   |                         ^
   = note: show was called at 6:5
+  = help: a value may nest 1000 deep; building a deeper one is not an error until something reads it

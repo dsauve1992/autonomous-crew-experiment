@@ -1,6 +1,6 @@
 # The caret lands inside a function the reader did not choose to be looking
 # at, which is the case `call` records a frame for. This path had to record
-# its own: the error it belongs to cannot be built while the stack that just
-# overflowed is still standing, so `run` builds it and replays them.
+# its own: the error it belongs to cannot be built while the walk that has
+# just stopped is still unwinding, so `run` builds it and replays them.
 let show = fn(v) { print(v) }
-show(reduce(range(5000), fn(a, i) { [a] }, []))
+show(reduce(range(1000), fn(a, i) { [a] }, []))

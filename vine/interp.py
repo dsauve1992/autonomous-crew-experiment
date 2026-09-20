@@ -18,11 +18,18 @@ from .nodes import (
     StrLit,
     Unary,
 )
-from .rules import FLOAT_CEILING, KEY_RULE, SET_RULE
+from .rules import (
+    FLOAT_CEILING,
+    KEY_RULE,
+    MAX_VALUE_DEPTH,
+    SET_RULE,
+    VALUE_DEPTH_RULE,
+)
 from .values import (
     Builtin,
     Function,
     INFINITY,
+    TooDeep,
     equal,
     function_path,
     holds_function,
@@ -39,6 +46,11 @@ MAX_DEPTH = 500
 # long before MAX_DEPTH does -- and a RecursionError is a Python traceback, not
 # a Vine error. Raise the ceiling high enough that our own guard wins.
 PY_FRAMES_PER_CALL = 12
+# And one level of a value costs a few more, on top of whatever the calls
+# around it are holding. Both terms are in the ceiling below because both
+# limits have to be able to fire: a 1000-deep value offered to `repr` inside
+# 499 calls is the worst case either of them permits.
+PY_FRAMES_PER_LEVEL = 4
 
 
 class ReturnSignal(Exception):
@@ -176,31 +188,56 @@ class Interpreter:
 
         if source is not None:
             self.source = source
-        needed = 1000 + MAX_DEPTH * PY_FRAMES_PER_CALL
+        needed = (
+            1000
+            + MAX_DEPTH * PY_FRAMES_PER_CALL
+            + MAX_VALUE_DEPTH * PY_FRAMES_PER_LEVEL
+        )
         previous = sys.getrecursionlimit()
         if previous < needed:
             sys.setrecursionlimit(needed)
         try:
             return self.eval_stmts(program, self.top)
-        except RecursionError:
-            # Not belt and braces, whatever this said until tick 31.
-            # `MAX_DEPTH` counts Vine *calls*, and a 5000-deep list is built
-            # by 5000 shallow ones -- so for a deep *value* this is the only
-            # guard there is. `equal`, `canonical`, `holds_function`,
-            # `to_repr` and `to_display` all walk a value to its bottom, and
-            # any of them can reach here. The message says `value` for that
-            # reason: an expression too deep is the parser's error and a call
-            # too deep is MAX_DEPTH's, and neither of them arrives here.
-            pos = self.deep_pos if self.deep_pos is not None else program.pos
-            err = RuntimeError_(
-                "value nested too deeply to work with", pos, self.source
-            )
-            for label, at in self.deep_frames:
-                err.frame(label, at)
-            self.deep_pos, self.deep_frames = None, []
-            raise err from None
+        except TooDeep:
+            # A walk stopped at `MAX_VALUE_DEPTH`. `MAX_DEPTH` counts Vine
+            # *calls* and a 1001-deep list is built by 1001 shallow ones, so
+            # this is the only guard a deep *value* meets. `equal`,
+            # `canonical`, `holds_function`, `to_repr` and `to_display` all
+            # walk a value to its bottom, and any of them can reach here. The
+            # message says `value` for that reason: an expression too deep is
+            # the parser's error and a call too deep is `MAX_DEPTH`'s, and
+            # neither arrives here.
+            raise self.deep_report(
+                f"value nested more than {MAX_VALUE_DEPTH} deep", program
+            ).help(VALUE_DEPTH_RULE) from None
+        except RecursionError:  # pragma: no cover - MAX_VALUE_DEPTH fires first
+            # Belt and braces, and the same pair `parse()` keeps: a limit the
+            # reader is told about, and a raised ceiling that lets it fire
+            # before CPython's does. This says something different from the
+            # message above on purpose -- reaching it means the machine gave
+            # out *below* Vine's number, so the number is not what the reader
+            # hit and a help quoting it would be false.
+            raise self.deep_report(
+                "value nested too deeply to work with", program
+            ) from None
         finally:
             sys.setrecursionlimit(previous)
+
+    def deep_report(self, message, program):
+        """The report for a walk that did not finish, at the position and
+        under the call chain recorded on the way out.
+
+        Both callers unwind past `eval` and `call`, which write `deep_pos`
+        and `deep_frames` rather than building anything: the `RecursionError`
+        path runs at the depth that has just overflowed, where a call could
+        overflow again. Nothing is built until here, where the stack is back.
+        """
+        pos = self.deep_pos if self.deep_pos is not None else program.pos
+        err = RuntimeError_(message, pos, self.source)
+        for label, at in self.deep_frames:
+            err.frame(label, at)
+        self.deep_pos, self.deep_frames = None, []
+        return err
 
     # -- evaluation -------------------------------------------------------
 
@@ -210,16 +247,17 @@ class Interpreter:
             self.fail(f"cannot evaluate {type(node).__name__}", node.pos)
         try:
             return method(self, node, env)
-        except RecursionError:
-            # The stack ran out somewhere under this node. `run` turns that
+        except (TooDeep, RecursionError):
+            # A value under this node was too deep to walk. `run` turns that
             # into a Vine error, and by then there is nothing left on the
             # stack to say where it happened -- so the innermost evaluation
             # still running claims the position on the way past. Innermost
             # wins because it writes first and the `is None` keeps it.
             #
-            # Nothing is built here on purpose. This handler runs at the
-            # depth that has just overflowed, so a call it made could
-            # overflow again; an attribute store pushes no frame.
+            # Nothing is built here on purpose. On the `RecursionError`
+            # path this handler runs at the depth that has just overflowed,
+            # so a call it made could overflow again; an attribute store
+            # pushes no frame.
             if self.deep_pos is None:
                 self.deep_pos = node.pos
             raise
@@ -452,7 +490,7 @@ class Interpreter:
                 # a nested call's -- leaves through here, and none of them
                 # knows what called it. See VineError.frame().
                 raise err.frame(callee.label, pos)
-            except RecursionError:
+            except (TooDeep, RecursionError):
                 # The same fact as the branch above, recorded rather than
                 # framed: the error this belongs to does not exist yet, since
                 # nothing may be built at the depth that has just overflowed.

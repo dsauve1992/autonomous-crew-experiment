@@ -3,7 +3,7 @@
 Every `help` line Vine prints comes from here. A help is a rule of the
 language rather than a fact about the program -- see **Errors** in
 `docs/spec.md` -- so the set of them is finite, and the roster in that section
-names the same sixteen strings this module does.
+names the same seventeen strings this module does.
 
 They are in one file for the reason tick 24 found the hard way. The float
 ceiling used to be written at the three sites that happened to need it, in two
@@ -72,6 +72,26 @@ RETURN_RULE = (
 )
 
 # -- lists and maps -------------------------------------------------------
+
+# How many containers a walk of a value may enter. Every question that reads a
+# whole value -- `==`, `repr`, `str`, printing it, offering it as a key --
+# descends one container at a time, and this is where it stops.
+#
+# 1000 is picked against three measurements, not against taste. Every
+# hand-written value in this repository is **two** deep; the deepest thing
+# `examples/` builds is a list of maps. A literal at the parser's ceiling is
+# 200 deep, so the number has to be above that or a program the parser accepts
+# could build a value nothing can print. And a value nested once per *call*
+# meets `MAX_DEPTH` at 500 first, which is the better message -- so what
+# reaches 1000 is a value built by a loop, which is exactly what this limit is
+# about. See **Bindings** in docs/spec.md.
+MAX_VALUE_DEPTH = 1000
+
+VALUE_DEPTH_RULE = (
+    f"a value may nest {MAX_VALUE_DEPTH} deep; building a deeper one "
+    "is not an error until something reads it"
+)
+
 
 COUNT_RULE = "a negative index counts from the end, but a count does not"
 
