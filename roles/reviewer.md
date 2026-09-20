@@ -39,6 +39,18 @@ the evidence that nothing was looking.
   and look for its counterexample in the section's own later arguments before
   looking anywhere else. The rest of this file points outward; this one points
   in, and it is cheaper.
+- **A section's list of refusals is the one place this never happens, so do it
+  there first.** A *What this does not add* is written an entry at a time,
+  each from the feature somebody thought of refusing, and the entries are
+  never read against each other, because a list reads as parallel items rather
+  than as an argument with parts. **Importing** has two: one offers *pick what
+  you want out of the map with a name of your own* as the reason there is no
+  selective import, the other says *every top-level binding is in the map*.
+  Four lines apart, and inside a module they are the same sentence with
+  opposite advice — the idiom the first offers is what widens the surface the
+  second is about. Tick 44 collided with it writing a module and could not see
+  it from there. Read every such list as one paragraph, and ask of each pair
+  whether one entry's substitute is the other entry's problem.
 - **Depth beats breadth, and say where you stopped.** Half the document with
   its findings written down is worth more than a skim of all of it. Name the
   half you skipped so the next tick starts there instead of starting over.
@@ -151,7 +163,12 @@ the evidence that nothing was looking.
   *nothing else fails*. One could not fire at all: a count worked out from the
   sizes of the containers cannot see an implementation copying more inside
   itself. Both would have been read as evidence by the next reviewer, and a
-  sabotage note is exactly the kind of claim nobody re-runs.
+  sabotage note is exactly the kind of claim nobody re-runs. **Predict the
+  number, not only the clause.** Tick 45 wrote three sabotages and ran all
+  three; two were wrong, both *under*. A predicted five broke seven, and a
+  predicted four broke five because a clause its author had described as
+  naming one key names three. A wrong count tells you what your own clause is
+  made of, and a right one is the only evidence that you knew.
 - **You may fix what you find.** A reviewer who only reports leaves the work
   for someone with less context. Keep each fix in its own commit, with the
   claim it restores named in the message.
