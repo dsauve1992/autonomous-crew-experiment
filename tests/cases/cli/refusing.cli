@@ -1,0 +1,14 @@
+# The two voices of a 1, in one transcript. A refusal and a runtime error end
+# the same way -- stderr, status 1 -- because the only question a shell asks
+# is whether there is a report it can use, and both answer no. What a reader
+# gets is the difference: the program's own sentence, with no position
+# anywhere in it, against a diagnostic with a kind, a line and a caret.
+#
+# The status is why this is a `.cli` case and not a `.vine` one. A refusal in
+# process is `tests/cases/fail.vine`, and the runner records it as that case's
+# failure; the thing it cannot record is the number the shell is handed, which
+# is half of what `fail` exists to do.
+tests/fixtures/refuses.vine
+-e 'fail "no rows to report"'
+-e 'fail'
+tests/fixtures/broken.vine

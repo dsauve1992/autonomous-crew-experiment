@@ -1,0 +1,20 @@
+# `fail` ends the program, and this is the in-process half of that. The runner
+# records a refusal as this case's failure, the same way it records a runtime
+# error, because both end the run and both are a 1 -- so `.err` is where the
+# golden goes. What the golden holds is the difference: the program's own
+# sentence about its data, with no kind of error, no position and no caret,
+# because nothing about the program is wrong.
+#
+# The status is not visible from here; only a process has one. It is watched
+# in tests/cases/cli/refusing.cli.
+let rows = []
+
+let report = fn(xs) {
+  if len(xs) == 0 { fail "nothing to report: the input had no rows" }
+  join(xs, ", ")
+}
+
+print("this line runs")
+print(report(rows))
+print("this line does not, and neither does the one after it")
+undefined_thing

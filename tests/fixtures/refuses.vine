@@ -1,0 +1,2 @@
+print("half a report")
+fail "refuses: and no more"

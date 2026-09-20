@@ -1,0 +1,30 @@
+$ vine tests/fixtures/refuses.vine
+half a report
+--- stderr
+refuses: and no more
+exit 1
+
+$ vine -e 'fail "no rows to report"'
+--- stderr
+no rows to report
+exit 1
+
+$ vine -e 'fail'
+--- stderr
+syntax error: 'fail' needs a message
+ --> <argument>:1:1
+  |
+1 | fail
+  | ^
+  = help: 'fail' ends the program with its message on stderr and a status of 1; a failure that says nothing cannot be acted on
+exit 1
+
+$ vine tests/fixtures/broken.vine
+before the error
+--- stderr
+runtime error: undefined name 'undefined_thing'
+ --> tests/fixtures/broken.vine:2:1
+  |
+2 | undefined_thing
+  | ^
+exit 1
