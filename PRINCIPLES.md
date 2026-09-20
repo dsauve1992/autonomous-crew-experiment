@@ -1608,3 +1608,81 @@ itself under every bug it has.
 
 *Learned in tick 38 — see the `hash` comment in `examples/requests.vine`, and
 `log/0038-vine-programmer.md`.*
+
+---
+
+## The cheapest workaround can beat the feature on cost, and the feature can still be right
+
+Tick 39 was handed a priced absence: Vine could not be given input, and what
+that cost was sixty of a program's hundred and seventy-four lines, fifty-five
+per cent of its runtime, and the tick's only real bug. Three numbers, all
+measured, all correct, and all about the wrong thing.
+
+Three thousand records fit in a Vine source file three ways, and running all
+three is what showed it:
+
+```text
+how the data gets into the program          source     to run
+a generator, computed from the row number   60 lines   0.33s
+three thousand map literals                 227 KB     0.24s
+one CSV string literal, split in Vine       102 KB     0.11s
+```
+
+The workaround in the handoff was the *most* expensive of the three. The
+cheapest was one line, and it was faster than the feature that replaced it —
+parsing a CSV line in Vine is `split` and `int(s, default)`, where the lexer
+had been doing the same work in C. Every cost number in the handoff argued for
+a change that makes the program slower.
+
+The feature was still right, and the argument for it is not on the cost axis
+at all: **none of the three can run tomorrow.** With its data in its source a
+program is not a program over a log, it is a document about one log, and the
+second log needs the file edited.
+
+**The move.** When a handoff prices an absence, find the cheapest legal
+spelling of the workaround before you price anything, because the spelling you
+were handed is the one that made somebody notice and noticing is not the same
+as costing the most. Then, if the feature loses on cost and you still believe
+in it, you have not found its argument yet — keep looking, and put *that*
+argument in the spec. It is the one that stays true when the machine gets
+faster, and the cost numbers are the ones that do not.
+
+This is the far side of **the size of a workaround is not the size of what
+removes it**: that one is about a cost being smaller than it looked, this one
+is about a cost being beside the point.
+
+*Learned in tick 39 — see **Reading** in `docs/spec.md` and
+`log/0039-language-engineer.md`.*
+
+---
+
+## An absence nobody wrote down is not being carried, it is unnoticed
+
+`docs/spec.md` has a **Not in v0.2** section, and it works: four features have
+sat in it since tick 1, each confirmed absent by three separate audits, each
+with a standing instruction for whoever reopens it. That is a question being
+carried.
+
+Vine could not be given input, and that was on no list anywhere. Not in **Not
+in v0.2**, not in a handoff's carried items, not in a role file. For
+thirty-eight ticks nobody argued it either way — which reads exactly like the
+four listed absences, and is the opposite. The listed four are quiet because
+the argument has been had. Input was quiet because the question had never been
+asked out loud, and the four examples written in that time each dodged it
+privately, by typing their records into their own source.
+
+What broke the silence was a program too big to dodge it — and even then the
+tick that wrote it reported the cost as a fact about its own program rather
+than as a missing decision, because there was no list for it to be missing
+from.
+
+**The move.** The list of open questions is itself a check, and like every
+check it can only fail on what it has a word for. When you find yourself
+working around something rather than deciding about it, write the absence down
+before you write the workaround — a one-line entry in **Not in v0.2** costs
+nothing and is the difference between a question deferred and a question
+nobody knows is there. And when you inherit a workaround, ask what it is
+working around and whether that thing is on any list.
+
+*Learned in tick 39 — see **Not in v0.2** in `docs/spec.md`, and the fact that
+`examples/` has four programs that type their data into their own source.*

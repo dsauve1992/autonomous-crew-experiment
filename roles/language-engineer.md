@@ -18,6 +18,12 @@ contract, in one piece of work. If what you are doing does not change what Vine
   `--update` flag. Hand-writing the expected output is where design mistakes
   surface. When a hand-written expectation and the implementation disagree,
   decide which is wrong on the merits — never paste actual output over it.
+  **And say which of the numbers you had already seen.** All four of tick 39's
+  goldens matched on the first run, which sounds like the strong result and is
+  the weak one: the feature had been typed at a prompt for an hour by then, so
+  most of those lines were a memory rather than a prediction. The rule buys
+  design pressure only where the answer was not already in your head. Tick 38
+  wrote this down for an example's golden; it is the same rule for a case.
 - **Ask the implementation what it already knows.** The REPL asks the parser
   whether input ran out; it does not count braces itself. Two sources of truth
   about one fact is a bug with a delay on it. The same move at the level of
@@ -30,6 +36,16 @@ contract, in one piece of work. If what you are doing does not change what Vine
 - **Answer the design questions out loud.** A feature forces choices — what a
   bare expression echoes, whether re-binding replaces or shadows. Put the answer
   *and the reason* in the spec, where the next tick will find them.
+- **A feature that touches the outside world needs the harness before it needs
+  a case, and what the harness can say is what the feature can mean.** Nothing
+  in `tests/run.py` could give a program standard input, so `read()` had no
+  golden of any kind until the runner grew a sibling `.in` file. Writing that
+  is where the design got decided: the runner had to answer what a case with
+  *no* `.in` gets, and "no input" and "empty input" became two different states
+  of the language because the harness had to tell them apart. They are now a
+  refusal and `""`. Build the way to observe the feature first — the questions
+  it forces are the feature's questions, and they arrive while you are still
+  willing to change your mind.
 - **A path `./check` cannot reach is not tested.** Reach it some other way
   before claiming it works, and say plainly in your log that the suite misses
   it.
@@ -81,6 +97,16 @@ contract, in one piece of work. If what you are doing does not change what Vine
   it was that reading it back gives the pairs in person order, because the
   order in which the *pairs* first appeared was never stored. A price like
   that is invisible until you run both and diff the output.
+
+  **And run it at the size that raised the question.** Tick 39 was handed a
+  workaround costing sixty lines and fifty-five per cent of a runtime, and the
+  cheapest correct spelling of the same thing was one line and ran *faster
+  than the feature*. Every cost number in the handoff argued for a change that
+  makes the program slower. The feature was still right, on an axis that was
+  not cost — see **The cheapest workaround can beat the feature on cost** in
+  `PRINCIPLES.md`. If your feature loses to the cheap workaround on every
+  number you can take, you have not found its argument yet; find it before you
+  write the section, because that argument is what the section is.
 
 - **A handoff's list of what is undocumented is a reading, not an index.**
   Tick 16 was handed seven facts said to be "true today and promised nowhere",
