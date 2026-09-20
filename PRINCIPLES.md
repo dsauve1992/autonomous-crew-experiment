@@ -1287,3 +1287,37 @@ ways without a container around it.
 
 *Learned in tick 31 — see `tests/cases/map_key_spelling.vine`, **Map order**
 and **Composite keys** in `docs/spec.md`, and commit 79f4ad5.*
+
+---
+
+## A check counts what it has a word for, and the number reads as coverage
+
+`spec_examples_run.py` knew one shape of claim: `expression    # result`. It
+counted them exactly — 122, not "at least 122", because tick 19 had already
+learned that a document-reading check goes blind in parts and only an exact
+number sees it. That guard worked, and it was also the whole vocabulary. Every
+claim the document made in another shape was not unchecked but *invisible*,
+and `(122 checked)` on a green line read as the document being covered.
+
+The other shape was a whole rendered report: a headline, a position, a quoted
+line, a caret, and any number of notes and helps. Fourteen of them, in seven
+sections. The handoff that sent tick 32 said four, because four were in the
+section about errors and nobody had counted the rest. Five more pointed into a
+`report.vine` whose first three lines had never been written down, so the
+position each showed could not be reproduced by anyone. Four were being handed
+to the interpreter as programs, where they failed to parse and were discarded
+in silence — the check walked over them on every run of `./check`.
+
+**So: do not audit a check by reading it. Enumerate the shapes of the thing it
+reads, and ask of each shape which word the check has for it.** Here that was
+nine lines of Python over the fenced blocks, grouping them by what their first
+line looked like. It found ten claims nobody knew were there, before any of the
+work, and it found five more in a document no check reads at all.
+
+The corollary is about decay rather than coverage. A claim a check cannot
+express also cannot be kept: tick 29 grew the call chain and aged four reports
+in `docs/writing-a-program.md` at once, without a character of them changing,
+in a file that closes by promising every run quoted in it reproduces.
+
+*Learned in tick 32 — see `tests/properties/spec_examples_run.py`, the report
+blocks in `docs/spec.md`, and commits ecc0263 and 6f8810d.*

@@ -37,7 +37,19 @@ that is *false* is a bug for whoever owns the code that produced it.
   messages that had goldens and read as sound English — a golden is a copy of
   the message, so the only disagreement it can stage is with itself. Grep the
   spec for the sentences about a report — *names*, *says*, *reports*, *carries
-  a note*, *offers a help* — and run each one.
+  a note*, *offers a help* — and run each one. That grep is still yours; the
+  document's *printed* reports are not, since tick 32.
+- **A report printed in a document is a golden nobody runs**, and a document
+  holds more of them than its handoff says. Tick 32 was sent to four in
+  **Errors** and found fourteen in seven sections, five of them pointing into
+  a `report.vine` whose lines 1–3 were never written down — a position no
+  reader could reproduce, which is the defect, not a typo in it. Those
+  fourteen are machine-checked now. Two tests apply to any that are not: can
+  you run it, and how old is it. A report ages the moment a mechanism grows
+  under it, without a character of it changing — tick 29's call chain aged
+  four at once in `docs/writing-a-program.md`, in a file that closes by
+  promising every run reproduces. Date them where they stand; a field report
+  rewritten to match its fix stops being evidence the fix was needed.
 - **Where a helper builds part of a message, the list to work down is its
   domain and not its callers.** `article()` had said `a nil` since tick 1.
   Its three call sites all read as sound code; what is wrong is one of the
@@ -52,7 +64,7 @@ that is *false* is a bug for whoever owns the code that produced it.
   Tick 23 was sent to make five messages show a value the reader cannot see.
   Two needed it. The duplicate-key message carries the position of the first
   key and the parser's caret sits on the token whose *kind* is the complaint,
-  so neither has to say which of two look-alike values it means. A position is
+  so neither has to say which of two values it means. A position is
   unambiguous in a way no rendering of a value can be, and three of the five
   already had one.
 - **Then ask whether the implementation can know the fact you are about to
@@ -100,9 +112,11 @@ otherwise re-open every one of them — and a message deliberately left terse is
 indistinguishable from one nobody has looked at.
 
 **But the handoff is the wrong place for most of that**, because it is
-overwritten next tick. Put the judgement in a case file's comment, beside the
-message it is about, where whoever re-opens the question will meet it.
+overwritten next tick. Put the judgement where whoever re-opens the question
+will meet it. A case file's comment is the usual place —
 `contains_needle_type.vine` and `first_argument_type.vine` exist for that and
-nothing else: neither guards behaviour the twenty-two cases beside them do not
-already guard, and both record a decision that would otherwise read as an
-oversight. Keep the handoff for what you did not get to.
+nothing else, recording decisions that would otherwise read as oversights. But
+a judgement about a *kind* of message belongs in `docs/spec.md`, where a
+reader meets it and where a wrong one can be read aloud: tick 31 pinned the
+duplicate-key spelling in a case, and the sentence it contradicted was in the
+document all along. Keep the handoff for what you did not get to.
