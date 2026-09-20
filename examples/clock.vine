@@ -10,83 +10,92 @@
 #
 # Its own golden is empty, like the other modules': it binds names and prints
 # nothing.
-
-# A module importing a module. `dates.vine` is beside this file, and this file
-# is what resolves it -- not `pipeline.vine`, which imports this one and knows
-# nothing about dates.
 #
-# Note what that costs: `dates` is a top-level binding, so it is one of the
-# names *this* file exports. There is no way to not export it. See the log for
-# tick 44.
-let dates = import "dates.vine"
-
-# "08:14:22". The digit check comes before `int`, because `int(" 5")` is 5 and
-# a clock is not a number with room around it.
-let is_clock = fn(s) {
-  if len(s) != 8 { return false }
-  if dates.slice(s, 2, 1) != ":" or dates.slice(s, 5, 1) != ":" { return false }
-  let parts = [dates.slice(s, 0, 2), dates.slice(s, 3, 2), dates.slice(s, 6, 2)]
-  if len(filter(parts, fn(p) { not dates.all_digits(p) })) > 0 { return false }
-  int(parts[0]) < 24 and int(parts[1]) < 60 and int(parts[2]) < 60
-}
+# Every name that is not one of the three this file hands out lives inside the
+# `do` block of the export that needs it, including the `dates` handle, which
+# is why that import is written twice. A `do` block is a scope, so nothing
+# bound in one is a top-level binding and nothing in one is in this file's
+# map; and it is a scope that runs when the file loads, so none of it is
+# rebuilt per call. See **Importing** in `docs/spec.md`.
 
 # "2024-06-03 08:14:22", nineteen characters, no zone. A log written by one
 # machine is in one zone and does not say which, so this file does not pretend
 # to know: every number below is a difference, and a difference is the same in
 # any zone that does not shift underneath it.
-let is_stamp = fn(s) {
-  if len(s) != 19 { return false }
-  if dates.slice(s, 10, 1) != " " { return false }
-  # `dates.is_date` answers whether the *shape* is a date -- ten characters,
-  # digits, two dashes -- and not whether the calendar has that day, so
-  # "2024-19-45" passes it. That is right for the program it was written for,
-  # which prints the range a report covers. It is not enough here, because
-  # this file turns a date into a day number and a month of 19 would quietly
-  # answer one. A borrowed name is a promise you cannot read from the call.
-  let day = dates.slice(s, 0, 10)
-  if not dates.is_date(day) { return false }
-  let m = int(dates.slice(s, 5, 2))
-  let d = int(dates.slice(s, 8, 2))
-  if m < 1 or m > 12 or d < 1 or d > 31 { return false }
-  is_clock(dates.slice(s, 11, 8))
-}
+let is_stamp = do {
+  let dates = import "dates.vine"
 
-# Days from 1970-01-01, by the usual shift of the year to begin in March, so
-# that a leap day is the last day of it and the four-year rule needs no case.
-# `int(a / b)` throughout: `/` in Vine always produces a float and there is no
-# integer division, so every quotient here goes through one. Every value below
-# is under a million and a float carries those exactly.
-let civil_days = fn(y, m, d) {
-  let shifted = if m <= 2 { y - 1 } else { y }
-  let era = int(shifted / 400)
-  let year_of_era = shifted - era * 400
-  let march = if m > 2 { m - 3 } else { m + 9 }
-  let day_of_year = int((153 * march + 2) / 5) + d - 1
-  let day_of_era = year_of_era * 365 + int(year_of_era / 4) -
-    int(year_of_era / 100) + day_of_year
-  era * 146097 + day_of_era - 719468
+  # "08:14:22". The digit check comes before `int`, because `int(" 5")` is 5
+  # and a clock is not a number with room around it.
+  let is_clock = fn(s) {
+    if len(s) != 8 { return false }
+    if dates.slice(s, 2, 1) != ":" or dates.slice(s, 5, 1) != ":" { return false }
+    let parts = [dates.slice(s, 0, 2), dates.slice(s, 3, 2), dates.slice(s, 6, 2)]
+    if len(filter(parts, fn(p) { not dates.all_digits(p) })) > 0 { return false }
+    int(parts[0]) < 24 and int(parts[1]) < 60 and int(parts[2]) < 60
+  }
+
+  fn(s) {
+    if len(s) != 19 { return false }
+    if dates.slice(s, 10, 1) != " " { return false }
+    # `dates.is_date` answers whether the *shape* is a date -- ten characters,
+    # digits, two dashes -- and not whether the calendar has that day, so
+    # "2024-19-45" passes it. That is right for the program it was written
+    # for, which prints the range a report covers. It is not enough here,
+    # because this file turns a date into a day number and a month of 19 would
+    # quietly answer one. A borrowed name is a promise you cannot read from
+    # the call.
+    let day = dates.slice(s, 0, 10)
+    if not dates.is_date(day) { return false }
+    let m = int(dates.slice(s, 5, 2))
+    let d = int(dates.slice(s, 8, 2))
+    if m < 1 or m > 12 or d < 1 or d > 31 { return false }
+    is_clock(dates.slice(s, 11, 8))
+  }
 }
 
 # Seconds since 1970-01-01 00:00:00. Only ever subtracted from another of
 # these, so the epoch it counts from is an implementation detail and not a
 # claim about what time it is anywhere.
-let epoch = fn(s) {
-  let day = civil_days(int(dates.slice(s, 0, 4)),
-    int(dates.slice(s, 5, 2)), int(dates.slice(s, 8, 2)))
-  day * 86400 + int(dates.slice(s, 11, 2)) * 3600 +
-    int(dates.slice(s, 14, 2)) * 60 + int(dates.slice(s, 17, 2))
-}
+let epoch = do {
+  let dates = import "dates.vine"
 
-let pad2 = fn(n) { if n < 10 { "0{n}" } else { "{n}" } }
+  # Days from 1970-01-01, by the usual shift of the year to begin in March, so
+  # that a leap day is the last day of it and the four-year rule needs no
+  # case. `int(a / b)` throughout: `/` in Vine always produces a float and
+  # there is no integer division, so every quotient here goes through one.
+  # Every value below is under a million and a float carries those exactly.
+  let civil_days = fn(y, m, d) {
+    let shifted = if m <= 2 { y - 1 } else { y }
+    let era = int(shifted / 400)
+    let year_of_era = shifted - era * 400
+    let march = if m > 2 { m - 3 } else { m + 9 }
+    let day_of_year = int((153 * march + 2) / 5) + d - 1
+    let day_of_era = year_of_era * 365 + int(year_of_era / 4) -
+      int(year_of_era / 100) + day_of_year
+    era * 146097 + day_of_era - 719468
+  }
+
+  fn(s) {
+    let day = civil_days(int(dates.slice(s, 0, 4)),
+      int(dates.slice(s, 5, 2)), int(dates.slice(s, 8, 2)))
+    day * 86400 + int(dates.slice(s, 11, 2)) * 3600 +
+      int(dates.slice(s, 14, 2)) * 60 + int(dates.slice(s, 17, 2))
+  }
+}
 
 # A duration reads left to right and drops the units it does not need, but
 # never the ones under a unit it kept: "3m 05s" and not "3m 5s", so a column
 # of them lines up on the numbers and not only on the right edge.
-let duration = fn(n) {
-  let s = n % 60
-  let m = int(n / 60) % 60
-  let h = int(n / 3600)
-  if h > 0 { "{h}h {pad2(m)}m {pad2(s)}s" }
-  else if m > 0 { "{m}m {pad2(s)}s" }
-  else { "{s}s" }
+let duration = do {
+  let pad2 = fn(n) { if n < 10 { "0{n}" } else { "{n}" } }
+
+  fn(n) {
+    let s = n % 60
+    let m = int(n / 60) % 60
+    let h = int(n / 3600)
+    if h > 0 { "{h}h {pad2(m)}m {pad2(s)}s" }
+    else if m > 0 { "{m}m {pad2(s)}s" }
+    else { "{s}s" }
+  }
 }

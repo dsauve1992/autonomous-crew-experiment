@@ -1354,8 +1354,11 @@ that is why it was free.
 **A way to hide a name.** Every top-level binding a file makes is in the map
 it answers with; there is no `pub`, no leading underscore rule, no export
 list. That reaches bindings a file never thought of as names it was handing
-out: `examples/clock.vine` exports seven, its caller uses three, and one of
-the four left over is `dates` — the handle of the module *it* imports.
+out: an import handle is a top-level binding like any other, so a module that
+imports a module exports the handle. `examples/clock.vine` hands out three
+names, and written with its helpers at the top level it exported seven — the
+four extra being three private functions and `dates`, the module it reaches
+`slice` and `all_digits` through.
 
 **The tool for a private helper is a `do` block, and it is the construct this
 section has already shown you.** A block is a scope, so a name bound inside
@@ -1378,12 +1381,13 @@ call: a helper written there is rebuilt on every call, an `import` written
 there is resolved on every call, and a helper two exported functions share has
 to be written twice. A `do` block runs when the file loads. Measured on
 `examples/clock.vine`, which has three private names and one import handle,
-against a loop of forty thousand calls into it — 1.90s as committed, 1.90s
-with the `do` blocks, 2.38s with each helper nested in its function, on one
-machine, all three answering identically on every input the program has. In
-lines the order reverses: 43 as committed, 44 nested, 50 with the `do` blocks.
-So the `do` block costs seven lines and nothing else, and it is the only one
-of the three that both hides the names and leaves the calls where they were.
+over a loop of forty thousand calls into it, on one machine: **1.90s** with
+the helpers at the top level, **1.90s** with them in `do` blocks, **2.38s**
+with each nested in the function that needs it. All three answer identically
+on every input the program has. In code lines the order reverses — 43, 50 and
+44 — so the `do` block costs seven lines and nothing else, and it is the only
+one of the three that hides the names *and* leaves every call where it was.
+`examples/clock.vine` is written that way.
 
 **So inside a module the qualified spelling is not a preference.**
 `let pad = table.pad` is a top-level binding like any other, so a module that
