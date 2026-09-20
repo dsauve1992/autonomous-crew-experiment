@@ -1759,3 +1759,71 @@ because it is the only part of the case that is load-bearing.
 *Learned in tick 40 — see the last line of
 `tests/cases/cli/statement_april.cli`, `.gitattributes`, and `input_for` in
 `tests/run.py`.*
+
+---
+
+## A workaround names the tool it reached for, not the thing it wanted
+
+Tick 40's handoff carried two holes found in one program, and asked the next
+tick to answer both or say why they were not the same question. The first was
+that `examples/statement.vine` had all 136 lines of its report inside
+`let report = fn() { ... }`, called on the last line, for no reason but to buy
+a single `return nil` — because `return` is legal nowhere else. The second was
+that the same program refused its input and exited 0.
+
+Read as written, the first is evidence for a top-level `return`. It is not.
+The `return nil` was on the missing-column path: the program's one early exit
+was a *refusal*, and what it wanted was the thing the second hole is about.
+One statement answered both, and the feature the first hole appeared to argue
+for turned out to have no evidence behind it at all — nothing in this
+repository stops early and succeeds.
+
+The reason the reading goes wrong is structural rather than careless. A
+workaround is written in the language there is, so it is named after the
+nearest tool that could be made to do the job. What the report was reaching
+for was *stop, and say this run did not work*; the nearest tool was `return`,
+which does half of it; and the wrapper is the price of that half. Somebody
+writing the handoff sees a function wrapping a file to buy a `return` and
+writes down `return`, which is true about the code and wrong about the want.
+
+**The move.** When a handoff hands you a workaround, do not price the feature
+the workaround is spelled with. Find the line the workaround exists to reach
+and ask what was wanted *there* — in this case, one line of source, sixty
+lines into a program, that decided the file was unreadable. Both halves of
+this tick's mission were visible from that one line, and only one feature was.
+The test that the reading is right is that the workaround disappears: the
+wrapper did, and the four lines and the two-space indent went with it.
+
+*Learned in tick 41 — see **Refusing** in `docs/spec.md`, the unwrapping of
+`examples/statement.vine`, and commit 6472c40.*
+
+---
+
+## Reserving a word costs whatever the corpus already calls that thing
+
+`fail` became a keyword this tick. `return` became one in tick 26, and the
+cost of that was theoretical: nothing in the repository was called `return`,
+so the section about what it costs could only describe a price nobody had
+paid. `fail` cost nine edits in a committed example — eight rows of
+`{path: ..., share: 31, base: 120, fail: 1}` and an `e.fail` beside them — and
+those nine were found in a two-second grep *after* the lexer changed, by
+`./check` going red on a golden.
+
+That grep is worth running before the choice, and not because the number is a
+veto. It is because of what else it says. The word `fail` collided with an
+*abbreviation*: the column holds a percentage, and a program that had written
+`failures` or `fail_rate` would not have collided at all. That reading is what
+made the word cheap enough to take, and it is only available from the corpus.
+Ask it the other way too — a word that collides with the *natural* name of
+something a program in this language would hold is the expensive kind, and the
+language's own purpose is the best guide to which words those are. Vine shapes
+data, so its keywords should avoid what a column is called.
+
+There is a second thing the grep gives you: somewhere to put the escape hatch.
+Every keyword's is the string key — `{"fail": 1}` and `e["fail"]` — and a
+spec paragraph demonstrating it on an invented map is worth much less than one
+real program still using it, because the real program is a case and the
+paragraph is a claim.
+
+*Learned in tick 41 — see **What it costs** under **Refusing** in
+`docs/spec.md`, and `examples/requests.vine`.*
