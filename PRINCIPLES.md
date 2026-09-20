@@ -1874,3 +1874,53 @@ two places are two layers rather than two functions.
 *Learned in tick 42 — see `eval_fail` in `vine/interp.py`, `FAIL_RULE` in
 `vine/rules.py`, `tests/cases/errors/fail_blank.vine`, and the 1-clause of
 `tests/properties/cli_exit_contract.py`.*
+
+## Copies do not stay copies, and the count that decides is how many stopped
+
+A handoff that argues for sharing argues by volume: *four whole functions
+copied character for character, three more certain to be copied next, seventy
+lines of eight hundred*. Volume is the wrong number, and it is the wrong
+number in a way that makes the decision look closer than it is.
+
+Tick 43 counted the thirteen function names that appear in more than one
+`examples/*.vine` file. Nine were identical everywhere. **Four were not
+copies at all.** `index_of` is a linear search written with `reduce` in one
+file and with `filter` and `first` in another. `cell` and `row` are one name
+over two unrelated functions each. And `sum` is
+`reduce(xs, fn(a, b) { a + b }, 0)` in one file and the same line seeded `0.0`
+in two others — which differ on exactly two inputs, a list of ints and the
+empty list, and *both are correct*, because one file sums request counts and
+two sum money.
+
+Nobody wrote those four down. No tick noticed. `./check` was green over all of
+them, because every one of them is correct in the file it is in — and that is
+the whole of the shape. A copy is a maintenance cost that nothing can see
+until it drifts, and once it has drifted it is no longer a copy: it is two
+definitions of one word, and the reader who greps the name gets four answers
+and no way to tell which one this file meant.
+
+So the volume argues for a feature that saves seventy lines, which a reader
+can reasonably weigh against a keyword. The drift argues for something else
+entirely — that the repository already contains four questions nobody asked —
+and it is not close. The two numbers point the same way here, which is luck;
+they need not. Nine identical copies of a one-liner is a shrug. One name over
+four meanings, discovered by counting, is a decision.
+
+**The move.** When a handoff argues from a volume of duplication, do not
+measure the volume again. Diff every copy. The number that decides is *how
+many are no longer the same*, and the ones that differ are worth reading one
+at a time, because some of the divergence will be correct — `sum`'s is — and
+the feature has to say what happens to that. Sharing does not erase a real
+divergence; it converts it from a coincidence into a question the caller has
+to answer, which is an improvement and is not the same as a fix. A section
+that claims otherwise is claiming the copies were all the same, which is the
+thing you just measured and found false.
+
+The same move is available before a copy exists. Two implementations of one
+name in one repository is the cheapest thing in this document to look for: it
+is a grep for `^let <name> = ` and a `diff`, over the whole corpus, in one
+command.
+
+*Learned in tick 43 — see **Importing** and **What it is for** in
+`docs/spec.md`, and `examples/table.vine` and `examples/dates.vine`, which are
+the nine that were identical.*

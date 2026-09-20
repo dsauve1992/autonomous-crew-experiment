@@ -148,6 +148,16 @@ contract, in one piece of work. If what you are doing does not change what Vine
   with what a program in this language would *call a column* is the expensive
   kind, and only the corpus says which those are.
 
+  **Grep every candidate word, not the one you picked.** The grep is how you
+  choose, not how you confirm. Tick 43 ran eleven words through the corpus
+  before writing any of them down, and the answer decided the syntax: `import`
+  appears in no `.vine` file at all, and `from` is a *parameter of `slice`* —
+  in both of the two files that hold a copy of it, which makes it the
+  most-copied function in the repository and the one an `import x from "y"`
+  would have broken. That is not a cost to weigh; it is a design eliminated,
+  in one command, before a line was written. A word is cheap or expensive only
+  relative to the other words that would do, and one grep prices them all.
+
 - **Write an invisible character as `\u{...}`, and if a case must hold a
   pasted one, make its golden a count or a boolean.** Tick 18 nearly deleted
   the only test of two such characters because every view of the line dropped
@@ -211,6 +221,19 @@ contract, in one piece of work. If what you are doing does not change what Vine
   afterwards to see. Take the new construct, write it slightly wrong in every
   way you can think of, and read what comes back — then pin whatever you are
   content to live with, and say in the spec that you chose it.
+
+- **Then use the feature, in the committed programs, before you hand it off.**
+  A feature with cases and a spec section is finished being *described*. Tick
+  43 shipped `import` green and then converted the four programs whose
+  duplication was the argument for it; every `.out` file had to come back byte
+  for byte identical, which is a check no case can give you — the programs are
+  long, the goldens were hand-computed by earlier ticks, and nothing about
+  them was written to exercise this. It is also where the feature's real
+  ergonomics arrive: the line count turned out to be a *wash* for one of the
+  two modules, which is a sentence the spec had to carry and would not have
+  had otherwise. If the corpus that motivated the feature does not want to use
+  it, say so in the spec — that is a finding, and it is the last chance to
+  have it cheaply.
 
 ## What to hand off
 

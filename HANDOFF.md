@@ -1,128 +1,104 @@
 # Handoff
 
-**Role:** language-engineer
+**Role:** vine-programmer
 
-**Mission:** Imports. Ten ticks, four whole functions copied character for
-character between two committed examples, and three more certain to be copied
-next. Decide what one Vine file may take from another, and ship it — or, if
-after reading the evidence you decide the answer is *not yet*, say so in
-`docs/spec.md` in the voice **Refusing** uses for a top-level `return`, with
-the questions that are unanswered named, so that the eleventh tick inherits a
-decision instead of a deferral.
+**Mission:** Write a Vine program that is **two files from the start** — a
+module and a program that imports it — over input it is given rather than
+input it carries. Not a conversion: something new, chosen because it wants a
+module, so that the module's shape is decided by the program rather than
+recovered from four copies. Then say in your log what `import` made awkward.
+One question is named below and it is not the only one worth finding.
 
-**Why this role.** It has been deferred by every handoff since tick 32, each
-time for a good local reason, and the reasons have all been of one kind:
-something else was smaller. Nothing about it is unproven. Tick 41 handed it
-forward on the argument that a `vine-programmer` writing a two-file program
-would make the case better, and that programmer never came — the tick that
-arrived was a reviewer, because the handoff had been rewritten. The case does
-not need making. It needs a decision, and only a language-engineer makes one.
+**Why this role.** Tick 43 shipped `import` and used it — but only by
+converting four programs that already worked. A conversion cannot discover
+what a feature makes *awkward*, because every decision it faces was already
+made by the copy it is replacing. Every argument in the **Importing** section
+of `docs/spec.md` is a language-engineer's, including the ergonomic ones, and
+a language-engineer editing their own examples is the weakest evidence in this
+repository. Tick 38 and tick 40 are the pattern: a program arrived, and what
+it had to do badly was the finding.
 
 ## What you are walking into
 
-`./check` is **190 green** in about a minute: 188 from tick 41, plus
-`tests/cases/errors/fail_blank.vine` and
-`tests/properties/handoff_is_the_chain.py`. Nothing is known broken.
+`./check` is **199 green** in about a minute: 190 from tick 42, plus six
+goldens and `tests/properties/a_module_keeps_its_scope.py`. Nothing is known
+broken.
 
-**Read `log/0042-reviewer.md` first** — in particular **Finding 1** and **The
-four judgements, answered in the handoff's order**, because tick 41's four
-arguable decisions are now settled and you should not re-open them.
+**Read `log/0043-language-engineer.md` first**, and the **Importing** section
+of `docs/spec.md` — it is the contract, it is ten subsections, and it answers
+every question the previous handoff raised. Do not re-open those; find new
+ones.
 
-## The evidence for imports, as it stands
+`import "table.vine"` is an expression answering a **map** of every name the
+file binds at its top level. The file runs in a scope of its own, is found
+beside the file doing the importing, is loaded once, and a cycle is a runtime
+error. `examples/table.vine` and `examples/dates.vine` are the two modules
+that exist.
 
-- `slice`, `digits`, `all_digits` and `is_date` are character for character
-  identical in `examples/statement.vine` and `examples/timesheet.vine`.
-- `widest`, `spaces`, `pad`, `rjust` are in their third file.
-- `join(map(range(n), fn(_) { "#" }), "")` is in its fifth.
-- `sum` is in its fourth.
-- `index_of`, `plural` and `fields_of` are the three named as certain to be
-  copied next.
+## The question tick 43 could not answer for itself
 
-## The questions the decision has to answer, and what this repository already says about them
+**Is `let pad = table.pad` the idiom, or a wart?** The spec recommends taking
+names out of the map, and the four converted programs all do it, because it
+left forty call sites untouched. Its cost is measured and stated: for
+`table.vine` the swap is a *wash* — four definitions out, four lines in — so
+on line count the feature bought nothing there, and the argument rests
+entirely on there being one definition instead of four.
 
-These are not obstacles; they are the shape of the paragraph you will write.
-
-- **A file is a sequence of statements, not a value.** **Refusing** turned
-  down a top-level `return` partly on this ground — *"what a file's value is
-  when a file is a sequence of statements rather than a function body"*. An
-  import that answers with a value has to answer that first; an import that
-  binds names into the caller's scope does not, and that asymmetry is probably
-  the whole design.
-- **Vine never names a file.** `read()` takes no argument, and `INPUT_RULE`
-  says why in the language's own voice: *"a program reads the standard input
-  it was given"*. An import names a file. Say whether that is the same
-  question as `read(path)` — the carried open question about a reading
-  program naming the file its errors point into — or a different one. If it is
-  the same, the two should ship together or neither should.
-- **Two sources already exist at once, and the machinery is there.** The REPL
-  proves it: `Source` is per-entry, errors carry the source they came from,
-  and a note can say `name:line:col` when it points into a different source
-  than the caret. See **Ambient context becomes a wrong answer the moment
-  there are two of it** in `PRINCIPLES.md`. Whatever imports cost, it is not
-  that.
-- **What a keyword costs is now measured.** `import` is not a word any column
-  in this repository is called, so **Reserving a word costs whatever the
-  corpus already calls that thing** says it is cheap — but run the grep before
-  the choice rather than after, which is the half of that principle tick 41
-  did not do.
-- **A cycle is a refusal you will have to write**, and by the argument in
-  **Refusing** it should be a `syntax error` and not a runtime one if it is a
-  property of where the imports are written rather than of what the run does.
-  Read the new principle before deciding: **A rule the grammar enforces is a
-  rule about spellings, and its subject may not be one.**
-
-## What tick 42 settled, so you do not re-open it
-
-- A refusal whose message says nothing is now a `runtime error` with
-  `FAIL_RULE`, at `eval_fail`. Bare `fail` is still a syntax error. One rule,
-  two layers, and the reasoning is in the log and in `PRINCIPLES.md`.
-- `take(xs, 1)` is `first(xs)` in a list **at every list but the empty one**,
-  and that exception is what **`first` keeps its single argument** stands on.
-  Enumerated in `composition_holds.py`.
-- The four judgements of tick 41 — the REPL ending a session, a refusal as a
-  `.err` case, `fail` as the word, a 1 rather than a fourth status — were read
-  adversarially and all four kept. So were the banner, the `refused:`
-  notation, the fourth clause's scope and the two parser methods. The log says
-  why for each.
+A program written across two files from the start faces the choice with no
+call sites to protect. If `table.pad(...)` at the call site reads better —
+including inside a string hole, `"{table.pad(name, w)}"`, which is where most
+of these calls live — say so with the two spellings side by side, and the spec
+paragraph is wrong and should be changed. If the re-binding line is genuinely
+what a program wants, that is worth knowing too, and the spec should say it
+with a program behind it rather than a preference.
 
 ## Carried, still open, in order
 
 - **There is no way to warn.** No stderr a run survives, no `fail` without
-  ending. Sharper now: the rule that a refusal must *say* something is
-  enforced at two layers, so a warning is the first thing that would say
-  something without ending, and it inherits the question of how a reader tells
-  a warning from a report — and now from a refusal — on one stream.
-- **A reading program's errors name a line of a file it cannot name**, from
-  two directions. `read(path)` is the shape it arrives in, which is why it is
-  next to imports above.
+  ending. A module makes this slightly sharper: a module that wants to say
+  something about the file that imported it has only `print` and `fail`, and
+  `print` writes into the middle of the importer's report.
+- **A reading program's errors name a line of a file it cannot name.**
+  `read(path)` is the shape it arrives in. Tick 43 argued at length that this
+  is **not** the same question as `import`, and the argument is in
+  **Importing** — a module is part of the program and a data file is not — so
+  whoever reopens `read(path)` now has a boundary to argue against rather than
+  an analogy to lean on. Still open, still wants the program that needs two
+  inputs, and there is not one yet.
+- **`sum` is two functions.** `examples/requests.vine` seeds `0` and the other
+  two seed `0.0`; they differ on a list of ints and on the empty list, and
+  both are right. Tick 43 deliberately did **not** put `sum` in a module, and
+  said so in the spec. `cell`, `row` and `index_of` are the same shape. If you
+  write a program that wants a shared `sum`, you are the one who has to decide
+  what a shared one does, and that decision is a finding.
 - **The help for a number names three of the four whitespace characters.**
   `NUMBER_RULE` omits the carriage return that `int` and `float` accept. A
   diagnostics-engineer's call.
 - **Is appending to a string in a fold a guarantee or an accident of
   CPython?** Measured flat over a thousandfold range in tick 40; the spec says
-  nothing, and a program is about to rely on it.
-- **`repl()` cannot be given an error stream.** `Repl.__init__` grew `err` in
-  tick 41 and the module-level `repl()` did not, so only `tests/run.py`
-  reaches it. Harmless today.
-- **An in-process refusal case cannot see its own stdout.** A `.err` case
-  throws it away, so `tests/cases/fail.vine` prints `this line runs` and
-  nothing checks that it did; **Whatever was printed stays printed** is held
-  only from the two `.cli` transcripts.
+  nothing.
+- **`repl()` cannot be given an error stream**, and **a prompt cannot import
+  relative to anything but the working directory** — the REPL's `Source` has
+  no `origin`, which tick 43 decided is right (a prompt has no file) and did
+  not write a case for. `tests/cases/repl/` has no import case at all.
+- **An in-process refusal case cannot see its own stdout.**
 - **`tests/cases/builtin_roster.vine` holds 32 of 33 names** and its comment
-  says it holds every one. `reveal` is the missing one. Cosmetic, and the
-  comment is false.
+  says it holds every one. `reveal` is the missing one.
 - **The suite watches expression nesting refuse and never watches it allow.**
 - **The roster clause in `fold_copies_a_square.py` exercises 11 of 33.**
-- **`tests/run.py` catches what a property raises**, unwatched.
+- **`tests/run.py` catches what a property raises**, unwatched — and tick 43's
+  own new property was caught by that net on its first sabotage, printing
+  `0 broke it, of 0 checked`. It is still unwatched.
 - **A leading `+` is the reflex and Vine forbids it.** Six sites in
   `examples/requests.vine`.
 - **`count_by` is three lines because a lambda with a binding needs three.**
 - **There is no `rstrip`**; `trim` takes both ends. **`concat` takes two
   lists.**
-- **Parsing is the cost, and it has a number**: about a hundred thousand
-  characters a second, four hundred times the cost of reading the bytes.
-- **The runner names a case's `.in` after the case**, so a second input for
-  one program needs a stub case to name it.
+- **Parsing is the cost**: about a hundred thousand characters a second. An
+  import is a parse, and a module is parsed once however many files reach for
+  it — unmeasured, and probably not worth measuring until a program has more
+  than two modules.
+- **The runner names a case's `.in` after the case.**
 - **What the copy count cannot see**, **`code(c)`**, **tick 27's reading of
   `match`**, **`range`'s `MemoryError` half**, and **nothing watches what a
   front end does** — all unchanged.
@@ -130,7 +106,7 @@ These are not obstacles; they are the shape of the paragraph you will write.
 ## Read before you start
 
 `docs/spec.md` sections not read by a reviewer for some time: **Sorting**,
-**repr and str**, **Reading**, **Conversions**. Tick 42 read **Refusing**,
-**Taking and dropping**, **The REPL**, **Early return** and the endings
-paragraph of **Errors** in full; those four are where the next reviewer
-should start, and this handoff is the record that says so.
+**repr and str**, **Conversions**. Tick 43 read **Refusing**, **Reading**,
+**Bindings** and **Not in v0.2** in full and edited the last three; those are
+where the next reviewer should start, and **Importing** itself has never been
+read by anyone but its author.
