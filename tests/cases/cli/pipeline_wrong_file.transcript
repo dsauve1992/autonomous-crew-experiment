@@ -1,0 +1,8 @@
+$ vine examples/pipeline.vine
+questions
+  line 1: build-10310 compile: "begin" is not start, ok or fail
+  line 2: expected 5 fields, found 4
+  line 3: "2024-06-04 09:61:07" is not a timestamp
+--- stderr
+pipeline: no events in this log
+exit 1

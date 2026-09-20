@@ -26,10 +26,16 @@ let table = import "table.vine"
 let pad = table.pad
 let rjust = table.rjust
 
-# Deliberately *not* `let duration = duration`, which is what the four
-# converted programs of tick 43 do and what **Importing** recommends. See the
-# log for tick 44: with six call sites the qualified spelling is the one that
-# reads, and inside a module it is not a choice at all.
+# Three names out of the map and three left in it, and the split is where the
+# calls are. `pad`, `rjust` and `duration` are called inside the string holes
+# of the report rows below, where `table.` five times in one line says one
+# thing five times; `table.widest`, `clock.is_stamp` and `clock.epoch` are
+# never in a hole and read better with the dot on. That is a judgement about
+# this program and not a rule -- the three spellings of it are within half a
+# percent of each other on every count, and PRINCIPLES.md says what to do with
+# a margin that size. The rule **Importing** does carry is one this file is
+# free of: inside a *module* a re-binding is an export, so a module has no
+# such choice to make.
 
 # ---------------------------------------------------------------- a line --
 
@@ -103,7 +109,17 @@ let state = reduce(parsed, fn(st, p) {
 
 let runs = state.runs
 let events = filter(parsed, fn(p) { p.ok })
-if len(events) == 0 { fail "pipeline: no events in this log" }
+if len(events) == 0 {
+  # The one run where the complaints are the whole report. A refusal is a
+  # single sentence with no position in it -- see **Refusing** -- so the lines
+  # go to standard output first, under the heading they would have had in a
+  # report that got as far as one.
+  if len(state.problems) > 0 {
+    print("questions")
+    print(join(map(state.problems, fn(p) { "  " + p }), "\n"))
+  }
+  fail "pipeline: no events in this log"
+}
 
 # The tombstones again: every key ever opened is still here, and the live ones
 # are the steps nobody ever ended.

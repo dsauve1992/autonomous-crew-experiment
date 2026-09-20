@@ -1,0 +1,19 @@
+# examples/pipeline.vine handed something that is not its log. The refusal at
+# the top of that program was written in tick 44 and nothing ran it until this
+# case existed, which is how it kept a defect for a tick: the program collects
+# a complaint per line it cannot read, and on the one run where those
+# complaints are the *whole* story it used to end with a single sentence and
+# drop every one of them. A log auditor going quiet exactly when the input is
+# wrong is the failure a user meets first.
+#
+# So the three lines below are the three ways `read_event` can refuse a line,
+# one each and in that order: an event word that is not start, ok or fail; a
+# line with the wrong number of fields; and a timestamp with a minute of 61,
+# which is five good fields and a well-formed-looking stamp that the clock
+# rejects. All three are reported, and then the program refuses.
+#
+# The status is why this is a `.cli` case. In process the runner records a
+# refusal as the case's own failure and cannot show the 1 the shell is handed
+# -- see `tests/cases/cli/refusing.cli`, which makes the same point about
+# `fail` itself.
+examples/pipeline.vine
