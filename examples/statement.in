@@ -1,0 +1,64 @@
+date,description,category,amount
+2024-03-01,"ACME, Inc.",software,-49.00
+2024-03-01,Northwind Hosting,hosting,-220.00
+2024-03-02,Blue Line Coffee,meals,-6.40
+2024-03-02,Client deposit — Halvorsen,income,4200.00
+2024-03-03,"Pike & Sons, Ltd.",hardware,-1189.99
+2024-03-03,Blue Line Coffee,meals,-4.20
+2024-03-04,Northwind Hosting,hosting,-18.75
+2024-03-04,Rail pass,travel,-96.00
+2024-03-05,ACME Cloud,software,-49.00
+2024-03-05,Blue Line Coffee,meals,-6.40
+2024-03-06,Harbour Taxi,travel,-23.50
+2024-03-06,Stationers,office,-41.10
+2024-03-07,Blue Line Coffee,meals,-6.40
+
+2024-03-07,Bank charge,fees,-12.00
+2024-03-08,"Pike & Sons, Ltd.",hardware,-84.25
+2024-03-08,Client deposit — Okonkwo,income,1750.00
+2024-03-09,ACME Cloud,software,-49.00
+2024-03-10,Rail pass,travel,-96.00
+2024-03-10,Blue Line Coffee,meals,-8.80
+2024-03-11,Northwind Hosting,hosting,-220.00
+2024-03-11,Kestrel Analytics,software,-310.00
+2024-03-12,Harbour Taxi,travel,-31.75
+2024-03-12,Blue Line Coffee,meals,-6.40
+2024-03-13,Stationers,office,-17.65
+2024-03-13,Refund — Kestrel Analytics,income,62.00
+2024-03-14,ACME Cloud,software,-49.00
+2024-03-14,Blue Line Coffee,meals,-4.20
+2024-03-15,"Pike & Sons, Ltd.",hardware,-256.40
+2024-03-15,Airline,travel,-412.80
+2024-03-16,Blue Line Coffee,meals,-6.40
+2024-03-16,Bank charge,fees,-12.00
+2024-03-17,Northwind Hosting,hosting,-18.75
+2024-03-17,Hotel Verity,travel,-388.00
+2024-03-17,Hotel Verity,travel,-388.00
+2024-03-18,Blue Line Coffee,meals,-6.40
+2024-03-18,Kestrel Analytics,software,-310.00
+2024-03-19,Client deposit — Halvorsen,income,3100.00
+2024-03-19,Stationers,office,-9.95
+2024-03-20,Blue Line Coffee,meals,-6.40
+2024-03-20,ACME Cloud,software,-49.00
+2024-03-21,Harbour Taxi,travel,-19.25
+2024-03-21,Blue Line Coffee,meals,-6.40
+2024-03-22,Lunch with client,meals,-58.30
+2024-03-22,Northwind Hosting,hosting,-220.00
+2024-03-23,Blue Line Coffee,meals,-6.40
+2024-03-23,Adjustment,fees,n/a
+2024-03-24,Stationers,office,-23.40
+2024-03-24,Blue Line Coffee,meals,-4.20
+2024-03-25,"Pike & Sons, Ltd.",hardware,-77.00
+2024-03-25,Client deposit — Okonkwo,income,1750.00
+2024-03-26,Blue Line Coffee,meals,-6.40
+2024-03-26,Unlabelled purchase,,-140.00
+2024-03-27,Airline,travel,-98.40
+2024-03-27,Blue Line Coffee,meals,-6.40
+2024-03-28,ACME Cloud,software,-49.00
+2024-03-28,Torn receipt
+2024-03-29,Blue Line Coffee,meals,-8.80
+2024-03-29,Kestrel Analytics,software,-310.00
+2024-03-30,Northwind Hosting,hosting,-18.75
+2024-03-30,Blue Line Coffee,meals,-6.40
+2024-03-31,Bank charge,fees,-12.00
+2024-03-31,"Pike & Sons, Ltd.",hardware,-42.15

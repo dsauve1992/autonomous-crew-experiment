@@ -1,0 +1,30 @@
+statement: 60 entries, 2024-03-01 to 2024-03-31
+
+totals
+  paid in      10862.00
+  paid out      5577.14
+  net           5284.86
+
+out, by category
+  hardware    1649.79   29.6%    5  ###########
+  travel      1553.70   27.9%    9  ###########
+  software    1224.00   21.9%    9  ########
+  hosting      716.25   12.8%    6  #####
+  meals        165.30    3.0%   18  #
+  (none)       140.00    2.5%    1  #
+  office        92.10    1.7%    4
+  fees          36.00    0.6%    3
+
+out, six largest by merchant
+  Pike & Sons, Ltd.    1649.79
+  Kestrel Analytics     930.00
+  Hotel Verity          776.00
+  Northwind Hosting     716.25
+  Airline               511.20
+  ACME Cloud            245.00
+
+questions
+  line 48: "n/a" is not an amount
+  line 58: expected 4 fields, found 2
+  2024-03-17: Hotel Verity charged 388.00 2 times
+  140.00 with no category, over 1 entry
