@@ -35,6 +35,18 @@ the document treats as separate can be comparing one thing (tick 13):
   and the half that is not a shared primitive is the disagreement: `concat`
   refuses every pair `+` accepts that is not two lists. The claim is not that
   they agree, it is *where* they agree, so both directions are checked.
+- **dedupe.** **What the fold costs** offers a second spelling of the
+  section's own `dedupe`, folding into a map and reading the list back with
+  `keys`, and claims it answers the same thing seventy-two times faster. The
+  two sides share nothing: one grows a list and asks `contains` of it, the
+  other grows a map and asks `set`. What they have to agree on is both the
+  membership test -- `==` over elements against key identity, which
+  **Composite keys** says is one rule -- and the *order*, which is the half a
+  set-based dedupe in most languages would lose. So the clause compares
+  `repr` of both, which is order-sensitive, rather than lengths. Its stated
+  exception is a list holding a function: a function may not be a key, so the
+  map spelling fails where the list spelling answers, and the clause pins
+  that rather than skipping those lists.
 - **replace.** **Text** refuses a `replace` builtin on the ground that
   `join(split(s, from), to)` already is one. The other three clauses compare
   two Vine spellings, because each of those sentences is an equality between
@@ -53,13 +65,20 @@ from vine import run
 from vine.errors import VineError
 
 CLAIM = (
-    "print's separator, push, concat and the split/join spelling of replace each "
-    "answer exactly what docs/spec.md says they are the same as"
+    "print's separator, push, concat, the map spelling of dedupe and the "
+    "split/join spelling of replace each answer exactly what docs/spec.md "
+    "says they are the same as"
 )
 
 from no_traceback import VALUES
 
 LISTS = [v for v in VALUES if v.startswith("[")]
+
+# The values that are a function, and so may not be a map key. Written as the
+# set rather than a test, because "holds no function" is a walk over composite
+# values and VALUES has no list or map with a function inside one -- if it
+# gains one, this line is what has to notice.
+FUNCTION_VALUES = {"fn(x) { x }", "print"}
 
 # print's contract is about any number of arguments, so the clause has to be
 # about more than two. Arities 0 and 1 run over all of VALUES; arity 3 runs
@@ -190,6 +209,57 @@ def check():
                         f"answered {direct!r} for a pair that is not two lists",
                     )
                 )
+
+    # The two dedupes agree -- What the fold costs, under Building lists.
+    # Over every pair and triple of VALUES as a list, because a dedupe has
+    # nothing to do until an element repeats and a pair is the smallest list
+    # that can repeat one. The triples are the subset the print clause uses,
+    # for the same reason it uses one: they add the case where the repeat is
+    # not adjacent, which no pair has.
+    dedupe_lists = [[a, b] for a in VALUES for b in VALUES] + [
+        [a, b, a] for a in TRIPLES for b in TRIPLES
+    ]
+    for elements in dedupe_lists:
+        checked += 1
+        written = ", ".join(elements)
+        scan = answer(
+            f"print(repr(reduce([{written}], fn(acc, x) "
+            "{ if contains(acc, x) { acc } else { push(acc, x) } }, [])))"
+        )
+        folded = answer(
+            f"print(repr(keys(reduce([{written}], "
+            "fn(m, x) { set(m, x, true) }, {}))))"
+        )
+        holds_function = any(e in FUNCTION_VALUES for e in elements)
+        if holds_function:
+            # The stated exception, pinned from both sides: the map spelling
+            # must refuse, and the list spelling must not. An exception that
+            # only says "they differ here" would survive the list spelling
+            # breaking too.
+            if not folded.startswith("error: "):
+                failures.append(
+                    (
+                        f"dedupe([{written}])",
+                        f"the map spelling answered {folded!r} for a list "
+                        "holding a function, where a key may not be one",
+                    )
+                )
+            if scan.startswith("error: "):
+                failures.append(
+                    (
+                        f"dedupe([{written}])",
+                        f"the contains spelling failed with {scan!r}; it has "
+                        "no keys in it and nothing to refuse",
+                    )
+                )
+        elif scan != folded:
+            failures.append(
+                (
+                    f"dedupe([{written}])",
+                    f"the contains spelling answered {scan!r}; the map "
+                    f"spelling answered {folded!r}",
+                )
+            )
 
     # replace(s, from, to) is join(split(s, from), to) -- Text. For a non-empty
     # `from` the two are the same function; for an empty one they part, and
