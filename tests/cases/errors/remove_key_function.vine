@@ -1,0 +1,4 @@
+# The key rule is `get`'s and `set`'s, reached the same way: `remove` asks the
+# interpreter for the key's slot and never the host's dictionary, so a list
+# holding a function is refused here exactly as it is there.
+remove({a: 1}, [print])

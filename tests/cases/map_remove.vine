@@ -1,0 +1,34 @@
+# `remove(m, k)` is a map without one key: `set`'s other direction, answering
+# a new map the way `set` does. See **Taking a key out** in docs/spec.md.
+let m = {a: 1, b: 2, c: 3}
+print(remove(m, "b"))
+print(m)
+print(keys(remove(m, "a")))
+
+# A key that is not there is not an error. The map comes back as it was, and
+# removing twice is removing once -- which is what lets a fold close a key it
+# may or may not have opened without asking first.
+print(len(remove(m, "z")))
+print(remove(m, "z") == m)
+print(remove(remove(m, "a"), "a") == remove(m, "a"))
+print(remove({}, "a"))
+
+# The whole point, against the spelling that was the only one there was: a key
+# held as nil is still a key, and `contains` is true of it forever.
+let held = set(m, "b", nil)
+print(contains(held, "b"), get(held, "b", "absent"), len(held))
+let gone = remove(m, "b")
+print(contains(gone, "b"), get(gone, "b", "absent"), len(gone))
+
+# A key removed and given again is a new key, and arrives at the end. `set` on
+# a key still there leaves it where it was. See **Map order**.
+print(keys(set(m, "a", 9)))
+print(keys(set(remove(m, "a"), "a", 9)))
+
+# The key is decided by `==` at every depth, which is `get`'s rule and `set`'s
+# -- not the host's idea of what hashes alike. A list is one key; 1 and 1.0
+# are two.
+let pairs = {[1, 2]: "x", [3, 4]: "y"}
+print(remove(pairs, [1, 2]))
+print(len(remove(pairs, [1.0, 2])))
+print(remove({1: "int", 1.0: "float"}, 1))

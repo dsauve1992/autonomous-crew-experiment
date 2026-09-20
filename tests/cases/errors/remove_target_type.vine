@@ -1,0 +1,4 @@
+# `remove`'s target is a map, for the reason `get`'s is: a list is indexed with
+# `xs[0]`, and taking an element out of one is `filter`, which is a
+# composition at the right curve. See **Taking a key out**.
+remove([1, 2], 0)

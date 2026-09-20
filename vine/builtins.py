@@ -623,6 +623,31 @@ def _set(interp, pos, args):
     return out
 
 
+@builtin("remove", 2, 2)
+def _remove(interp, pos, args):
+    """A map without one key. `set`'s other direction, and total like it.
+
+    A key the map does not have is not an error: the map itself is the
+    answer. That is the family rule -- no container builtin here fails for
+    being asked about something that is not there -- and it is the direction
+    that can be made strict with a spelling that already exists, since
+    `m[k]` fails and names the key. The other direction cannot be made
+    tolerant without writing a `contains` guard at every call.
+
+    The map itself, and not a copy of it, so that a removal which removes
+    nothing carries nothing. Nothing in Vine mutates, so there is no way for
+    a program to tell the two apart -- except in a copy count, where this is
+    the true answer. See **What the fold costs**.
+    """
+    target = want(interp, pos, args[0], "map", "remove target")
+    slot = interp.key_for(args[1], pos)
+    if slot not in target:
+        return target
+    out = dict(target)
+    del out[slot]
+    return out
+
+
 # -- strings --------------------------------------------------------------
 
 

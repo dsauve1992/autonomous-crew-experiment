@@ -1,0 +1,5 @@
+runtime error: remove target must be a map, got list
+ --> remove_target_type.vine:4:7
+  |
+4 | remove([1, 2], 0)
+  |       ^

@@ -70,11 +70,13 @@ let parsed = map(range(len(lines)), fn(i) { read_event(i + 1, lines[i]) })
 # runs that are finished, and everything that could not be made sense of, in
 # the order the lines arrive.
 #
-# `open` is where the language is felt. Nothing in Vine takes a key out of a
-# map -- `set` is the only way in and there is no way back out -- so a step
-# that has ended is held as `nil`, and `contains(open, key)` is `true` for
-# every step that has *ever* run. The question has to be `!= nil` throughout,
-# and the map never shrinks.
+# `open` is where the language is felt. `remove` takes the key back out, so
+# the map holds the steps that are open right now and nothing else: on
+# `pipeline.in` that is never more than two, against the twenty-six pairs the
+# log names. Before tick 46 there was no way out of a map -- an ended step was
+# held as `nil`, `contains(open, key)` was true of every step that had *ever*
+# run, and the accumulator grew to the whole log. What that cost is in **What
+# the fold costs**.
 let pair = fn(st, e) {
   let key = [e.build, e.step]
   let held = get(st.open, key, nil)
@@ -94,12 +96,12 @@ let pair = fn(st, e) {
     # has no duration, and a negative one run through `duration` would
     # come out looking like a real number.
     set(note("{e.build} {e.step} ended before line {held.line} started it"),
-      "open", set(st.open, key, nil))
+      "open", remove(st.open, key))
   }
   else {
     let run = {build: e.build, step: e.step, at: held.at, secs: e.secs - held.secs,
       outcome: e.event}
-    set(set(st, "runs", push(st.runs, run)), "open", set(st.open, key, nil))
+    set(set(st, "runs", push(st.runs, run)), "open", remove(st.open, key))
   }
 }
 
@@ -121,9 +123,12 @@ if len(events) == 0 {
   fail "pipeline: no events in this log"
 }
 
-# The tombstones again: every key ever opened is still here, and the live ones
-# are the steps nobody ever ended.
-let unfinished = keys(state.open) |> filter(fn(k) { get(state.open, k) != nil })
+# Whatever is left in `open` is what nobody ever ended, and that is the whole
+# of it -- there is no filter here any more because there are no tombstones to
+# filter out. The order is `open`'s own: a step that ended and started again
+# was taken out and put back, so it reads at the end rather than where it first
+# appeared. See **Map order**.
+let unfinished = keys(state.open)
 
 # ------------------------------------------------------------- the builds --
 

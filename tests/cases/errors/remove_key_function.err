@@ -1,0 +1,7 @@
+runtime error: a map key may not hold a function, got list
+ --> remove_key_function.vine:4:7
+  |
+4 | remove({a: 1}, [print])
+  |       ^
+  = note: the function is at [0] inside the key
+  = help: a key may be any value that holds no function
