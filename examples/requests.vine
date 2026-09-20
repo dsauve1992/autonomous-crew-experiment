@@ -35,16 +35,19 @@ let hash = fn(i, salt) {
 let roll = fn(i, salt) { hash(i, salt) % 100 }
 
 # share is out of a hundred, base is the latency floor in milliseconds, fail
-# is the percentage of calls that 500.
+# is the percentage of calls that 500. That one is quoted because `fail` is a
+# keyword -- see **Refusing** in docs/spec.md -- and a bare key may not be one.
+# A string key of any spelling always works, which is what makes reserving a
+# word cost a name rather than a column.
 let endpoints = [
-  {path: "/v1/search",     share: 31, base: 120,  fail: 1},
-  {path: "/v1/items",      share: 24, base: 45,   fail: 0},
-  {path: "/v1/orders",     share: 15, base: 80,   fail: 1},
-  {path: "/v1/auth/token", share: 11, base: 30,   fail: 0},
-  {path: "/v1/orders/new", share: 8,  base: 210,  fail: 4},
-  {path: "/v1/items/bulk", share: 6,  base: 900,  fail: 9},
-  {path: "/v1/reports",    share: 4,  base: 1500, fail: 6},
-  {path: "/v1/health",     share: 1,  base: 3,    fail: 0},
+  {path: "/v1/search",     share: 31, base: 120,  "fail": 1},
+  {path: "/v1/items",      share: 24, base: 45,   "fail": 0},
+  {path: "/v1/orders",     share: 15, base: 80,   "fail": 1},
+  {path: "/v1/auth/token", share: 11, base: 30,   "fail": 0},
+  {path: "/v1/orders/new", share: 8,  base: 210,  "fail": 4},
+  {path: "/v1/items/bulk", share: 6,  base: 900,  "fail": 9},
+  {path: "/v1/reports",    share: 4,  base: 1500, "fail": 6},
+  {path: "/v1/health",     share: 1,  base: 3,    "fail": 0},
 ]
 
 # To draw from those shares, each endpoint needs the running total of the ones
@@ -62,7 +65,7 @@ let whales = ["acct-104", "acct-118", "acct-131", "acct-142", "acct-159"]
 let request = fn(i) {
   let e = pick(roll(i, 1))
   let bad = roll(i, 4)
-  let status = if bad < e.fail { 500 } else if bad < e.fail + 2 { 404 } else { 200 }
+  let status = if bad < e["fail"] { 500 } else if bad < e["fail"] + 2 { 404 } else { 200 }
   # A 500 here is a timeout, so it costs the full three seconds rather than
   # the endpoint's usual latency. That is the detail the report has to see
   # past: it drags a mean up without a single successful call getting slower.

@@ -46,7 +46,7 @@ name. See **Errors** for what each way of ending means.
   is written down the page. `|>` is the only operator that works from the left,
   and it can be, because no expression starts with one.
 - Identifiers are `[A-Za-z_][A-Za-z0-9_]*`.
-- Keywords: `let fn if else do return true false nil and or not`.
+- Keywords: `let fn if else do return fail true false nil and or not`.
 - Numbers are `123` (int), and `1.5` or `1e-9` (float). See **Literals**.
 - Strings are double-quoted and do not span lines. Escapes: `\n \t \r \" \\
   \{ \}` and `\u{...}`. A `{` opens a string interpolation — see Strings.
@@ -613,6 +613,170 @@ nothing. The parser could see the trivial case and could not see
 for the same reason and needs flow analysis to know it. Half a rule about
 unreachable code would be worse than none: a reader who learned that Vine
 catches this would be wrong most of the time they relied on it.
+
+## Refusing
+
+```
+fail expr
+```
+
+`fail` ends the program. The value is rendered the way `print` renders it,
+written to standard error, and the process exits **1**. Nothing after it runs
+— not the rest of the block, not the rest of the function, not the rest of the
+file.
+
+```
+fail "no rows to report"           # refused: no rows to report
+```
+
+It is for the one thing a program that is *given* something can do and a
+program carrying its own data never needs to: look at what it was handed,
+decide it cannot make a report out of it, and say so to whoever is waiting.
+
+```sh
+$ vine statement.vine < an-export-from-somewhere-else.csv
+statement: I cannot read this file
+  no column named: date, description, category, amount
+  it has:          txn_date, memo, amount_eur
+$ echo $?
+1
+```
+
+The three printed lines are the program's own; only the last of them is a
+`fail`. `tests/cases/cli/statement_wrong_file.cli` is that command line, and
+its transcript records the status.
+
+**It is a statement, for the reason `return` is one.** A `fail` has no value to
+give the expression around it — it abandons that expression, and the program
+under it — so `let x = fail "no"`, `f(fail "no")` and `1 + fail "no"` are
+syntax errors, each reading as the message any keyword in that position gets:
+
+```
+let x = fail "no"
+```
+
+```report
+syntax error: expected an expression, found the keyword 'fail'
+ --> report.vine:1:9
+  |
+1 | let x = fail "no"
+  |         ^
+```
+
+This is the boundary **Early return** already drew, on the same argument and
+for the same cost: one grammar rule, against every reader remembering an
+expression that never yields. It is also why `fail` is not a builtin. `exit(1)`
+is the shape every other language reaches for, and in Vine it would be the only
+builtin that never answers — a call in the middle of an expression that the
+expression never gets back.
+
+**It has no bare form.** `return` has one, because a function that answers
+nothing answers `nil`, and `nil` is a value. A program that exits 1 with
+nothing on standard error is a failure nobody can act on, and **Errors**
+forbids that ending outright, so the grammar is where it is settled:
+
+```
+fail
+```
+
+```report
+syntax error: 'fail' needs a message
+ --> report.vine:1:1
+  |
+1 | fail
+  | ^
+  = help: 'fail' ends the program with its message on stderr and a status of 1; a failure that says nothing cannot be acted on
+```
+
+**It is legal wherever a statement is**, including the top level of a file —
+and that is the second half of what it buys. `return` needs a function to
+leave, so a file whose decision to stop comes at line sixty had to put its
+whole report inside one and call it on the last line. What `fail` ends is the
+program, and a program is what every statement is already inside.
+
+**A refusal is not an error.** Both end the run and both exit 1, because the
+only question a shell asks is whether there is a report it can use, and both
+answer no. What differs is the voice, and it is the whole of the difference: a
+runtime error is a diagnostic *about the program*, with a kind, a position and
+a caret pointing into source the reader may not have written; a refusal is the
+program's own sentence *about its data*, with no position anywhere in it,
+because nothing about the program is wrong. Crashing on purpose would be the
+cheap way to a 1, and it would hand a reader a caret aimed at the guard that
+was working correctly.
+
+**Whatever was printed stays printed.** `fail` does not undo the standard
+output before it, so a program that prints half a report and then refuses has
+left half a report behind. Refuse before printing, which is where the decision
+usually is: a program can only tell that its input is unusable by looking at
+it, and that is over before the first line of a report.
+
+**In a session, `fail` ends the session**, and the session's status is the 1 it
+asked for. At a prompt there is no process but that one, so ending the program
+is ending it; a REPL in which `fail` ended only the entry would make *the
+program* mean one thing in a file and another at a prompt.
+
+### The status, and the one it is not
+
+A refusal is a 1 rather than a fourth number, and the argument is that no shell
+could use the difference. A script that runs a Vine program is asking one
+question — is there a report here? — and *the program crashed* and *the program
+refused what I gave it* answer it identically. The difference between them is
+for a person, and it is already on standard error in the only form a person can
+use: a report with a caret, or a sentence without one.
+
+It is emphatically not a **2**. That status is the command line's, and it says
+that nothing was ever parsed — an unreadable file, `-e` with nothing after it,
+two programs named at once. A command line that named a readable program and
+redirected one file into it was not the problem; the file was, and only the
+program is in a position to know that.
+
+### What it costs
+
+`fail` is a keyword, so it is no longer a name. `let fail = 1`,
+`fn(fail) {...}`, `o.fail` and the bare-identifier map key `{fail: 1}` are all
+syntax errors now. This is the second keyword to be taken from the namespace,
+and the first whose word was already in use: `examples/requests.vine` had eight
+rows of `{path: ..., share: 31, base: 120, fail: 1}` and an `e.fail` beside
+them, and every one of them had to be quoted:
+
+```
+{"fail": 1}                        # {"fail": 1}
+let e = {"fail": 1}
+e["fail"]                          # 1
+```
+
+That escape hatch is every keyword's, and `return`'s section notes that tick 26
+was the first to need it. Worth saying plainly, because the choice was close:
+the word a program wants for a count of failures is `failures` or `fail_rate`,
+and neither collides. `fail` collided with an abbreviation, which is what made
+it cheap enough to take — and the reason to take it is that **Errors** already
+says a program that fails exits 1, and the statement that produces a 1 should
+be spelled with the word the contract uses for it.
+
+### What this does not add
+
+**A top-level `return`.** The evidence for one evaporated when it was looked
+at. `examples/statement.vine` wrapped a hundred and thirty-six lines in a
+function to buy a single `return nil`, and that `return` was on the
+missing-column path — the program's one early exit was a *refusal*, and `fail`
+is what it wanted. Nothing in this repository yet stops early and succeeds. A
+top-level `return` would also have to answer what it means at a prompt, where
+an entry has nothing to return from and nothing after it to abandon, and what a
+file's value is when a file is a sequence of statements rather than a function
+body. Three questions, no program asking them.
+
+**A status of the program's choosing.** `fail 3` is legal and exits 1 with `3`
+on standard error, because the value is the message and not the status. A
+program that could pick its own number would make the three endings above into
+any number at all, and every reader of a Vine program's status would have to
+read that program to know what it meant. The three are a contract because there
+are three.
+
+**A way to succeed loudly, or to fail quietly.** There is no `fail` without a
+message, and no way to write to standard error without ending the program. A
+warning that a run survives is a real thing and Vine has no spelling for it;
+the program that wants one has not been written here yet, and when it is, it
+will want to say how a reader tells a warning from a report on the same stream.
 
 ## The REPL
 
@@ -2807,11 +2971,18 @@ properties that caused it and no magnitude would have helped.
 
 A Python traceback reaching the user is always a bug in the implementation.
 
-Running a file exits 0 when the program runs and 1 when it fails, with the
-report above on stderr. A problem with the command line itself — an unreadable
-file, `-e` with nothing after it, or more than one program named at once —
-exits 2 and is reported as `error: ...` with no position, because nothing has
-been parsed to have a position in.
+Running a file exits 0 when the program runs and 1 when it fails, with
+something on stderr saying so. A problem with the command line itself — an
+unreadable file, `-e` with nothing after it, or more than one program named at
+once — exits 2 and is reported as `error: ...` with no position, because
+nothing has been parsed to have a position in.
+
+A 1 has two voices and one meaning. Either the program broke, and stderr holds
+the report above — a kind of error, a position, a caret; or the program looked
+at what it was given and refused it, and stderr holds the sentence the program
+chose, with no position anywhere in it, because nothing about the program is
+wrong. See **Refusing**. A 0 means stderr is empty and there is a report on
+stdout to use; that is the whole of what a shell needs from these three.
 
 One command line runs one program. `vine a.vine b.vine`, and `-e` beside a
 file, are refused rather than half-obeyed: running the first and ignoring the
@@ -2819,7 +2990,7 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Twenty rules, and every help is one of them. Nineteen live in
+Twenty-one rules, and every help is one of them. Twenty live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
@@ -2840,6 +3011,7 @@ the same list.
 - `there is no exponent operator; x to the power y is pow(x, y)` — **Operators, loosest binding first**
 - `a line ending in an operator continues onto the next; only '|>' continues from the left` — **Lexical structure**
 - `only a function body may return; a block's value is its last statement` — **Early return**
+- `'fail' ends the program with its message on stderr and a status of 1; a failure that says nothing cannot be acted on` — **Refusing**
 - `a call may nest 500 deep; map, filter and reduce walk a list of any length without nesting` — **Bindings**
 - `a program reads the standard input it was given; redirect a file into it with 'vine prog.vine < file'` — **Reading**
 - `a negative index counts from the end, but a count does not` — **Taking and dropping**

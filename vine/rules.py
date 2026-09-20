@@ -71,6 +71,18 @@ RETURN_RULE = (
     "a block's value is its last statement"
 )
 
+# -- ending ---------------------------------------------------------------
+
+# Offered to a `fail` with nothing after it. The rule is not "an expression
+# goes here" -- the grammar says that. It is why this statement has no bare
+# form where `return` does: the value is the whole of what the program gets to
+# say, and a status of 1 with an empty stderr is the one ending the contract
+# in **Errors** forbids outright.
+FAIL_RULE = (
+    "'fail' ends the program with its message on stderr and a status of 1; "
+    "a failure that says nothing cannot be acted on"
+)
+
 # How deep Vine calls may nest. Here rather than in `interp.py`, where it was
 # until tick 36, for this module's reason: the number is now in a rule, and a
 # limit spelled in one file and offered from another is the duplication the

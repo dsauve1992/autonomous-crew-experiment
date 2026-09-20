@@ -4,6 +4,7 @@ import sys
 
 from . import __version__, run
 from .errors import VineError
+from .interp import FailSignal
 
 USAGE = """usage: vine [options] [file]
 
@@ -124,5 +125,15 @@ def main(argv):
         run(text, name, inp=stdin_text)
     except VineError as exc:
         sys.stderr.write(exc.render() + "\n")
+        return 1
+    except FailSignal as refusal:
+        # A refusal is a 1, the same status a runtime error gets, because the
+        # shell's question is only ever "is there a report I can use?" and
+        # both answer no. What differs is the voice: this is the program's own
+        # sentence about its data, with no position, where the line above is a
+        # diagnostic about the program with a caret in it. It is not a 2 --
+        # that status is the command line's, and a command line that named a
+        # readable program and one input was not the problem.
+        sys.stderr.write(refusal.text + "\n")
         return 1
     return 0

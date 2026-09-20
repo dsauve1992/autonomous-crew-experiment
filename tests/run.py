@@ -7,7 +7,9 @@ Each case is a source file under tests/cases with a sibling expectation:
   foo.vine + foo.err          the program must fail; the rendered error must match
   foo.repl + foo.transcript   the lines of foo.repl are fed to the REPL as if
                               typed; the whole session, prompts included, must
-                              match the transcript exactly
+                              match the transcript exactly -- stdout and
+                              stderr into one buffer, which is the one stream
+                              a person at a terminal sees
   foo.cli + foo.transcript    each line of foo.cli is a `vine` command line,
                               run in a real subprocess; the transcript records
                               stdout, stderr and the exit status of each
@@ -54,6 +56,7 @@ sys.path.insert(0, str(ROOT))
 
 from vine import Source, run  # noqa: E402
 from vine.errors import VineError  # noqa: E402
+from vine.interp import FailSignal  # noqa: E402
 from vine.repl import Repl  # noqa: E402
 
 # Examples are tested too, so the documentation cannot quietly stop working.
@@ -165,7 +168,8 @@ def actual_for(case):
         return "transcript", run_cli(case)
     if case.suffix == ".repl":
         buffer = io.StringIO()
-        Repl(Keyboard(case.read_text(encoding="utf-8")), buffer, interactive=False).run()
+        Repl(Keyboard(case.read_text(encoding="utf-8")), buffer,
+             interactive=False, err=buffer).run()
         return "transcript", buffer.getvalue()
     buffer = io.StringIO()
     try:
@@ -173,6 +177,13 @@ def actual_for(case):
             inp=input_for(case))
     except VineError as exc:
         return "err", exc.render() + "\n"
+    except FailSignal as refusal:
+        # A refusal is a `.err` case like any other failure, and for the
+        # reason `vine/cli.py` gives: both end the run, both exit 1, and both
+        # put their text on stderr. What the golden then holds is the
+        # difference -- a report with a caret, or the program's own sentence
+        # with no position anywhere in it.
+        return "err", refusal.text + "\n"
     return "out", buffer.getvalue()
 
 

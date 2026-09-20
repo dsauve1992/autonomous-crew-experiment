@@ -9,6 +9,7 @@ from .rules import (
     CONTINUATION_RULE,
     EXPONENT_RULE,
     HOLE_RULE,
+    FAIL_RULE,
     RETURN_RULE,
 )
 from .nodes import (
@@ -24,6 +25,7 @@ from .nodes import (
     Literal,
     Logical,
     MapLit,
+    Fail,
     Return,
     StrLit,
     Unary,
@@ -251,7 +253,26 @@ class Parser:
             return self.let_stmt()
         if self.at("kw", "return"):
             return self.return_stmt()
+        if self.at("kw", "fail"):
+            return self.fail_stmt()
         return self.expression()
+
+    def fail_stmt(self):
+        """`fail expr`: this run did not work, and here is what to tell them.
+
+        Legal wherever a statement is, and refused nowhere -- unlike `return`,
+        which needs a function to leave. What `fail` ends is the program, and
+        a program is what every statement is inside.
+
+        The message is required. `return` has a bare form because a function
+        that answers nothing answers `nil`, which is a value; a program that
+        fails with nothing on stderr is the one ending **Errors** forbids, so
+        the grammar is where that is settled rather than the runtime.
+        """
+        tok = self.next()
+        if self.at("nl") or self.at("eof") or self.at("op", "}"):
+            raise self.error("'fail' needs a message", tok).help(FAIL_RULE)
+        return Fail(tok.pos, self.expression())
 
     def return_stmt(self):
         tok = self.next()

@@ -33,6 +33,12 @@ against the first line of the rendered error -- the bare `error:` matching
 either kind, since the document uses it as a shorthand in two places and the
 distinction is **Errors**' subject, not the example's.
 
+One beginning `refused:` claims the entry ends the program with that message
+instead. A refusal is not an error and has no rendered report to read a first
+line out of -- see **Refusing** -- so it needs its own notation, and it needs
+one at all because the alternative is a `fail` in an untagged block ending
+this property in a Python traceback.
+
 Any other result is compared against three *exact* observables of the run:
 what the entry printed, the value's `str`, and the value's `repr`. It passes
 if it equals one of them. That tolerance is about the document's notation and
@@ -82,7 +88,7 @@ import re
 
 from vine import run
 from vine.errors import Source, SyntaxError_, VineError
-from vine.interp import Interpreter
+from vine.interp import FailSignal, Interpreter
 from vine.parser import parse
 from vine.repl import CONTINUE, PROMPT, Repl
 from vine.values import to_display, to_repr
@@ -104,10 +110,10 @@ RESULT = re.compile(r"\S\s+#\s*(\S.*)$")
 # blindness is the realistic way a document-reading check goes wrong, and only
 # an exact number sees it. A tick that adds or removes an example edits this
 # line in the same commit, which is the point: the count is a claim too.
-EXPECTED = 125
+EXPECTED = 128
 # The same claim for report blocks, and it is the tighter of the two: a report
 # that loses its tag stops being read and starts being parsed as a program.
-REPORTS = 16
+REPORTS = 18
 
 REPORT = "report"
 HEADLINE = re.compile(r"^(syntax error|runtime error|error): ")
@@ -182,6 +188,11 @@ def file_report(lines, name):
         run("\n".join(lines) + "\n", name, out=io.StringIO())
     except VineError as exc:
         return exc.render()
+    except FailSignal as signal:
+        # A refusal has no report, so it cannot match one. Returned rather
+        # than raised so that a `fail` written above a report block fails this
+        # property with its own text quoted, instead of ending the suite.
+        return signal.text
     return None
 
 
@@ -193,7 +204,8 @@ def session_report(lines):
     how the REPL names its sources would agree with itself.
     """
     transcript = io.StringIO()
-    Repl(io.StringIO("\n".join(lines) + "\n"), transcript, interactive=False).run()
+    Repl(io.StringIO("\n".join(lines) + "\n"), transcript, interactive=False,
+         err=transcript).run()
     written = transcript.getvalue().splitlines()
     prompts = (PROMPT.rstrip(), CONTINUE.rstrip())
     typed = [i for i, line in enumerate(written) if line.startswith(prompts)]
@@ -261,12 +273,23 @@ def check():
             try:
                 source = Source(text, "<spec>")
                 value = Interpreter.run(interp, parse(source), source)
-                failed = None
+                failed = refused = None
             except VineError as exc:
-                value, failed = None, exc.render().split("\n")[0]
+                value, failed, refused = None, exc.render().split("\n")[0], None
+            except FailSignal as signal:
+                value, failed, refused = None, None, signal.text
             if want is None:
                 continue
             checked += 1
+            wants_refusal = want.startswith("refused:")
+            if wants_refusal or refused is not None:
+                if refused is None:
+                    failures.append((text, f"claims {want!r} and did not refuse"))
+                elif not wants_refusal:
+                    failures.append((text, f"claims {want!r} and refused with {refused!r}"))
+                elif refused != want[len("refused:"):].strip():
+                    failures.append((text, f"claims {want!r} and refused with {refused!r}"))
+                continue
             wants_error = want.startswith(("error:", "runtime error:", "syntax error:"))
             if wants_error:
                 kinds = ["runtime error:", "syntax error:"]

@@ -17,6 +17,7 @@ from .nodes import (
     Literal,
     Logical,
     MapLit,
+    Fail,
     Return,
     StrLit,
     Unary,
@@ -71,6 +72,30 @@ class ReturnSignal(Exception):
     def __init__(self, value):
         super().__init__()
         self.value = value
+
+
+class FailSignal(Exception):
+    """A program's own refusal, on its way out of the program.
+
+    The mirror image of `ReturnSignal` above, and the contrast is the whole
+    design. A `return` is caught by the call beneath it and never leaves this
+    module, because the parser will not let one exist without a call to take
+    it. A `fail` has nothing beneath it to catch it: what it ends is the run,
+    so it is *meant* to leave -- past every call, past `run`, out to whoever
+    started the process. `vine/cli.py` turns it into a line on stderr and a
+    status of 1; `vine/repl.py` ends the session with it; `tests/run.py`
+    records it as a case's failure.
+
+    `text` is already rendered, at the `fail` itself, because rendering a
+    value can fail the way any walk can and that failure has a position where
+    this has none.
+    """
+
+    __slots__ = ("text",)
+
+    def __init__(self, text):
+        super().__init__()
+        self.text = text
 
 
 class Env:
@@ -371,6 +396,17 @@ class Interpreter:
         value = None if node.value is None else self.eval(node.value, env)
         raise ReturnSignal(value)
 
+    def eval_fail(self, node, env):
+        """End the program, saying this.
+
+        The value is rendered here rather than by the caller, with `str` --
+        the same rendering `print` gives it, because a refusal is the
+        program's own sentence and there is no second way to write a value
+        down. Rendering under this walk is what gives a value too deep to
+        render a positioned report instead of a traceback out of `cli.py`.
+        """
+        raise FailSignal(to_display(self.eval(node.value, env)))
+
     def eval_fn(self, node, env):
         return Function(node.params, node.body, env, node.name, node.pos)
 
@@ -599,6 +635,7 @@ Interpreter.DISPATCH = {
     Block: Interpreter.eval_block,
     Let: Interpreter.eval_let,
     Return: Interpreter.eval_return,
+    Fail: Interpreter.eval_fail,
     FnLit: Interpreter.eval_fn,
     If: Interpreter.eval_if,
     Logical: Interpreter.eval_logical,

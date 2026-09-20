@@ -3,7 +3,7 @@
 import sys
 
 from .errors import Source, VineError
-from .interp import Interpreter
+from .interp import FailSignal, Interpreter
 from .parser import parse
 
 __version__ = "0.2.0"
@@ -36,6 +36,11 @@ def run(text, name="<input>", out=None, inp=None):
     `inp` is the standard input `read()` answers with: `None` when the program
     was given none, or a zero-argument callable returning the text, called at
     most once and only if the program asks.
+
+    A `fail` statement raises `FailSignal` out of here instead. That is not a
+    VineError: the program did not break, it refused, and what it carries is
+    the sentence it chose rather than a report about itself. Every caller of
+    `run` has to say what a refusal looks like from where it stands.
     """
     source = Source(text, name)
     return Interpreter(source, out, inp).run(parse(source))

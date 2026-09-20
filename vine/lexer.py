@@ -14,7 +14,7 @@ from .rules import (
 from .values import INFINITY
 
 KEYWORDS = {
-    "let", "fn", "if", "else", "do", "return",
+    "let", "fn", "if", "else", "do", "return", "fail",
     "true", "false", "nil", "and", "or", "not",
 }
 

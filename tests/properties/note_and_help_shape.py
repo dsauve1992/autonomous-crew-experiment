@@ -112,7 +112,7 @@ POSITION = re.compile(r"\d+:\d+")
 # site, add the program that reaches it and move this number in the same
 # commit; if the program is genuinely impossible, say so beside the number.
 SITES = re.compile(r"\.note\(|\.help\(")
-EXPECTED_SITES = 47  # the 47th is read()'s, reached by the grid's zero-argument call
+EXPECTED_SITES = 48  # the 47th is read()'s, reached by the grid's zero-argument call
 VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.
@@ -134,6 +134,7 @@ MISTAKES = [
     "take([1], -1)",       # a count that is not a quantity
     "fixed(1, 2000)",      # more decimal places than any float has
     "return 1",            # a statement of a function body, outside one
+    "fail",                # the one statement with no bare form, written bare
     # A failure four calls down: the frame notes that say which call reached
     # it, and the line counting the ones the report has no room for. The grid
     # varies types and never nests a call, so nothing in it has a caller.

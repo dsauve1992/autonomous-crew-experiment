@@ -2,9 +2,10 @@
 
 A help is a rule of the language -- `docs/spec.md` says so and uses the split
 to keep a guess from being printed in the voice of a fact -- so the set of
-them is finite, and **The rules a report may offer** writes it out. Twenty.
+them is finite, and **The rules a report may offer** writes it out.
+Twenty-one.
 
-Nineteen come from a report. The twentieth is `vine/cli.py`'s, and finding it
+Twenty come from a report. The twenty-first is `vine/cli.py`'s, and finding it
 is why this property runs the command line as well: a problem with the command
 line has no position and so no `VineError`, so that file writes the
 ` = help: ` prefix out as text. It was held by one golden, and the comment
@@ -80,7 +81,7 @@ SPEC = pathlib.Path(__file__).resolve().parent.parent.parent / "docs" / "spec.md
 HEADING = "### The rules a report may offer"
 
 # How many rules there are. Exact on purpose -- see the docstring.
-EXPECTED = 20
+EXPECTED = 21
 
 # A roster line: the rule in backticks, then the section that states it, bold.
 ENTRY = re.compile(r"^- `(.+)` — \*\*(.+)\*\*$")

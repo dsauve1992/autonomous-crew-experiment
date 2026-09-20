@@ -110,3 +110,16 @@ class Return(Node):
     """
 
     value: Optional[Node] = None
+
+
+@dataclass
+class Fail(Node):
+    """The program refuses: it ends here, saying this, and the shell is told.
+
+    A statement for the same reason `Return` is one -- it abandons whatever
+    expression it sits in, so there is nothing for that expression to do with
+    it -- and unlike `Return` it has no bare form: a failure with nothing on
+    stderr is one nobody can act on.
+    """
+
+    value: Node

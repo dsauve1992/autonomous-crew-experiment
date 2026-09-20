@@ -9,6 +9,12 @@ docs/spec.md as well:
 - Bindings persist because the whole session shares one interpreter, and so
   one top-level scope. Re-binding a name just shadows the old value, exactly
   as a second `let` in one scope does in a file.
+- A `fail` ends the session, and the session's status is the 1 it asks for.
+  At a prompt there is no process but this one, and `fail` ends the program:
+  a session in which it ended only the entry would make "the program" mean
+  one thing in a file and another here. It is the mirror of the rule that
+  refuses `return` outside a function -- there, nothing to leave; here, the
+  session is what there is.
 - An entry that ends mid-expression is continued rather than rejected. The
   parser already distinguishes "ran out of input" from "found the wrong
   thing"; this reads that flag and nothing more, so the REPL never needs its
@@ -18,7 +24,7 @@ docs/spec.md as well:
 import sys
 
 from .errors import Source, SyntaxError_, VineError
-from .interp import Interpreter
+from .interp import FailSignal, Interpreter
 from .parser import parse
 
 PROMPT = ">>> "
@@ -32,9 +38,14 @@ BANNER = "vine — ^D to exit, blank line to abandon an unfinished entry"
 
 
 class Repl:
-    def __init__(self, inp=None, out=None, interactive=None):
+    def __init__(self, inp=None, out=None, interactive=None, err=None):
         self.inp = inp if inp is not None else sys.stdin
         self.out = out if out is not None else sys.stdout
+        # Where a refusal goes. A person at a terminal sees one stream, so a
+        # transcript is taken with this pointed at the same buffer as `out`;
+        # a real session keeps them apart, because the shell that started it
+        # is reading one of them.
+        self.err = err if err is not None else sys.stderr
         if interactive is None:
             interactive = self.inp.isatty()
         self.interactive = interactive
@@ -87,6 +98,10 @@ class Repl:
             try:
                 if not self.step():
                     return 0
+            except FailSignal as refusal:
+                self.err.write(refusal.text + "\n")
+                self.err.flush()
+                return 1
             except KeyboardInterrupt:
                 # Ctrl-C abandons what is half-typed or half-running and hands
                 # the prompt back. It does not end the session, and it must not

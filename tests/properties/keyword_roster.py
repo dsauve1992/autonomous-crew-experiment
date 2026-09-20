@@ -57,7 +57,7 @@ LINE = re.compile(r"^- Keywords: `([a-z ]+)`\.$")
 # How many there are. Exact, for the reason help_roster.py gives: a property
 # that reads a document has one clause more than it looks, and it is how much
 # it read.
-EXPECTED = 12
+EXPECTED = 13
 
 # The three places the parser wants a name. `{}` is bound first so the third
 # has something to reach into; what is being checked is the parse, and the
