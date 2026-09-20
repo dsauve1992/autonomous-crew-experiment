@@ -1,13 +1,13 @@
-"""Every `expression    # result` line in docs/spec.md answers what it claims.
+"""Every example in docs/spec.md runs, and answers what it claims.
 
-The document holds sixty-odd of these and nothing ran a single one of them
-until this file existed. They read to a reviewer as evidence -- an expression
-next to its answer, in the tone of a transcript -- and they were a
-hand-written expectation stored where the test runner never looks. Tick 19
-ran all of them and every one was true, which is the result that makes this
-property worth having rather than the one that makes it unnecessary: the
-claims are right today, so a check added now records that and fails the day
-one stops being.
+The document holds sixty-odd `expression    # result` lines and nothing ran a
+single one of them until this file existed. They read to a reviewer as
+evidence -- an expression next to its answer, in the tone of a transcript --
+and they were a hand-written expectation stored where the test runner never
+looks. Tick 19 ran all of them and every one was true, which is the result
+that makes this property worth having rather than the one that makes it
+unnecessary: the claims are right today, so a check added now records that and
+fails the day one stops being.
 
 This does not make the goldens redundant, and it is not the collapse tick 13
 warned about. A delegation makes two answers one; here the spec's comment and
@@ -17,21 +17,21 @@ catch differs: a golden catches the implementation drifting, and this catches
 the *document* drifting -- an example edited into a falsehood, which no golden
 can see, because no golden reads the document.
 
-## What counts as a claim, and how it is compared
+## Two kinds of claim
 
-An untagged fenced block is Vine; a tagged one (```sh) is not, which is how
-the **Running it** block stays out. A block's lines are fed to one
+An untagged fenced block is Vine; a tagged one is not, which is how the
+**Running it** block (```sh) stays out. A block's lines are fed to one
 interpreter in order, so a `let` binds for the lines under it, exactly as the
 REPL binds across entries. Entries that span lines are joined by the parser's
 own "ran out of input" flag, which is the rule `vine/repl.py` uses and not a
 second guess at it.
 
-The result is the comment text up to the first em dash; the rest is
-commentary. A result beginning `error:` (or `runtime error:` / `syntax
-error:`) claims the entry fails with that message, compared against the first
-line of the rendered error -- the bare `error:` matching either kind, since
-the document uses it as a shorthand in two places and the distinction is
-**Errors**' subject, not the example's.
+**A result comment** is the text after `#` on an entry's last line, up to the
+first em dash; the rest is commentary. One beginning `error:` (or `runtime
+error:` / `syntax error:`) claims the entry fails with that message, compared
+against the first line of the rendered error -- the bare `error:` matching
+either kind, since the document uses it as a shorthand in two places and the
+distinction is **Errors**' subject, not the example's.
 
 Any other result is compared against three *exact* observables of the run:
 what the entry printed, the value's `str`, and the value's `repr`. It passes
@@ -43,7 +43,35 @@ Both are true statements about the same run. The one entry that both prints
 and answers -- `tap([1, 2]) |> take(1)` -- could therefore pass by matching
 the wrong observable; its printed half is pinned by `tests/cases/printing.vine`.
 
-Reading the wrong *number* of claims is a failure, for the reason
+**A report block** (```report) is a whole rendered failure, compared line for
+line against the program in the untagged block *immediately above it*. Fourteen
+of them, in seven sections, and until tick 32 not one was compared past its
+headline: a result comment cannot hold a caret, so every note and every help
+the document printed sat outside every check in the repository. Four blocks
+were being fed to the interpreter as if they were programs, where they failed
+to parse and were discarded in silence.
+
+A report says which source it is about on its ` --> ` line, and that name
+chooses how the program is run. `<repl:N>` is a session: the lines are typed
+at `vine/repl.py` and the report is what it wrote after the last of them, so
+the entry number in that name is the implementation's and is checked. Any
+other name is a file, and there the name is the document's own -- `report.vine`
+is a stand-in for whatever the reader calls their file, so it is handed to the
+runner rather than checked. Nothing else in a report is the document's: the
+position, the quoted line, the caret column and every extra line come from the
+run.
+
+A whole report is the only form. An excerpt -- a headline alone, or the note
+lines without the caret above them -- reads as a transcript and is checked by
+nothing, so an untagged block whose first line is an error headline, or which
+carries a ` = note: ` or ` = help: ` line, fails this property as a report
+that lost its tag. Three blocks in **Early return** and two in **Errors** were
+excerpts before tick 32 made them whole; the two in **Errors** were the note
+lines of `call_chain_deep` and `infinite_recursion`, whose programs the reader
+could not see, so `d was called at 6:18` named a line that was nowhere in the
+document.
+
+Reading the wrong *number* of either kind is a failure, for the reason
 `roster_names_every_builtin.py` gives: a property that reads the document has
 to fail when the document changes shape, or it quietly stops checking.
 """
@@ -52,14 +80,17 @@ import io
 import pathlib
 import re
 
+from vine import run
 from vine.errors import Source, SyntaxError_, VineError
 from vine.interp import Interpreter
 from vine.parser import parse
+from vine.repl import CONTINUE, PROMPT, Repl
 from vine.values import to_display, to_repr
 
 CLAIM = (
-    "every 'expression # result' line in a Vine block of docs/spec.md runs, "
-    "and answers exactly the result its comment claims"
+    "every 'expression # result' line in a Vine block of docs/spec.md runs "
+    "and answers exactly the result its comment claims, and every report "
+    "block is exactly what the program above it prints when it fails"
 )
 
 SPEC = pathlib.Path(__file__).resolve().parent.parent.parent / "docs" / "spec.md"
@@ -74,23 +105,46 @@ RESULT = re.compile(r"\S\s+#\s*(\S.*)$")
 # an exact number sees it. A tick that adds or removes an example edits this
 # line in the same commit, which is the point: the count is a claim too.
 EXPECTED = 122
+# The same claim for report blocks, and it is the tighter of the two: a report
+# that loses its tag stops being read and starts being parsed as a program.
+REPORTS = 14
+
+REPORT = "report"
+HEADLINE = re.compile(r"^(syntax error|runtime error|error): ")
+ARROW = re.compile(r"^ *--> (.+):(\d+):(\d+)$")
+EXTRA = re.compile(r"^ *= (note|help): ")
+
+
+def blocks():
+    """Every fenced block, as (tag, lines)."""
+    found, body, inside, tag = [], [], False, ""
+    for line in SPEC.read_text(encoding="utf-8").splitlines():
+        if line.startswith("```"):
+            if inside:
+                found.append((tag, body))
+                body, inside = [], False
+            else:
+                inside, tag = True, line[3:].strip()
+            continue
+        if inside:
+            body.append(line)
+    return found
 
 
 def vine_blocks():
     """The untagged fenced blocks, as lists of lines."""
-    blocks, body, inside, tagged = [], [], False, False
-    for line in SPEC.read_text(encoding="utf-8").splitlines():
-        if line.startswith("```"):
-            if inside:
-                if not tagged:
-                    blocks.append(body)
-                body, inside = [], False
-            else:
-                inside, tagged = True, bool(line[3:].strip())
-            continue
-        if inside:
-            body.append(line)
-    return blocks
+    return [body for tag, body in blocks() if not tag]
+
+
+def report_blocks():
+    """Each report block with the untagged block above it, as (program, want)."""
+    pairs, program = [], None
+    for tag, body in blocks():
+        if tag == REPORT:
+            pairs.append((program, body))
+        elif not tag:
+            program = body
+    return pairs
 
 
 def entries(lines):
@@ -120,6 +174,79 @@ def claimed(entry):
     if not match:
         return None
     return match.group(1).split("—")[0].strip()
+
+
+def file_report(lines, name):
+    """What running these lines as a file called `name` reports, or None."""
+    try:
+        run("\n".join(lines) + "\n", name, out=io.StringIO())
+    except VineError as exc:
+        return exc.render()
+    return None
+
+
+def session_report(lines):
+    """What the REPL wrote after the last of these lines was typed, or None.
+
+    Read out of the session's own transcript rather than rebuilt: the entry
+    numbers in `<repl:N>` are what this claim is about, and a second guess at
+    how the REPL names its sources would agree with itself.
+    """
+    transcript = io.StringIO()
+    Repl(io.StringIO("\n".join(lines) + "\n"), transcript, interactive=False).run()
+    written = transcript.getvalue().splitlines()
+    prompts = (PROMPT.rstrip(), CONTINUE.rstrip())
+    typed = [i for i, line in enumerate(written) if line.startswith(prompts)]
+    after = written[typed[-1] + 1:] if typed else written
+    return "\n".join(after) if after else None
+
+
+def check_reports(failures):
+    """Every report block, against the program in the block above it."""
+    checked = 0
+    for program, want in report_blocks():
+        checked += 1
+        text = "\n".join(want)
+        if program is None:
+            failures.append((text, "has no program block above it to run"))
+            continue
+        arrow = ARROW.match(want[1]) if len(want) > 1 else None
+        if arrow is None:
+            failures.append((text, "has no ' --> name:line:col' line to say what it is about"))
+            continue
+        name = arrow.group(1)
+        got = (
+            session_report(program)
+            if name.startswith("<repl:")
+            else file_report(program, name)
+        )
+        if got is None:
+            failures.append(("\n".join(program), f"claims a report and did not fail:\n{text}"))
+        elif got != text:
+            failures.append(("\n".join(program), f"reports\n{got}\nand the document says\n{text}"))
+    if checked != REPORTS:
+        failures.append(
+            (
+                str(SPEC),
+                f"read {checked} report blocks and expected exactly {REPORTS}. "
+                "If you added or removed one, update REPORTS in the same commit.",
+            )
+        )
+    return checked
+
+
+def check_untagged(failures):
+    """An untagged block that is really a report has stopped being checked."""
+    for body in vine_blocks():
+        if not body:
+            continue
+        line = next((l for l in body if EXTRA.match(l)), None)
+        if HEADLINE.match(body[0]):
+            line = body[0]
+        if line is not None:
+            failures.append(
+                ("\n".join(body), f"is a report and is not tagged ```{REPORT}: {line!r}")
+            )
 
 
 def check():
@@ -168,4 +295,5 @@ def check():
                 "longer being read.",
             )
         )
-    return checked, failures
+    check_untagged(failures)
+    return checked + check_reports(failures), failures

@@ -289,6 +289,11 @@ A hole is an ordinary piece of the program, so a failure inside one is an
 ordinary error, pointing into the string at the part that failed:
 
 ```
+let label = "x"
+print("value: {label + 1}")
+```
+
+```report
 runtime error: cannot add string and int
  --> report.vine:2:22
   |
@@ -448,7 +453,15 @@ reader a special case to remember. What the refusal reads as is the message
 any keyword in that position gets:
 
 ```
+let x = return 1
+```
+
+```report
 syntax error: expected an expression, found the keyword 'return'
+ --> report.vine:1:9
+  |
+1 | let x = return 1
+  |         ^
 ```
 
 **It is refused outside a function, and refused at parse time.** Whether a
@@ -457,7 +470,15 @@ what happens when the program runs, so the parser is where it is answered and
 a `return` at the top of a file never runs at all:
 
 ```
+return 1
+```
+
+```report
 syntax error: 'return' outside a function
+ --> report.vine:1:1
+  |
+1 | return 1
+  | ^
   = help: only a function body may return; a block's value is its last statement
 ```
 
@@ -483,15 +504,21 @@ until it does not:
 ```
 let head_price = fn(orders) {
   let first = orders[0]
-  ...
   if len(orders) == 0 { 0.0 }
-  else if ...
+  else if type(get(first, "unit", nil)) != "float" { 0.0 }
+  else if first.unit < 0.0 { 0.0 }
+  else { first.qty * first.unit }
 }
 head_price([])
 ```
 
-```
+```report
 runtime error: index 0 is out of range for a list of length 0
+ --> report.vine:2:21
+  |
+2 |   let first = orders[0]
+  |                     ^
+  = note: head_price was called at 8:11
 ```
 
 The empty list is the one input the length check exists to survive, so that
@@ -735,10 +762,15 @@ That second kind also carries the value **written out in escapes**, when
 writing it out shows anything the quoted text did not:
 
 ```
+let row = "١٢٣"
+print(int(row))
+```
+
+```report
 runtime error: cannot convert "١٢٣" to an int
- --> report.vine:3:11
+ --> report.vine:2:10
   |
-3 | print(int(row))
+2 | print(int(row))
   |          ^
   = note: written out in escapes, that string is "\u{661}\u{662}\u{663}"
   = help: the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them
@@ -816,10 +848,15 @@ A call that passes a default and fails anyway carries the rule as a help,
 because that reader has asked for exactly the question it answers:
 
 ```
+let row = [1]
+print(float(row, 0.0))
+```
+
+```report
 runtime error: cannot convert a list to a float
- --> report.vine:3:12
+ --> report.vine:2:12
   |
-3 | print(float(row, 0.0))
+2 | print(float(row, 0.0))
   |            ^
   = help: a default answers for text that is not a number, and for nothing else
 ```
@@ -1415,10 +1452,14 @@ Refusing a syntax every reader arrives with is only cheap if the refusal says
 what to write instead, so both spellings do:
 
 ```
+print(2 ** 3)
+```
+
+```report
 syntax error: expected an expression, found '*'
- --> report.vine:4:10
+ --> report.vine:1:10
   |
-4 | print(2 ** 3)
+1 | print(2 ** 3)
   |          ^
   = help: there is no exponent operator; x to the power y is pow(x, y)
 ```
@@ -2107,10 +2148,15 @@ Refusing the colon is not free, because every reader arrives already knowing
 it, so a hole that reaches for one says what to write instead:
 
 ```
+let total = 1.5
+print("{total:.2f}")
+```
+
+```report
 syntax error: expected '}' to close the interpolation, found ':'
- --> report.vine:4:14
+ --> report.vine:2:14
   |
-4 | print("{total:.2f}")
+2 | print("{total:.2f}")
   |              ^
   = help: a hole holds one expression, with no format after it; for decimal places write "{fixed(x, 2)}"
 ```
@@ -2153,6 +2199,11 @@ Every failure in a Vine program is a `syntax error` or a `runtime error`
 carrying a position, and is rendered with the offending line and a caret:
 
 ```
+let label = "total"
+print(label + 3)
+```
+
+```report
 runtime error: cannot add string and int
  --> example.vine:2:13
   |
@@ -2164,6 +2215,10 @@ A report may say more than that. Under the caret come any number of extra
 lines, each labelled:
 
 ```
+print("{")
+```
+
+```report
 syntax error: unterminated string
  --> example.vine:1:9
   |
@@ -2176,9 +2231,15 @@ syntax error: unterminated string
 A **note** states a fact about this program that the headline leaves out, and
 may carry a *second position* — written `line:col`, or `name:line:col` when
 it points into a different source than the caret does, which is the ordinary
-case in a session:
+case in a session. Three entries typed at the prompt:
 
 ```
+let greet = fn(first, last) { "{first} {last}" }
+"an entry in between"
+greet("solo")
+```
+
+```report
 runtime error: greet expects 2 arguments, got 1
  --> <repl:3>:1:6
   |
@@ -2234,7 +2295,7 @@ print(mean(hours))
 print(mean(extra))
 ```
 
-```
+```report
 runtime error: division by zero
  --> mean.vine:1:57
   |
@@ -2257,9 +2318,22 @@ program, so they can walk up from it.
 Three calls are named and the rest are counted:
 
 ```
-  = note: d was called at 6:18
-  = note: c was called at 7:18
-  = note: b was called at 8:18
+let d = fn(x) { x / 0 }
+let c = fn(x) { d(x) }
+let b = fn(x) { c(x) }
+let a = fn(x) { b(x) }
+print(a(1))
+```
+
+```report
+runtime error: division by zero
+ --> chain.vine:1:19
+  |
+1 | let d = fn(x) { x / 0 }
+  |                   ^
+  = note: d was called at 2:18
+  = note: c was called at 3:18
+  = note: b was called at 4:18
   = note: 1 more call is not shown
 ```
 
@@ -2272,6 +2346,16 @@ the call that entered it and the depth, which is the whole of what the caret
 was missing:
 
 ```
+let loop = fn(n) { loop(n + 1) }
+loop(0)
+```
+
+```report
+runtime error: call depth exceeded 500 (infinite recursion?)
+ --> loop.vine:1:24
+  |
+1 | let loop = fn(n) { loop(n + 1) }
+  |                        ^
   = note: loop was called at 2:5
   = note: 499 more calls are not shown
 ```
