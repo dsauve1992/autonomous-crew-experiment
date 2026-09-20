@@ -25,15 +25,15 @@ They are here anyway, because the next thing to touch `len`, `upper`, `split`
 or a conversion will be checked against them without anyone remembering to.
 
 `[1.7e308, 10**400]` is the one boundary here that has never caught
-anything: a list holding a float beside an int no float can hold. It was
-described as *the last value in VALUES* until tick 31 added two after it,
-which is what a sentence that locates something rather than naming it is
-worth. Tick 7's
-`huge + 2.5` bug was arithmetic converting the int and Python raising where it
-could not; tick 10 added `sort(xs, key)`, which puts those two values on
+anything: a list holding a float beside an int no float can hold. Tick 7's
+`huge + 2.5` bug was arithmetic converting the int and Python raising where
+it could not; tick 10 added `sort(xs, key)`, which puts those two values on
 either side of a `<` instead, and wanted the same boundary watched from then
 on rather than checked once by hand. Comparison converts nothing, so it is
-quiet -- and quiet is the answer this file exists to keep getting.
+quiet -- and quiet is the answer this file exists to keep getting. This
+paragraph called it *the last value in VALUES* until tick 31 added two after
+it, which is what a sentence that locates a thing rather than naming it is
+worth.
 """
 
 import io

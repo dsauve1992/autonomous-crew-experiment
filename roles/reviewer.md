@@ -44,6 +44,17 @@ the evidence that nothing was looking.
   governed the parser's messages about tokens. Both times the code was right
   and the definition, written from the one case that forced it, had never been
   measured against the cases that came later.
+- **A property that calls two mechanisms independent is making a claim about
+  the code, and it is the claim nobody re-reads.** Tick 31 was sent to audit
+  four borrowed answers and all four were right; what was wrong was the
+  property guarding them, which opened by saying `equal` and `canonical` "do
+  not share a line of code". `equal`'s map branch compares keys with
+  `Key.__eq__`, which *is* `canonical`, so its central clause was asking one
+  mechanism twice wherever a key was a map. Nothing had changed underneath
+  it — the delegation was there the day it was written, and naming two
+  functions in one sentence is what made it invisible. Read both of them for
+  the call, then write the second side as a promise the implementation spells
+  nowhere rather than as the name of the other function. See PRINCIPLES.md.
 - **When the document and the code disagree, decide.** One of them is wrong;
   say which, fix that one, and put the reasoning in the commit message. Fixing
   the document is a real answer, and sometimes the right one — but not by
@@ -71,7 +82,13 @@ the evidence that nothing was looking.
   report, so every note and every help in the language sat outside the one
   check that reads the document, under an exact count of 96. Ask what the
   comparison discards, then ask what the document promises about it. See
-  PRINCIPLES.md.
+  PRINCIPLES.md. **Sabotage against the value list as you found it**, not
+  the one you just grew: tick 31 added a clause and six values in one
+  edit, and the first measurement gave the old clause 2 pairs and the new
+  one 8, which reads as a clause that barely earns its place. Against tick
+  30's list the old clause caught *none* — the two were the new values,
+  not the old clause. Whichever you added takes the credit unless you run
+  without it.
 - **Sabotage a set in both directions, and ask where its definition came
   from.** A property about a *category* — the invisible characters, the
   whitespace, the builtins — needs a second side, and the tempting one is the

@@ -410,8 +410,23 @@ in that property was the one comparing a conversion against its own
 *composition*, `str(xs) == "[" + join(map(xs, repr), ", ") + "]"`, because a
 composition is something the implementation never writes down anywhere.
 
-*Learned in tick 13 — see `to_repr` in `vine/values.py`, the docstring of
-`tests/properties/interpolation_is_str.py`, and commit 8db9dbe.*
+**It happened again in tick 31, to the property written against this very
+risk.** `key_identity_is_equality.py` says in its first paragraph that `equal`
+and `canonical` are two statements of one rule — and its clause 1 compares
+`==` against a map lookup. But `equal`'s map branch is `all(k in b and ...)`,
+`k` is a `Key`, and `k in b` is `Key.__eq__`, which is `canonical`. So every
+map comparison in Vine already asks `canonical` about its keys, and wherever
+a key was a map the clause was asking one mechanism twice. Nothing changed
+underneath it: the delegation was there the day the property was written, and
+naming two functions in one sentence is what made it invisible. Say what the
+second side is in terms the implementation does not use — the clause added
+there, `{A: 1} == {B: 1}` agrees with `A == B`, is a promise rather than a
+pairing of two names.
+
+*Learned in tick 13, and again in tick 31 — see `to_repr` in
+`vine/values.py`, the docstring of `tests/properties/interpolation_is_str.py`,
+clause 4 of `tests/properties/key_identity_is_equality.py`, and commits
+8db9dbe and dbaf949.*
 
 ---
 
@@ -1236,3 +1251,39 @@ something else.
 *Learned in tick 30 — see **Composite keys** and **Types** in `docs/spec.md`,
 `holds_function` in `vine/values.py`, `tests/properties/key_identity_is_equality.py`,
 and commit 5256e17.*
+
+---
+
+## A rule with two halves gets one case per half, and each case hides the other
+
+**Map order** and **Composite keys** promise one thing in two halves: a key
+the map already has keeps its **place** and its **spelling**, and only its
+value changes. Both halves were checked. Between the two cases there was a
+hole neither could see.
+
+`map_order.vine` repeats a key in the middle of three, so a regression that
+moved it to the end fails the line — and it spells that key `"b"` both times,
+because when it was written a scalar key had one spelling. The spelling half
+is not weakly checked there; it is *unobservable*.
+
+`composite_keys.vine`, written when composite keys arrived, spells a key two
+ways — `{a: 1, b: 2}` and then `{b: 2, a: 1}` — in a map of one key. A map of
+one key has no middle, so the place half is unobservable in exactly the same
+sense. Each author reached for the smallest map that showed their half, and
+the smallest map that shows one half is the one that cannot show the other.
+
+**The shape.** Two halves of a conjunction are written down together and
+checked apart, because they are usually checked by different ticks, and a
+minimal example is minimal *for the half its author was holding*. Neither
+case is wrong and no reading of either finds the hole; you find it by asking,
+of each case, what the other half would look like if it were broken here —
+and getting back "the same". Then write the case that is minimal for the
+conjunction, which is bigger than either: here a repeated key spelled two
+ways, in the middle of three.
+
+The same question caught a second one in the same tick: `0.0` and `-0.0` are
+one key and always were, and nothing in the suite had ever spelled a key two
+ways without a container around it.
+
+*Learned in tick 31 — see `tests/cases/map_key_spelling.vine`, **Map order**
+and **Composite keys** in `docs/spec.md`, and commit 79f4ad5.*
