@@ -6,11 +6,18 @@
 #
 # Every other program in `examples/` starts from records typed into the source,
 # and none of them could: three thousand lines of map literal is not a file
-# anyone writes or reads. Vine cannot read one either -- `print` is the only
-# builtin that touches the outside world -- so the log is generated below from
-# a hash of the row number, and the report is written as though it had been
-# read from disk. The generator is the first third of this file and the report
-# is the rest; nothing in the report knows how the log was made.
+# anyone writes or reads. Vine could not read one either when this was written
+# -- `print` was the only builtin that touched the outside world -- so the log
+# is generated below from a hash of the row number, and the report is written
+# as though it had been read from disk. The generator is the first third of
+# this file and the report is the rest; nothing in the report knows how the log
+# was made.
+#
+# Tick 39 added `read()`, and this program is deliberately left as it was: it
+# is the evidence that the absence cost something, and rewriting it would
+# delete the evidence. The generator is now one of two ways to get three
+# thousand records into a Vine program, and the slower one -- see **Reading**
+# in docs/spec.md.
 
 # ---------------------------------------------------------------- the log --
 

@@ -695,10 +695,15 @@ the whole of it.
 
 ## Printing
 
-`print(...)` writes to standard output and answers `nil`. It is the only
-builtin that does anything other than compute a value, and the one builtin no
-composition can replace: no other expression in Vine writes. Everything
-*around* the writing does compose, and that is the rest of this section.
+`print(...)` writes to standard output and answers `nil`. It is the one
+builtin no composition can replace: no other expression in Vine writes.
+Everything *around* the writing does compose, and that is the rest of this
+section.
+
+It was also, until tick 39, the only builtin that did anything but compute a
+value. `read()` is the other one and it is the other direction — see
+**Reading** — and the pair is the whole of Vine's contact with the world
+outside the program.
 
 It takes **any number of arguments, including none** — the only builtin with no
 upper bound on its arity. Each is converted with `str`, the results are joined
@@ -847,6 +852,22 @@ file goes through it, because a text file ends in a newline and a list of
 lines does not end in an empty one. `trim` is the answer and it is the reason
 `read() |> trim |> split("\n")` is the spelling above. A row count that is one
 too high is the symptom.
+
+**A file written on another machine ends its lines with `\r\n`.** `trim`
+removes the one at the end of the text, and `split` leaves every other one
+where it is:
+
+```
+split(trim("a,120\r\nb,45\r\n"), "\n")   # ["a,120\r", "b,45"]
+```
+
+Numbers come through it — `int` and `float` accept a carriage return around
+their digits the way they accept a space, see **Text** — and strings do not,
+so the field that reads back wrong is a label nobody thinks to check, in a
+report whose arithmetic is right. `map(fields, trim)` is the spelling.
+`read()` does not do it for you: what a line ends with is the file's business,
+and the one builtin whose job is to answer with what it was given is the wrong
+place to start rewriting it.
 
 **Standard input is UTF-8, the way source is.** A byte sequence that is not
 fails with the same sentence about the same byte that `vine somebinary` gives
@@ -2841,21 +2862,38 @@ visible in a golden file, because a golden is a copy of the message it checks.
 ## Not in v0.2
 
 Deliberately absent, roughly in the order they look worth adding: a
-module/import system, a `match` expression, user-defined operators, and a
-bytecode compiler. Anything here is fair game for a later tick — but adding
-one means adding its tests and updating this file in the same commit.
+module/import system, a `match` expression, a second input, user-defined
+operators, and a bytecode compiler. Anything here is fair game for a later
+tick — but adding one means adding its tests and updating this file in the
+same commit.
+
+A program's own input was never on this list at all, which is the interesting
+thing about it. `print` wrote and nothing read, so a program's
+data had to be in its source; nobody listed the absence, so for thirty-eight
+ticks nobody argued it either way. **An undecided question that is not on the
+list of undecided questions is not being carried — it is unnoticed.** Tick 39
+added `read()`; see **Reading**. What made it visible was a program, exactly as
+the paragraph above recommends: tick 38 wrote the first one that minded and
+spent sixty of its hundred and seventy-four lines manufacturing a log.
+
+The third entry above is what is left of it. `read()` takes no argument, so a
+program is given one input and a program that wants two must be given them
+joined. `read(path)` would answer that and would also give Vine a second
+opinion about where files are, after the shell's; whoever reopens it should
+bring the program that wants two inputs, because there is not one yet.
 
 Early `return` was the fifth, at the head of the list, from tick 1 until tick
 26 took it. What took it was not an argument: it was running the flattening
 that would have made it unnecessary and watching it fail on an empty list. See
-**Why `return` earns its keyword**. The other four have now been confirmed
-absent by seven ticks without one of them being argued either way, which is
-what a question looks like once it has stopped being asked. Whoever reopens
+**Why `return` earns its keyword**. The four this list has carried since tick
+1 have now been confirmed absent by seven ticks without one of them being
+argued either way, which is what a question looks like once it has stopped
+being asked — and the thirty-eight ticks of silence about input above is what
+it looks like when it was never asked. Whoever reopens
 one: the cheapest move is to write the program the feature is for, in the Vine
 there is, and read it.
 
-Audited in tick 7, rechecked in ticks 21 and 26: the remaining four are
-absent. `import` is not a keyword, so `import "x"` is two statements on one
+Audited in tick 7, rechecked in ticks 21 and 26: those four are absent. `import` is not a keyword, so `import "x"` is two statements on one
 line and says so —
 `expected end of line between statements, found the string "x"`. `match` is
 not a keyword either, so `match x { 1 => 2 }` fails at `x` for the same reason

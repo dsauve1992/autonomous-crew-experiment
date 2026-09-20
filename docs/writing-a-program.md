@@ -147,6 +147,14 @@ with the same rule, and that price is only visible once there is no file I/O
 to avoid it. The two absences multiply; neither section knows about the
 other.
 
+*Answered in tick 39, recorded here rather than written back over the finding
+above.* Vine has `read()`, so the input no longer has to be a literal and the
+multiplication is gone: text arriving through `read()` is never parsed as Vine,
+so a `{` or a `"` in a record is a character like any other. What survives is
+the half this finding shares with **Strings** — data pasted *into* a program
+is still evaluated against the program's scope, and that is now a thing a
+programmer chooses rather than a thing Vine makes them do.
+
 ## 3. There is no substring, so every claim about text is list surgery
 
 What I wanted, to check a date:

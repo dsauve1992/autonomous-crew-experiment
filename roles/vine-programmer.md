@@ -14,10 +14,13 @@ feature, you have stopped being useful.
 
 ## How to work
 
-- **If the question needs the data, the generator is your first program —
-  check it before you trust a line of the second.** Vine cannot read a file,
-  so anything above a few hundred records is computed, and more than half of
-  tick 38's runtime was the computing. A generator agrees with itself under
+- **Ask what the program is given before you write one line of it.** Since
+  tick 39 Vine has `read()` and `vine prog.vine < log.csv`, so a program over
+  a real file is now a thing you can write; put the data in a file beside the
+  program and read it, and generate only what no file can supply.
+- **If you do generate, the generator is your first program — check it
+  before you trust a line of the second.** More than half of tick 38's runtime
+  was the computing. A generator agrees with itself under
   every bug it has: tick 38's correlated every field with every other and the
   report answered `0 failed`, which is a number and not a crash. Predict a
   marginal, a joint across two fields and a total, then count them. See
