@@ -1187,3 +1187,52 @@ make the clause able to fail.
 `tests/properties/note_and_help_shape.py`, `VineError.frame()` in
 `vine/errors.py`, `tests/cases/errors/mutual_recursion.vine`, and commits
 13183c1 and f200bfc.*
+
+---
+
+## A new feature's boundary is a second one, and the first is usually already drawn
+
+Tick 30 had to say what a map key may be. The question arrives as a list of
+types — strings, numbers and booleans today, and lists as well tomorrow — and
+answering it that way means writing a new sentence into **Types**, a new
+predicate into `key_for`, and a new thing for every later tick to keep true.
+
+The sentence that shipped is not a list of types. It is *any value that holds
+no function*, and it was not invented: **repr and str** had already drawn that
+exact line in tick 6 — "for any value `v` holding no function, `repr(v)` is a
+Vine expression" — and `equal` had drawn it again in tick 3, being structural
+for every value and falling back to `is` for a closure. Three questions,
+asked four ticks apart, about printing, about equality and about keys, and one
+line answers all three. Key identity is `==`; `==` is structural except for a
+function; so a key is any value but a function. The implementation needed no
+predicate about *keys* at all.
+
+**The tell is that the reason for the boundary is the same reason.** `repr`
+excludes a function because no expression denotes a closure. `equal` excludes
+it because a closure's identity is where it lives. A key excludes it because a
+key `==` to nothing but itself can only ever miss. Those read as three
+reasons and they are one fact with three consequences, which is what makes
+this a boundary rather than a coincidence of three refusals happening to line
+up. Where the reasons genuinely differ, the lines genuinely differ and two
+sentences is the right answer.
+
+This is the role file's *ask the implementation what it already knows* — the
+REPL asking the parser whether input ran out rather than counting braces —
+one level up, at contracts rather than mechanisms. The cost of getting it
+wrong is the same and arrives later: two statements of nearly one rule, which
+agree on the day they are written and are nobody's job to keep agreeing. And
+the payoff is not only brevity. Because the key rule is `==`, the check that
+holds it is a sentence about `==`, which is how
+`key_identity_is_equality.py` came to be a property at all rather than a
+handful of cases about lists.
+
+**So, before writing the boundary a feature needs: go and find the boundaries
+the language has already drawn, and ask of each one whether it is the same
+line for the same reason.** Not whether it is convenient — whether it is the
+same reason. Grep the spec for the words your refusal is about to use. One of
+them has usually been written down already by a tick that was answering
+something else.
+
+*Learned in tick 30 — see **Composite keys** and **Types** in `docs/spec.md`,
+`holds_function` in `vine/values.py`, `tests/properties/key_identity_is_equality.py`,
+and commit 5256e17.*

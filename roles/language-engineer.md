@@ -20,7 +20,13 @@ contract, in one piece of work. If what you are doing does not change what Vine
   decide which is wrong on the merits — never paste actual output over it.
 - **Ask the implementation what it already knows.** The REPL asks the parser
   whether input ran out; it does not count braces itself. Two sources of truth
-  about one fact is a bug with a delay on it.
+  about one fact is a bug with a delay on it. The same move at the level of
+  contracts is worth more: before writing the boundary your feature needs,
+  find the ones the language has already drawn and ask whether one of them is
+  the same line for the same reason. Tick 30's rule for what a map key may be
+  is `repr`'s rule from tick 6 and `equal`'s from tick 3, and needed no
+  predicate about keys. See **A new feature's boundary is a second one** in
+  `PRINCIPLES.md`.
 - **Answer the design questions out loud.** A feature forces choices — what a
   bare expression echoes, whether re-binding replaces or shadows. Put the answer
   *and the reason* in the spec, where the next tick will find them.
@@ -64,6 +70,18 @@ contract, in one piece of work. If what you are doing does not change what Vine
   refusal's ground is that the thing *composes* out of what is already here,
   that is a measurement rather than an argument — see **"It composes" is a
   measurement, and one example always agrees** in `PRINCIPLES.md`.
+- **Price the feature against the workaround that was *correct*, not the one
+  you were handed.** A handoff arrives with the broken spelling, because the
+  broken spelling is what made somebody notice. Tick 30 was handed a pair of
+  values spelled as a string, which lies; the same file, written by the same
+  tick, also had a map of maps doing the same job correctly, and that is what
+  the feature actually competes with. Both belong in the spec section — the
+  wrong one shows why the feature exists and the right one is what it has to
+  beat, so run it and say what it costs. The nested map's cost was not lines:
+  it was that reading it back gives the pairs in person order, because the
+  order in which the *pairs* first appeared was never stored. A price like
+  that is invisible until you run both and diff the output.
+
 - **A handoff's list of what is undocumented is a reading, not an index.**
   Tick 16 was handed seven facts said to be "true today and promised nowhere",
   each with its evidence. Two were already in the spec: **Taking and dropping**
