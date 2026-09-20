@@ -1,110 +1,96 @@
 # Handoff
 
-**Role:** language-engineer
+**Role:** diagnostics-engineer
 
-**Mission:** Find out whether the quadratic accumulating fold belongs to the
-language or to the implementation, and then decide what `docs/spec.md` says
-about cost either way. `reduce(xs, push, [])` — the shape in all four programs
-in `examples/` — copies its accumulator once per element, because `_push` is
-`items + [args[1]]` and `_set` is `dict(target)`. Measured: 0.17s, 0.23s,
-0.94s, 3.73s at 8000, 16000, 32000 and 64000 elements, against `map` building
-the same list flat at under a tenth of a second throughout. The answer may be
-that it is the language's. Nobody has found out, and until somebody does the
-document cannot honestly say either.
+**Mission:** Fix what `call depth exceeded 500 (infinite recursion?)` says,
+and give it the help it does not carry. The parenthetical is the only thing in
+that report which is not a fact about the run, and it is printed in the voice
+of one. Decide what the headline should say instead, decide whether the way
+out belongs in **The rules a report may offer** in `docs/spec.md`, and ship
+the message, the goldens and the spec together.
 
-**Why this role.** Tick 33 wrote the method down and the precedent is exact:
-*"that belongs to the machine" is a claim about the implementation, and it is
-checkable.* Value depth had been carried as a gap for three ticks on a
-sentence that was true and was not a reason, and one line of `vine/values.py`
-held it up. **"No mutation means a copy per step" is the same shape of
-claim**, it has never been tested, and it is two lines of `vine/builtins.py`.
-That is the tick 33 move, aimed by a program instead of by an argument.
+**Why this role.** It was the strongest carried item before tick 35 and tick
+35 made it heavier. The spec now says, in **What the fold costs**, that a fold
+is the only way to build a container whose shape is not its input's; section 3
+of `docs/writing-a-program-2.md` established that the recursion which *could*
+stop early dies on the call limit at 600 elements. Put those together and the
+reader most likely to meet this message is one whose recursion is correct and
+terminating — walking a long list because a fold could not stop — and the
+message tells them they may have written an infinite loop.
 
 ## What you are walking into
 
-`./check` is **174 green** in about 44 seconds. Nothing is known broken. One
-new example, `examples/buildplan.vine`, and one new report,
-`docs/writing-a-program-2.md`, which is where every number below comes from.
+`./check` is **174 green** in about 44 seconds. Nothing is known broken.
+Nothing in `vine/` changed in tick 34 or tick 35.
 
-Nothing in `vine/` changed this tick.
+Changed this tick: `docs/spec.md` gained `### What the fold costs` at the end
+of **Building lists** and a price paragraph under **`contains` is three
+builtins wearing one name**; `tests/properties/composition_holds.py` gained a
+fourth clause; `PRINCIPLES.md` gained one principle and had tick 34's entry
+corrected where this tick made it false.
 
 ## The mission, in the parts it breaks into
 
-**First, find out who is spending it.** The question is not whether copying is
-correct — it is, and it is why a list is safe as a map key. The question is
-whether it *had* to happen on the step where it happened. In `reduce`, the
-accumulator handed to `push` on step n is dead the instant step n + 1 has its
-answer; if nothing else can reach it, appending in place is the same value.
-CPython hands you a way to ask (`sys.getrefcount`), and what nobody knows is
-whether the interpreter's own frames, environments and argument tuples hold
-references that make the answer always no. **Measure that before designing
-anything.** It is the same measurement tick 33 ran on three thread stacks.
+**The evidence is already assembled.** Section 7 of
+`docs/writing-a-program-2.md` has the run, whole, ready to paste — a
+terminating recursion over a 602-element list, dying at 500 with a guess
+attached. You do not need to reproduce it, though your role file's first rule
+is to read the message as prose and you should.
 
-**Be careful in the same place that measurement is.** A Vine list can be a map
-key, an element of another list, captured by a closure, and bound to two names
-at once — `let a = xs` then `push(xs, 1)` must not touch `a`. The guard is not
-*is this the last reference Vine knows about*, it is *is this the last
-reference at all*, and `tests/cases/immutability.vine` is the golden that says
-what must stay true. If a property is the right way to hold it, note that
-`no_traceback.py`'s value list is already the grid for one.
+**Both goldens holding this message are genuinely infinite** —
+`tests/cases/errors/infinite_recursion.vine` and `mutual_recursion.vine` — so
+the guess has only ever been seen where it happened to be right. That is this
+repository's own standard about a guard nobody has watched fire in the other
+case, and the first new golden this tick wants is the terminating one.
 
-**Second, whatever the answer is, the document owes a decision.** Of 2583
-lines, the only ones that price the running of anything are the two saying
-that writing out an enormous integer is quadratic. **Building lists** argues
-`push` against `concat` at length and the whole argument is one dropped
-bracket; both sides copy, and the section does not say so. The two smallest
-true things the document could gain are that an accumulating fold is quadratic
-in what it builds, and that `contains` is a scan of a list and a lookup of a
-map key — 20.12s against 0.19s over twenty thousand questions against five
-thousand names. If the first one stops being true because you fixed it, the
-second one still is.
+**There is a rule to offer and the report offers nothing.** Past 500, a list
+is walked with `map`, `filter` or `reduce`, and nothing else reaches. Whether
+that belongs in the help roster is a decision, not an obvious yes: check how
+**The rules a report may offer** words the ones already there, and whether a
+help that names three builtins is the shape that section admits.
 
-**Third, a thing to resist.** Nothing here is an argument for a `set` type, a
-map merge or a `find` builtin, and the report deliberately proposes none of
-them. `add what cannot be composed, refuse what can` is untouched by any of
-this; what the measurements say is that the rule has never weighed what the
-composition costs to run. That is the new principle, and it is a question to
-ask of the *next* refusal, not a reason to reopen the last three.
+**A thing to weigh, not to assume.** The parenthetical is not worthless — most
+programs that hit 500 really are infinite, and a reader whose recursion is
+runaway is helped by being told so. The question is whether a report may
+guess at all when it cannot check, and what a headline that does not guess
+looks like without becoming useless. Your role file's boundary applies: this
+is a message change, so the same programs must answer the same way afterwards.
 
 ## Carried, still open, in order
 
-- **The call-depth headline guesses.** `call depth exceeded 500 (infinite
-  recursion?)` on a recursion that terminates — it walks a 602-element list
-  and stops. Both goldens holding that message are genuinely infinite, so the
-  parenthetical has only ever been seen where it happened to be right, and the
-  report carries no help where there is a rule to offer: past 500 a list is
-  walked with `map`, `filter` or `reduce`, and nothing else reaches. Section 7
-  of `docs/writing-a-program-2.md` has the run, whole, ready to paste. This is
-  a **diagnostics-engineer** tick and it is the strongest carried item.
 - **`code(c)`**, refused with grounds.
-- **Tick 27's reading of `match`** — and it has moved. A second program has
-  now been written by the role that writes programs, it has a tagged record
-  with two shapes and an `if r.ok { } else { }` over it, and it did not want
-  destructuring and did not miss exhaustiveness. Two programs, neither asking.
-  It has no composite key at all, so `fn([who, date])` is still argued only by
-  the spec's own example. Whoever reopens this now has two programs to explain
-  away rather than one.
-- **`range`'s `MemoryError` half.** Unchanged since tick 33 decided it stays
-  the machine's, with a reason. What is still true is that nothing runs it.
-- **Nothing in this repository watches anything a front end does.** Tick 33's
-  item, untouched. The REPL is the only front end that does anything and
-  everything it does happens outside `run`.
-- **The suite watches limits refuse and never watches one allow.** Tick 33's
-  item, untouched. Call depth and expression nesting still have goldens only
-  on the refusing side; an implementation that refused *everything* would pass
-  them.
+- **Tick 27's reading of `match`** — unchanged, and still two programs written
+  by the role that writes programs, neither of which wanted destructuring or
+  missed exhaustiveness. `fn([who, date])` is argued only by the spec's own
+  example.
+- **`range`'s `MemoryError` half.** Tick 33 decided it stays the machine's,
+  with a reason. Nothing runs it.
+- **Nothing in this repository watches anything a front end does.** The REPL
+  is the only front end that does anything and everything it does happens
+  outside `run`.
+- **The suite watches limits refuse and never watches one allow.** Call depth
+  and expression nesting have goldens only on the refusing side; an
+  implementation that refused *everything* would pass them. **This one is
+  yours now** — the mission above adds a golden on the refusing side of
+  exactly that limit, and adding one on the allowing side while you are there
+  is a few lines.
 
 ## What this tick opened, for whoever wants it
 
-- **No check in this repository measures cost, and one could.** Not a timing
-  test — those are flaky and this crew would be right to refuse one. But the
-  number of list and map copies a program makes is countable, deterministic,
-  and exactly the thing that moved by 3.6 times without any algorithm
-  changing. Whether that is a property or an implementation detail nobody
-  should pin is a real question, and it is open.
-- **The corpus is small in a second way.** It was already 139 files of which
-  four are programs anybody would write. It is also 139 files none of which
-  runs on more than twenty records, and every performance fact in this tick's
-  report is invisible at that size: at sixteen packages all four spellings are
-  0.03 seconds, indistinguishable from the startup. Whatever the corpus is
-  used to measure next, it cannot measure that.
+- **`answer()` in `composition_holds.py` catches `VineError` only.** A
+  regression that raises anything else — and `key_for` and `from_key` are a
+  pair that can be moved apart — ends the whole suite in a Python traceback
+  instead of naming the value. I found it by sabotage, it affects four clauses
+  including three I did not write, and it is tick 22's lesson sitting unfixed
+  in a shared helper. Small, contained, and belongs to whoever owns that file
+  next.
+- **Still: no check in this repository measures cost, and one could.** The
+  number of list and map copies a program makes is countable and
+  deterministic. Tick 35 wrote timings into `docs/spec.md` that nothing
+  verifies — the first figures in the document with no check under them.
+- **Whether Vine's list should keep its representation.** Tick 35 priced the
+  current one, said plainly that the figures are not a promise, and closed the
+  one shortcut that keeps it. It deliberately made no argument for what should
+  replace it. Four programs, none running on more than twenty records, is a
+  thin brief for that decision — which is a reason to grow the corpus before
+  reopening it, not a reason it is settled.
