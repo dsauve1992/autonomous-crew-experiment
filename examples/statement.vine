@@ -9,11 +9,11 @@
 #
 # — and that is the whole difference. It does not know how many rows there
 # are, what order the columns arrive in, or whether the column it wants is
-# there at all: it finds each one by name in the header row and says so when
-# it cannot. This same file, not one character changed, runs over next
-# month's export in `tests/cases/cli/statement_april.cli`, whose columns are
-# in a different order, which has a column this one has never heard of, and
-# whose lines end the way a Windows machine ends them.
+# there at all: it finds each one by name in the header row and refuses the
+# file when it cannot. This same file, not one character changed, runs over
+# next month's export in `tests/cases/cli/statement_april.cli`, whose
+# columns are in a different order, which has a column this one has never
+# heard of, and whose lines end the way a Windows machine ends them.
 
 # -------------------------------------------------------------- a CSV row --
 
@@ -74,147 +74,143 @@ let missing = filter(wanted, fn(n) { at[n] < 0 })
 
 # ------------------------------------------------------------- the report --
 
-# All of it is inside a function so that the missing-column case can stop.
-# Vine has no `exit` and `return` is only legal inside a function, so a
-# program that decides on line 60 it cannot read this file has no other way
-# to say so and stop saying anything else.
-let report = fn() {
-  if len(missing) > 0 {
-    print("statement: I cannot read this file")
-    print("  no column named: {join(missing, ", ")}")
-    print("  it has:          {join(header, ", ")}")
-    return nil
-  }
-
-  let cell = fn(row, name) {
-    let i = at[name]
-    if i < len(row) { row[i] } else { "" }
-  }
-
-  # `slice`, `digits`, `all_digits` and `is_date` are here character for
-  # character as they are in examples/timesheet.vine. A date matters because
-  # the report prints the range it covers, and one malformed date makes that
-  # range a lie rather than an error.
-  let slice = fn(s, from, count) { take(drop(split(s, ""), from), count) |> join("") }
-  let digits = "0123456789"
-  let all_digits = fn(s) {
-    len(s) > 0 and len(filter(split(s, ""), fn(c) { not contains(digits, c) })) == 0
-  }
-  let is_date = fn(s) {
-    if len(s) != 10 { return false }
-    if slice(s, 4, 1) != "-" or slice(s, 7, 1) != "-" { return false }
-    all_digits(slice(s, 0, 4)) and all_digits(slice(s, 5, 2)) and all_digits(slice(s, 8, 2))
-  }
-
-  # A row that cannot be classified is still a row where money moved, so an
-  # empty category is a bucket and a question, never a reason to drop the
-  # amount. Only a row whose *amount* or *date* cannot be read is refused,
-  # because those are the two things the arithmetic is made of.
-  let unlabelled = "(none)"
-  let complaint = fn(n, why) { {ok: false, line: n, why: why} }
-
-  let read_row = fn(n, line) {
-    if len(trim(line)) == 0 { return nil }
-    let row = fields_of(line)
-    if len(row) < len(header) {
-      return complaint(n, "expected {len(header)} fields, found {len(row)}")
-    }
-    let date = cell(row, "date")
-    if not is_date(date) { return complaint(n, "{repr(date)} is not a date") }
-    let raw = cell(row, "amount")
-    let amount = float(raw, nil)
-    if amount == nil { return complaint(n, "{repr(raw)} is not an amount") }
-    if amount == 0.0 { return complaint(n, "an entry of zero moves no money") }
-    let category = cell(row, "category")
-    {ok: true, line: n, date: date, who: cell(row, "description"), amount: amount,
-      category: if len(category) == 0 { unlabelled } else { lower(category) }}
-  }
-
-  # `map` hands the function an element and never an index, so the index is
-  # what gets mapped over. Row i of the body is line i + 2 of the file.
-  let rows = map(range(len(body)), fn(i) { read_row(i + 2, body[i]) })
-    |> filter(fn(r) { r != nil })
-  let entries = filter(rows, fn(r) { r.ok })
-  let complaints = filter(rows, fn(r) { not r.ok })
-
-  let sum = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) }
-  let amounts = fn(rs) { sum(map(rs, fn(r) { r.amount })) }
-  let paid_in = amounts(filter(entries, fn(r) { r.amount > 0.0 }))
-  let spend = filter(entries, fn(r) { r.amount < 0.0 })
-  let paid_out = 0.0 - amounts(spend)
-
-  let by_category = reduce(spend, fn(acc, r) {
-    set(acc, r.category, get(acc, r.category, 0.0) - r.amount)
-  }, {})
-  let counted = reduce(spend, fn(acc, r) {
-    set(acc, r.category, get(acc, r.category, 0) + 1)
-  }, {})
-  let by_merchant = reduce(spend, fn(acc, r) {
-    set(acc, r.who, get(acc, r.who, 0.0) - r.amount)
-  }, {})
-
-  # The same merchant, the same amount, twice on one day. A key may be three
-  # values, so the question is a tally and not a search.
-  let charges = reduce(spend, fn(acc, r) {
-    set(acc, [r.date, r.who, r.amount], get(acc, [r.date, r.who, r.amount], 0) + 1)
-  }, {})
-  let repeated = keys(charges) |> filter(fn(k) { get(charges, k) > 1 }) |> sort(fn(k) { k[0] })
-
-  let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
-  let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
-  let pad = fn(s, w) { s + spaces(w - len(s)) }
-  let rjust = fn(s, w) { spaces(w - len(s)) + s }
-  let money = fn(x) { fixed(x, 2) }
-  let plural = fn(n, one, many) { if n == 1 { one } else { many } }
-
-  let dates = map(entries, fn(r) { r.date }) |> sort
-  print("statement: {len(entries)} entries, {first(dates)} to {dates[len(dates) - 1]}")
-  print()
-
-  print("totals")
-  print("  paid in    {rjust(money(paid_in), 10)}")
-  print("  paid out   {rjust(money(paid_out), 10)}")
-  print("  net        {rjust(money(paid_in - paid_out), 10)}")
-  print()
-
-  # Spending by category, largest first, with a bar forty characters wide at
-  # the whole month's outgoings.
-  let cats = keys(by_category) |> sort(fn(c) { 0.0 - get(by_category, c) })
-  let cat_width = widest(cats)
-  print("out, by category")
-  print(join(map(cats, fn(c) {
-    let out = get(by_category, c)
-    let share = out / paid_out
-    let bar = join(map(range(int(share * 40.0)), fn(_) { "#" }), "")
-    # `trim` takes both ends and there is no rstrip, so a last column that is
-    # sometimes empty has to carry its own separator or the golden grows a
-    # trailing space nothing can see.
-    let tail = if len(bar) == 0 { "" } else { "  " + bar }
-    "  {pad(c, cat_width)}  {rjust(money(out), 9)}  {rjust(fixed(share * 100.0, 1), 5)}%  {rjust(str(get(counted, c)), 3)}{tail}"
-  }), "\n"))
-  print()
-
-  let top = keys(by_merchant) |> sort(fn(m) { 0.0 - get(by_merchant, m) }) |> take(6)
-  let top_width = widest(top)
-  print("out, six largest by merchant")
-  print(join(map(top, fn(m) {
-    "  {pad(m, top_width)}  {rjust(money(get(by_merchant, m)), 9)}"
-  }), "\n"))
-  print()
-
-  # Three kinds of question, and only the first is about a line: the other two
-  # are invisible until the rows are added up.
-  let unlabelled_note = if contains(by_category, unlabelled) {
-    let n = get(counted, unlabelled)
-    ["  {money(get(by_category, unlabelled))} with no category, over {n} {plural(n, "entry", "entries")}"]
-  } else { [] }
-  let repeats = map(repeated, fn(k) {
-    "  {k[0]}: {k[1]} charged {money(0.0 - k[2])} {get(charges, k)} times"
-  })
-  let questions = concat(map(complaints, fn(c) { "  line {c.line}: {c.why}" }),
-    concat(repeats, unlabelled_note))
-  print("questions")
-  print(if len(questions) == 0 { "  none" } else { join(questions, "\n") })
+# The decision to refuse is made here, on the strength of the header alone and
+# before a line of the report exists. It goes out in one piece on stderr and
+# ends the program with a status of 1, so a shell downstream of this gets
+# nothing at all where a report should be -- which is the difference between
+# `vine statement.vine < junk.csv && publish` publishing and not.
+if len(missing) > 0 {
+  fail join(["statement: I cannot read this file",
+    "  no column named: {join(missing, ", ")}",
+    "  it has:          {join(header, ", ")}"], "\n")
 }
 
-report()
+let cell = fn(row, name) {
+  let i = at[name]
+  if i < len(row) { row[i] } else { "" }
+}
+
+# `slice`, `digits`, `all_digits` and `is_date` are here character for
+# character as they are in examples/timesheet.vine. A date matters because
+# the report prints the range it covers, and one malformed date makes that
+# range a lie rather than an error.
+let slice = fn(s, from, count) { take(drop(split(s, ""), from), count) |> join("") }
+let digits = "0123456789"
+let all_digits = fn(s) {
+  len(s) > 0 and len(filter(split(s, ""), fn(c) { not contains(digits, c) })) == 0
+}
+let is_date = fn(s) {
+  if len(s) != 10 { return false }
+  if slice(s, 4, 1) != "-" or slice(s, 7, 1) != "-" { return false }
+  all_digits(slice(s, 0, 4)) and all_digits(slice(s, 5, 2)) and all_digits(slice(s, 8, 2))
+}
+
+# A row that cannot be classified is still a row where money moved, so an
+# empty category is a bucket and a question, never a reason to drop the
+# amount. Only a row whose *amount* or *date* cannot be read is refused,
+# because those are the two things the arithmetic is made of.
+let unlabelled = "(none)"
+let complaint = fn(n, why) { {ok: false, line: n, why: why} }
+
+let read_row = fn(n, line) {
+  if len(trim(line)) == 0 { return nil }
+  let row = fields_of(line)
+  if len(row) < len(header) {
+    return complaint(n, "expected {len(header)} fields, found {len(row)}")
+  }
+  let date = cell(row, "date")
+  if not is_date(date) { return complaint(n, "{repr(date)} is not a date") }
+  let raw = cell(row, "amount")
+  let amount = float(raw, nil)
+  if amount == nil { return complaint(n, "{repr(raw)} is not an amount") }
+  if amount == 0.0 { return complaint(n, "an entry of zero moves no money") }
+  let category = cell(row, "category")
+  {ok: true, line: n, date: date, who: cell(row, "description"), amount: amount,
+    category: if len(category) == 0 { unlabelled } else { lower(category) }}
+}
+
+# `map` hands the function an element and never an index, so the index is
+# what gets mapped over. Row i of the body is line i + 2 of the file.
+let rows = map(range(len(body)), fn(i) { read_row(i + 2, body[i]) })
+  |> filter(fn(r) { r != nil })
+let entries = filter(rows, fn(r) { r.ok })
+let complaints = filter(rows, fn(r) { not r.ok })
+
+let sum = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0.0) }
+let amounts = fn(rs) { sum(map(rs, fn(r) { r.amount })) }
+let paid_in = amounts(filter(entries, fn(r) { r.amount > 0.0 }))
+let spend = filter(entries, fn(r) { r.amount < 0.0 })
+let paid_out = 0.0 - amounts(spend)
+
+let by_category = reduce(spend, fn(acc, r) {
+  set(acc, r.category, get(acc, r.category, 0.0) - r.amount)
+}, {})
+let counted = reduce(spend, fn(acc, r) {
+  set(acc, r.category, get(acc, r.category, 0) + 1)
+}, {})
+let by_merchant = reduce(spend, fn(acc, r) {
+  set(acc, r.who, get(acc, r.who, 0.0) - r.amount)
+}, {})
+
+# The same merchant, the same amount, twice on one day. A key may be three
+# values, so the question is a tally and not a search.
+let charges = reduce(spend, fn(acc, r) {
+  set(acc, [r.date, r.who, r.amount], get(acc, [r.date, r.who, r.amount], 0) + 1)
+}, {})
+let repeated = keys(charges) |> filter(fn(k) { get(charges, k) > 1 }) |> sort(fn(k) { k[0] })
+
+let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
+let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
+let pad = fn(s, w) { s + spaces(w - len(s)) }
+let rjust = fn(s, w) { spaces(w - len(s)) + s }
+let money = fn(x) { fixed(x, 2) }
+let plural = fn(n, one, many) { if n == 1 { one } else { many } }
+
+let dates = map(entries, fn(r) { r.date }) |> sort
+print("statement: {len(entries)} entries, {first(dates)} to {dates[len(dates) - 1]}")
+print()
+
+print("totals")
+print("  paid in    {rjust(money(paid_in), 10)}")
+print("  paid out   {rjust(money(paid_out), 10)}")
+print("  net        {rjust(money(paid_in - paid_out), 10)}")
+print()
+
+# Spending by category, largest first, with a bar forty characters wide at
+# the whole month's outgoings.
+let cats = keys(by_category) |> sort(fn(c) { 0.0 - get(by_category, c) })
+let cat_width = widest(cats)
+print("out, by category")
+print(join(map(cats, fn(c) {
+  let out = get(by_category, c)
+  let share = out / paid_out
+  let bar = join(map(range(int(share * 40.0)), fn(_) { "#" }), "")
+  # `trim` takes both ends and there is no rstrip, so a last column that is
+  # sometimes empty has to carry its own separator or the golden grows a
+  # trailing space nothing can see.
+  let tail = if len(bar) == 0 { "" } else { "  " + bar }
+  "  {pad(c, cat_width)}  {rjust(money(out), 9)}  {rjust(fixed(share * 100.0, 1), 5)}%  {rjust(str(get(counted, c)), 3)}{tail}"
+}), "\n"))
+print()
+
+let top = keys(by_merchant) |> sort(fn(m) { 0.0 - get(by_merchant, m) }) |> take(6)
+let top_width = widest(top)
+print("out, six largest by merchant")
+print(join(map(top, fn(m) {
+  "  {pad(m, top_width)}  {rjust(money(get(by_merchant, m)), 9)}"
+}), "\n"))
+print()
+
+# Three kinds of question, and only the first is about a line: the other two
+# are invisible until the rows are added up.
+let unlabelled_note = if contains(by_category, unlabelled) {
+  let n = get(counted, unlabelled)
+  ["  {money(get(by_category, unlabelled))} with no category, over {n} {plural(n, "entry", "entries")}"]
+} else { [] }
+let repeats = map(repeated, fn(k) {
+  "  {k[0]}: {k[1]} charged {money(0.0 - k[2])} {get(charges, k)} times"
+})
+let questions = concat(map(complaints, fn(c) { "  line {c.line}: {c.why}" }),
+  concat(repeats, unlabelled_note))
+print("questions")
+print(if len(questions) == 0 { "  none" } else { join(questions, "\n") })

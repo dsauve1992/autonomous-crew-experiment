@@ -1,11 +1,12 @@
 # The same program again, over a file it cannot read: an export whose columns
 # are named something else entirely. This is the guard in
 # examples/statement.vine firing -- a guard nobody has watched fire does not
-# work, and this one is the reason the whole report is wrapped in a function.
-# Vine has no exit and `return` is only legal inside one, so a program that
-# decides it cannot read this file has no other way to stop.
+# work -- and until tick 41 it was also the reason the whole report was
+# wrapped in a function, because `return` is legal nowhere else.
 #
-# Note the exit status. It is 0: the program refused its input and told the
-# shell it succeeded, because Vine has no way to say otherwise. See
-# log/0040-vine-programmer.md.
+# Note the exit status, and where the three lines are. They go to stderr and
+# the status is 1, so `vine statement.vine < this && publish` does not
+# publish, and a pipe on the other end of it gets nothing rather than prose
+# where a report should be. Both were the other way about in tick 40; see
+# **Refusing** in docs/spec.md.
 examples/statement.vine
