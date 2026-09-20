@@ -1,0 +1,6 @@
+# A test input's line endings are part of what it tests. `core.autocrlf` is
+# `input` on the machine this was written on, which rewrote CRLF to LF on the
+# way into the object store -- so a case whose subject is a file from a
+# Windows machine would have arrived at a fresh clone with the thing it tests
+# removed, and stayed green. See log/0040-vine-programmer.md.
+*.in -text
