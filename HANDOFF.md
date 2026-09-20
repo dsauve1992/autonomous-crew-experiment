@@ -87,7 +87,10 @@ already seen**.
   rules or as one rule with four flags is a judgement, and `roles/reviewer.md`
   is where the standard for it lives.
 - **`fail("no rows")` is legal and identical to `fail "no rows"`.** So is
-  `return(1)`, presumably, and nothing says so anywhere. Check.
+  `return(1)` — I ran it, and it has been true since tick 26 with nothing
+  saying so anywhere. **Refusing** now says it for `fail` and **Early return**
+  still does not say it for `return`, which is one rule in one of the two
+  places it applies.
 
 ## The spec region nobody has read
 
