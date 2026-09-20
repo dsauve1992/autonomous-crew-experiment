@@ -30,6 +30,17 @@ naming more than one program to run -- two files, or `-e` and a file -- must
 be a 2. It named two things and can do one; vine used to run the first and
 exit 0 on the rest, which is a success status for half of what was asked.
 
+A fourth clause, about the document rather than the runs: **the statuses
+these command lines produce are exactly the ones the paragraph in **Errors**
+names.** That paragraph is where the three endings are promised, and until
+this clause it was held by nobody -- this file quoted it in prose above, which
+is a copy and not a check. The shape is tick 26's: `return` became a keyword,
+the Keywords line went false, and a hundred and fifty-two checks stayed green
+over it. A status vine can return and the document does not name is an
+undocumented ending; one the document names that nothing here produces is a
+promise the implementation dropped, or a command line this file stopped
+enumerating. Both directions, for `help_roster.py`'s reason.
+
 The 1 clause tells the two voices apart by the headline, and that is a reading
 of the command lines below rather than a law about every program there could
 be: `fail "runtime error: x"` is legal Vine and would be read here as a
@@ -64,6 +75,13 @@ TRACEBACK = "Traceback (most recent call last)"
 # What a Vine report opens with. `error: ` alone is the command line's shape
 # and belongs to a 2; anything else on a failing run's stderr is a refusal.
 REPORT_HEAD = re.compile(r"^(syntax|runtime) error: ")
+SPEC = ROOT / "docs" / "spec.md"
+# The paragraph in **Errors** that promises the endings, and the numbers in
+# it. Anchored on its first words rather than found by the numbers alone:
+# `exits 0` and `exit 1` appear in five other places in that document, each
+# about one ending rather than about the set of them.
+PARAGRAPH = "Running a file exits"
+STATUS = re.compile(r"\bexits (\d+)\b")
 # Long enough that a hang is what it catches, short enough that a hung suite
 # still finishes. Every command line below is milliseconds of real work.
 TIMEOUT = 30
@@ -164,6 +182,25 @@ def programs_named(argv):
     return count
 
 
+def documented_statuses():
+    """The endings **Errors** promises, read out of the document.
+
+    Returns None if the paragraph is not where this expects it, which is a
+    failure of its own: a property that reads a document and finds nothing
+    reads nothing, and passes.
+    """
+    lines = SPEC.read_text(encoding="utf-8").splitlines()
+    starts = [i for i, line in enumerate(lines) if line.startswith(PARAGRAPH)]
+    if len(starts) != 1:
+        return None
+    body = []
+    for line in lines[starts[0]:]:
+        if not line.strip():
+            break
+        body.append(line)
+    return {int(n) for n in STATUS.findall(" ".join(body))}
+
+
 def asks_a_question(argv):
     return any(a in ("-h", "--help", "-v", "--version") for a in argv)
 
@@ -223,6 +260,7 @@ def check():
     """Returns (how many command lines were checked, the ones that broke it)."""
     failures = []
     checked = 0
+    seen = set()
     with tempfile.TemporaryDirectory() as scratch_name:
         scratch = pathlib.Path(scratch_name)
         (scratch / "empty.vine").write_text("")
@@ -247,8 +285,24 @@ def check():
             except subprocess.TimeoutExpired:
                 failures.append((shown, f"did not finish in {TIMEOUT}s"))
                 continue
+            seen.add(done.returncode)
             broke = broken_by(argv, done)
             if broke is not None:
                 failures.append((shown, broke))
         os.chmod(noread, 0o600)
+
+    checked += 1
+    promised = documented_statuses()
+    if promised is None:
+        failures.append((
+            str(SPEC),
+            f"has no one paragraph starting {PARAGRAPH!r} -- the endings are "
+            "promised somewhere this cannot find, so nothing was compared",
+        ))
+    elif promised != seen:
+        failures.append((
+            str(SPEC),
+            f"promises the endings {sorted(promised)} and these command lines "
+            f"produced {sorted(seen)}",
+        ))
     return checked, failures

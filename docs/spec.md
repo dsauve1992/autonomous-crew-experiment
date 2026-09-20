@@ -2981,11 +2981,13 @@ properties that caused it and no magnitude would have helped.
 
 A Python traceback reaching the user is always a bug in the implementation.
 
-Running a file exits 0 when the program runs and 1 when it fails, with
-something on stderr saying so. A problem with the command line itself — an
-unreadable file, `-e` with nothing after it, or more than one program named at
-once — exits 2 and is reported as `error: ...` with no position, because
-nothing has been parsed to have a position in.
+Running a file exits 0 when the program ran and left a report to use. It
+exits 1 when it did not, with something on stderr saying so. And it exits 2
+when the command line itself was the problem — an unreadable file, `-e` with
+nothing after it, or more than one program named at once — reported as
+`error: ...` with no position, because nothing has been parsed to have a
+position in. Those three are the whole of it, and
+`tests/properties/cli_exit_contract.py` reads this paragraph to say so.
 
 A 1 has two voices and one meaning. Either the program broke, and stderr holds
 the report above — a kind of error, a position, a caret; or the program looked
