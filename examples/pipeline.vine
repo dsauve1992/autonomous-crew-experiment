@@ -21,9 +21,12 @@
 # of timestamp in, seconds out, and seconds back into something a column can
 # hold. `table.vine` is the shared one.
 let clock = import "clock.vine"
+let duration = clock.duration
 let table = import "table.vine"
+let pad = table.pad
+let rjust = table.rjust
 
-# Deliberately *not* `let duration = clock.duration`, which is what the four
+# Deliberately *not* `let duration = duration`, which is what the four
 # converted programs of tick 43 do and what **Importing** recommends. See the
 # log for tick 44: with six call sites the qualified spelling is the one that
 # reads, and inside a module it is not a choice at all.
@@ -82,7 +85,7 @@ let pair = fn(st, e) {
   else if e.secs < held.secs {
     # Two machines, two clocks. The step is closed anyway -- a second end for
     # it would otherwise be reported as a step that never started -- but it
-    # has no duration, and a negative one run through `clock.duration` would
+    # has no duration, and a negative one run through `duration` would
     # come out looking like a real number.
     set(note("{e.build} {e.step} ended before line {held.line} started it"),
       "open", set(st.open, key, nil))
@@ -161,26 +164,26 @@ print()
 let id_w = table.widest(map(builds, fn(b) { b.id }))
 let outcome_w = table.widest(map(builds, fn(b) { b.outcome }))
 let count_w = table.widest(map(builds, fn(b) { "{b.steps} {plural(b.steps, "step", "steps")}" }))
-let elapsed_w = table.widest(map(builds, fn(b) { clock.duration(b.secs) }))
+let elapsed_w = table.widest(map(builds, fn(b) { duration(b.secs) }))
 print("builds")
 print(join(map(builds, fn(b) {
   let count = "{b.steps} {plural(b.steps, "step", "steps")}"
   # `trim` takes both ends and there is no rstrip, so the last column carries
   # its own separator rather than leaving a space a golden cannot show.
   let tail = if len(b.note) == 0 { "" } else { "  " + b.note }
-  "  {table.pad(b.id, id_w)}  {table.pad(b.outcome, outcome_w)}  {table.rjust(count, count_w)}  {table.rjust(clock.duration(b.secs), elapsed_w)}{tail}"
+  "  {pad(b.id, id_w)}  {pad(b.outcome, outcome_w)}  {rjust(count, count_w)}  {rjust(duration(b.secs), elapsed_w)}{tail}"
 }), "\n"))
 print()
 
 let step_w = table.widest(concat(steps, ["step"]))
 let runs_w = table.widest(concat(map(steps, fn(s) { str(get(counted, s)) }), ["runs"]))
-let spent_w = table.widest(concat(map(steps, fn(s) { clock.duration(get(spent, s)) }), ["total"]))
-let worst_w = table.widest(concat(map(steps, fn(s) { clock.duration(get(worst, s).secs) }), ["slowest"]))
-print("steps, {clock.duration(total_spent)} in all")
-print("  {table.pad("step", step_w)}  {table.rjust("runs", runs_w)}  {table.rjust("total", spent_w)}  {table.rjust("slowest", worst_w)}")
+let spent_w = table.widest(concat(map(steps, fn(s) { duration(get(spent, s)) }), ["total"]))
+let worst_w = table.widest(concat(map(steps, fn(s) { duration(get(worst, s).secs) }), ["slowest"]))
+print("steps, {duration(total_spent)} in all")
+print("  {pad("step", step_w)}  {rjust("runs", runs_w)}  {rjust("total", spent_w)}  {rjust("slowest", worst_w)}")
 print(join(map(steps, fn(s) {
   let slowest = get(worst, s)
-  "  {table.pad(s, step_w)}  {table.rjust(str(get(counted, s)), runs_w)}  {table.rjust(clock.duration(get(spent, s)), spent_w)}  {table.rjust(clock.duration(slowest.secs), worst_w)}  {slowest.build}"
+  "  {pad(s, step_w)}  {rjust(str(get(counted, s)), runs_w)}  {rjust(duration(get(spent, s)), spent_w)}  {rjust(duration(slowest.secs), worst_w)}  {slowest.build}"
 }), "\n"))
 print()
 
