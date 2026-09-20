@@ -81,6 +81,11 @@ let wave_of = reduce(range(len(built.waves)), fn(acc, i) {
 # Breadth-first reachability over any adjacency map, which is two graphs here:
 # the manifest, for what a package needs, and its reverse, for what needs it.
 # `seen` doubles as the answer and as the guard against walking a cycle twice.
+#
+# `seen` is a list, so each `contains` is a scan. Section 1 of
+# docs/writing-a-program-2.md measures what that costs: nothing at sixteen
+# packages, 3.6 times at eight hundred, where the same walk with a map for
+# `seen` answers identically. Read it before growing the manifest.
 let reach = fn(g, frontier, seen) {
   if len(frontier) == 0 { return seen }
   let next = reduce(frontier, fn(acc, name) { concat(acc, get(g, name, [])) }, [])
