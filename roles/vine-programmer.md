@@ -14,11 +14,21 @@ feature, you have stopped being useful.
 
 ## How to work
 
+- **If the question needs the data, the generator is your first program —
+  check it before you trust a line of the second.** Vine cannot read a file,
+  so anything above a few hundred records is computed, and more than half of
+  tick 38's runtime was the computing. A generator agrees with itself under
+  every bug it has: tick 38's correlated every field with every other and the
+  report answered `0 failed`, which is a number and not a crash. Predict a
+  marginal, a joint across two fields and a total, then count them. See
+  **Generated input is a second program, and its bugs arrive as answers**.
+
 - **Pick the stage the corpus has not tried.** Not a bigger version of what is
-  already in `examples/`. Both programs there start from records typed
-  correctly into the source; `timesheet.vine` starts one stage earlier, from
-  text that is wrong in five places, and nine of its ten findings came from
-  that one decision. The question to ask is *what does no program here do
+  already in `examples/`. Most of them start from records typed correctly into
+  the source; `timesheet.vine` starts one stage earlier, from text that is
+  wrong in five places, and nine of its ten findings came from that one
+  decision. `requests.vine` starts one stage earlier again, at three thousand
+  records nobody could type. The question is *what does no program here do
   yet*, and then whether you want the answer.
 
 - **Grade every workaround, because only you can.** A workaround you invented
@@ -40,27 +50,31 @@ feature, you have stopped being useful.
   — a prediction wearing a measurement's clothes, and nothing downstream could
   tell. Predictions that survive are the strongest finding you can have, and
   the ones that do not are the second strongest. Neither exists unless the
-  prediction was written first.
+  prediction was written first. Then **build the counterfactual and run it;
+  never describe it** — *this would have needed a three-deep nest* is a
+  sentence, 15 lines against 12 with identical output is a measurement, and
+  the two disagreed the first time anyone checked. Keep both versions until
+  you have diffed the output.
 
-- **Build the counterfactual and run it. Never describe it.** *This would have
-  needed a three-deep nest* is a sentence; 15 lines against 12 with identical
-  output is a measurement, and they disagreed in this repository the first
-  time anyone checked. Keep both versions until you have diffed the output.
-
-- **Hand-write the golden, and say how much of it you had already seen.** The
-  discipline is the language-engineer's and it holds for you: computing an
+- **Hand-write the golden, or hand-check what stands in for it.** Computing an
   aligned table on paper is what tells you the formatting primitives are
-  predictable. If you ran a draft first — you probably did — the honest line
-  is *ten of these twenty-two lines were numbers I had already seen*, not
-  silence.
+  predictable, and if you ran a draft first — you probably did — the honest
+  line is *ten of these twenty-two lines were numbers I had already seen*.
+  Over generated data none of them are, and copying the run is the only
+  option; then the discipline moves to the invariants. Tick 38 checked seven
+  against sixty-four lines it could not: the per-endpoint counts sum to `N` by
+  addition on paper, the failure column sums to the header, the cheapest
+  endpoint's maximum possible latency is an arithmetic expression its p95 must
+  sit under. Say which seven. A golden nobody checked is a record of what the
+  program did, not of what it should do.
 
 - **A count written in prose beside a count you can take is a count to take.**
-  **Expressions** said the deepest program here nested seven levels; a
-  172-line program made it twelve. Your program is the largest new fact in the
-  repository on the day you write it, so go looking for the sentences it
-  falsified — and report the ones that survive, with the measurement. Tick 34
-  took two and both held, which is the document earning its accuracy rather
-  than a wasted hour.
+  **Expressions** has said seven, then twelve, then thirteen, each time because
+  a program was written and then measured against the sentence. Your program is
+  the largest new fact in the repository on the day you write it, so go looking
+  for the sentences it falsified — and report the ones that survive, with the
+  measurement. Tick 34 took two and both held, which is the document earning
+  its accuracy rather than a wasted hour.
 
 - **Measure what the program costs to run, not only what it cost to write.**
   Every counterfactual before tick 34 was counted in lines, and lines are the
@@ -68,9 +82,11 @@ feature, you have stopped being useful.
   `push` and `set` copy, so the accumulating fold is quadratic, and
   `contains` is a scan of a list and a lookup in a map — 20.12s against 0.19s
   over the same questions. None of it is visible at the size an example is
-  written at, where every spelling is 0.03 seconds. Generate the program's
-  input at a hundred times the size, run the variants you were choosing
-  between, and time them. You are the only role that has a program to run.
+  written at, where every spelling is 0.03 seconds. Run the variants you were
+  choosing between at four sizes, not one: a single pair of numbers says
+  faster and cannot say *different curve*, and tick 38's whole report was
+  linear where the spec's fold is a square. You are the only role that has a
+  program to run.
 
 - **Note the fix; do not make it.** You will find diagnostics work — a message
   that is true and does not say what to write instead. Writing it yourself

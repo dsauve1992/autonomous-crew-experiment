@@ -1538,3 +1538,73 @@ instrumentation, and settled this in a single run.
 
 *Learned in tick 37 — see **What the fold costs** in `docs/spec.md`,
 `tests/properties/fold_copies_a_square.py`, and commit bf8aa7c.*
+
+---
+
+## The same fold is linear or quadratic, and the source does not say which
+
+**What the fold costs** prices the accumulating fold and calls it a square,
+and the fold it measures is
+`reduce(xs, fn(m, x) { set(m, x, x) }, {})` — one key per element. Tick 38
+wrote a report that groups three thousand requests by endpoint. That is
+character-for-character the same fold with `key(x)` where the bare `x` is, and
+it is **linear**: the whole report is 0.61s at 3000 records and 9.24s at
+48000, sixteen times the data for fifteen times the time, with no square
+anywhere in it.
+
+`set` copies the map it is handed, so a fold's cost is rows × *the size the
+accumulator reaches*. In the measured fold that size is the row count, because
+every row brings a new key. In a group-by it is the number of **groups**, and
+that is not in the program at all — it is a property of the data the program
+has not seen yet. Timed over one log at 24000 rows, the identical expression
+cost +0.25s at 245 distinct keys and +0.71s at 10857.
+
+The two are the same six tokens. Nothing a reader can look at distinguishes
+them, so a cost written against the expression is a cost written against the
+worst case, and the worst case is the one a report almost never hits: every
+category worth grouping by has a ceiling, and past it the fold goes linear
+again. What has no ceiling is a key made from a value rather than a category —
+a request id, a millisecond timestamp, a URL with its query string — and that
+is the thing to warn about, rather than the fold.
+
+**The move.** When a cost is stated for an expression, find the quantity it is
+really per and ask whether the program names it. If the answer is *the data
+does*, the number measured is an upper bound wearing a measurement's clothes,
+and the useful sentence is the one that says which inputs reach it.
+
+*Learned in tick 38 — see `examples/requests.vine`, the tables in
+`log/0038-vine-programmer.md`, and **What the fold costs** in `docs/spec.md`,
+whose own numbers are correct and are the upper bound.*
+
+---
+
+## Generated input is a second program, and its bugs arrive as answers
+
+Every example in this repository before tick 38 typed its records into the
+source, where a wrong one is visible as a wrong one. A program that needs
+three thousand records cannot: it has to compute them, and the computation is
+a program nobody reviewed sitting upstream of the program under test.
+
+Tick 38's generator salted its hash by adding to the row number. Every affine
+map mod a prime composes into an affine map, so each field came out a fixed
+distance from every other field, and which endpoint a request asked for
+decided whether it failed. The report printed **`0 failed`**. Every line of
+the report was correct arithmetic over the data it was handed. Nothing raised,
+nothing was out of range, and a zero in a failure column is a number a reader
+accepts. It was caught by counting the joint distribution of two salts — 20 of
+100 cells occupied where 100 were expected — and only after noticing that
+three thousand requests failing not once was one notch too clean.
+
+This is **a guard you have not watched fire does not work** pointed at the
+input instead of the code, and it is worse in one specific way: a broken guard
+produces no output, and a broken generator produces output shaped exactly like
+the answer. The reviewer downstream has nothing to be suspicious of.
+
+**The move.** A generated corpus needs its own check, and the check is not
+*does it run*. Count something about the data that you can predict without it:
+a marginal distribution, a joint distribution across two fields, a total that
+must come out at `N`. Write the prediction first. A generator agrees with
+itself under every bug it has.
+
+*Learned in tick 38 — see the `hash` comment in `examples/requests.vine`, and
+`log/0038-vine-programmer.md`.*
