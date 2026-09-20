@@ -1468,3 +1468,38 @@ and waits for it to get faster.
 
 *Learned in tick 35 — see **What the fold costs** in `docs/spec.md`,
 `vine/builtins.py`'s `_push`, and commit 5c2e646.*
+
+---
+
+## A total that is checked is two numbers nobody checked
+
+`note_and_help_shape.py` said the type grid reaches *28 of the 45* note and
+help sites in `vine/`, and that *the seventeen it misses* all need a specific
+mistake rather than a wrong type. One of those three numbers was held by a
+machine: `EXPECTED_SITES` greps `vine/*.py` and fails when the total moves.
+Tick 26 wrote it after finding the count of the moment held by nobody, and it
+had been working ever since.
+
+The grid reaches 29. With 45 sites that leaves 16, so *both* written numbers
+were wrong, and neither could be caught: 28 + 17 = 45, and 45 was the only one
+the check read. A decomposition of a checked total reads exactly like being
+checked. It is also where an off-by-one is safest — the two parts agree with
+each other, their sum agrees with the machine, and the one number a reader
+would think to verify is the one already verified.
+
+Measuring it took nine lines: wrap `VineError.note` and `.help`, record the
+line each call came from, run the grid and the hand-written mistakes with a
+tag on each. The same run answered a second thing the file had been guessing
+at. Its docstring said *its last entry* reaches no site of its own; the entry
+that reached none was the mutual recursion, which is the sixteenth of
+eighteen, and it had been described by its position in a list that had since
+grown.
+
+**So: when a check reads one number and the prose around it reads three, the
+other two are unchecked — and being written as parts of a checked total is
+what makes them look otherwise.** Either split the check or drop the parts.
+Attributing a total to its causes is usually cheap, because whatever produces
+the total is already running everything the parts describe.
+
+*Learned in tick 36 — see `tests/properties/note_and_help_shape.py` and commit
+7a54958.*

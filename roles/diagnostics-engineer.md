@@ -72,7 +72,12 @@ that is *false* is a bug for whoever owns the code that produced it.
   fourth message needed to know two strings look alike, which no code here can
   answer without a Unicode table; the condition written for it was a tautology
   that could never fire. See PRINCIPLES.md. A message you cannot produce is
-  worse than one you decided against, because it reads as shipped.
+  worse than one you decided against, because it reads as shipped. Tick 36
+  met the other half of that: `(infinite recursion?)` was a fact the
+  implementation *could* print and could not check, so it shipped a diagnosis
+  in the voice of a fact for thirty-five ticks, in a report whose every other
+  line was a fact about the run. Both goldens holding it were genuinely
+  infinite, so the guess had only ever been seen where it was right.
 - **A true message is not automatically a good one.** `unterminated string`
   is correct about `"{"` and useless. That gap is what notes are for, and
   recognising it is most of the job.
@@ -83,6 +88,14 @@ that is *false* is a bug for whoever owns the code that produced it.
 - **Note is a fact; help is a rule.** If you find yourself writing "you
   probably meant", you are about to print a guess in the voice of a fact.
   State what is true about the program, and let a `help` offer the rule.
+- **Where you attach an extra line decides where it prints — until the
+  rendering decides instead.** Twelve reports read *notes, then help* because
+  each happened to add one note before one help, and nothing arranged it. The
+  call-depth help is attached where the failure is raised and its notes by the
+  five hundred calls it leaves through, so it printed first. `note_lines()`
+  now orders by what a line *is*. Any shape a report has never been built in
+  is a convention nobody arranged, and the report that breaks one is the one
+  you are writing.
 - **Do not decorate what is already clear.** A note on every message is noise,
   and noise is the failure mode of this whole job. Add one where the headline
   is true and still misleading; nowhere else. Once notes come from a
