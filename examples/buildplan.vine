@@ -1,0 +1,180 @@
+# A build planner over a package manifest. A monorepo is a graph, and the
+# three questions anybody maintaining one asks are the three answered here: in
+# what order can this be built, what is the longest chain through it, and what
+# does it cost to touch any one package. Then the same questions are asked of
+# a proposed change, which is the only reason to own the tool.
+#
+# Nothing in this file is a report over records. A graph is not a table: every
+# answer below is a traversal, and a traversal in Vine has to carry its own
+# state in its arguments, because there is no loop to put a variable in.
+
+let manifest = {
+  "web":        ["ui", "api-client", "config"],
+  "mobile":     ["api-client", "config"],
+  "api":        ["auth", "billing", "store", "logging"],
+  "worker":     ["billing", "queue", "store", "logging"],
+  "auth":       ["store", "crypto", "logging"],
+  "billing":    ["store", "ledger", "logging"],
+  "ledger":     ["store", "money"],
+  "store":      ["config", "logging"],
+  "queue":      ["config", "logging"],
+  "api-client": ["config", "types"],
+  "ui":         ["types", "icons"],
+  "crypto":     ["config"],
+  "money":      ["types"],
+  "logging":    ["config"],
+  "config":     [],
+  "types":      [],
+}
+
+let packages = keys(manifest)
+let deps_of = fn(g, name) { get(g, name, []) }
+
+let dedupe = fn(xs) {
+  reduce(xs, fn(acc, x) { if contains(acc, x) { acc } else { push(acc, x) } }, [])
+}
+
+# Every name any package mentions. `concat` is here rather than `+` because a
+# fold needs a function and an operator is not a value.
+let mentioned = fn(g) { dedupe(reduce(values(g), concat, [])) }
+
+# A name nothing declares is something built elsewhere: already available, and
+# worth saying out loud, because the usual reason for one is a typo.
+let outside = fn(g) { filter(mentioned(g), fn(d) { not contains(keys(g), d) }) }
+
+let edges = reduce(values(manifest), fn(n, ds) { n + len(ds) }, 0)
+
+let problems = sort(packages)
+  |> map(fn(p) {
+    filter(deps_of(manifest, p), fn(d) { not contains(packages, d) })
+      |> map(fn(d) { "  {p} needs {d}, which the manifest does not declare" })
+  })
+  |> reduce(concat, [])
+
+# The build order, as waves: everything in a wave can be built at once, and
+# needs everything in the waves above it. This is the loop the language does
+# not have -- repeat until nothing is left -- so it is a function that calls
+# itself with the next state, and its three accumulators are its parameters.
+#
+# It answers two things: the waves, and, if it jams, what was left. A function
+# returns one value, so the two travel as one record with a tag on it.
+let plan_from = fn(g, left, done, waves) {
+  if len(left) == 0 { return {ok: true, waves: waves, stuck: []} }
+  let ready = sort(filter(left, fn(p) {
+    len(filter(deps_of(g, p), fn(d) { not contains(done, d) })) == 0
+  }))
+  if len(ready) == 0 { return {ok: false, waves: waves, stuck: sort(left)} }
+  plan_from(g, filter(left, fn(p) { not contains(ready, p) }),
+    concat(done, ready), push(waves, ready))
+}
+
+let plan = fn(g) { plan_from(g, keys(g), outside(g), []) }
+
+let built = plan(manifest)
+
+# Which wave each package landed in. A fold inside a fold, where the inner one
+# starts from the outer accumulator, is how two levels are walked at once.
+let wave_of = reduce(range(len(built.waves)), fn(acc, i) {
+  reduce(built.waves[i], fn(m, name) { set(m, name, i + 1) }, acc)
+}, {})
+
+# Breadth-first reachability over any adjacency map, which is two graphs here:
+# the manifest, for what a package needs, and its reverse, for what needs it.
+# `seen` doubles as the answer and as the guard against walking a cycle twice.
+let reach = fn(g, frontier, seen) {
+  if len(frontier) == 0 { return seen }
+  let next = reduce(frontier, fn(acc, name) { concat(acc, get(g, name, [])) }, [])
+    |> dedupe
+    |> filter(fn(name) { not contains(seen, name) })
+  reach(g, next, concat(seen, next))
+}
+
+let reachable = fn(g, name) { rest(reach(g, [name], [name])) }
+
+let dependents = reduce(packages, fn(acc, p) {
+  reduce(deps_of(manifest, p), fn(inner, d) {
+    set(inner, d, push(get(inner, d, []), p))
+  }, acc)
+}, {})
+
+let needs = fn(p) { len(reachable(manifest, p)) }
+let rebuilds = fn(p) { len(reachable(dependents, p)) }
+
+# The longest chain is read off the waves rather than searched for: a package
+# in wave n has a dependency in wave n-1, so following the deepest dependency
+# each time walks a chain as long as the plan is deep.
+let chain = fn(name) {
+  let deepest = sort(deps_of(manifest, name), fn(d) { -get(wave_of, d, 0) })
+  if len(deepest) == 0 or get(wave_of, first(deepest), 0) == 0 { return [name] }
+  concat([name], chain(first(deepest)))
+}
+
+# Two passes, least significant first: by name, then by wave, so the ties are
+# in name order rather than in the order the manifest happens to be typed.
+let by_wave = sort(packages) |> sort(fn(p) { -get(wave_of, p) })
+let by_cost = sort(packages) |> sort(fn(p) { -rebuilds(p) })
+
+let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
+let pad = fn(s, w) { s + spaces(w - len(s)) }
+let rjust = fn(s, w) { spaces(w - len(s)) + s }
+let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
+let name_width = widest(concat(packages, ["package"]))
+let row = fn(name, wave, n, r) {
+  "  {pad(name, name_width)}  {rjust(wave, 4)}  {rjust(n, 5)}  {rjust(r, 8)}"
+}
+
+print("build plan: {len(packages)} packages, {edges} dependencies")
+print()
+print("problems")
+print(join(problems, "\n"))
+print()
+print("build order: {len(built.waves)} waves")
+print(join(map(range(len(built.waves)), fn(i) {
+  "  wave {i + 1}  {join(built.waves[i], "  ")}"
+}), "\n"))
+print()
+let longest = chain(first(by_wave))
+print("longest chain: {len(longest)} deep")
+print("  {join(longest, " -> ")}")
+print()
+print("cost of a change")
+print(row("package", "wave", "needs", "rebuilds"))
+print(join(map(by_cost, fn(p) {
+  row(p, "{get(wave_of, p)}", "{needs(p)}", "{rebuilds(p)}")
+}), "\n"))
+print()
+
+# The question the tool exists for. Money wants to ask billing what currency a
+# customer is in; billing already needs ledger, and ledger needs money.
+let proposed = set(manifest, "money", push(deps_of(manifest, "money"), "billing"))
+let after = plan(proposed)
+
+# Where in a path a name first appears. A fold cannot stop, so this one keeps
+# folding after it has the answer and carries it past the rest.
+let index_of = fn(xs, x) {
+  reduce(range(len(xs)), fn(found, i) {
+    if found == nil and xs[i] == x { i } else { found }
+  }, nil)
+}
+
+# Depth-first through the packages that never became ready -- only those can be
+# in a cycle -- carrying the path walked to get here. Meeting a name already on
+# the path is the cycle, and the cycle is the path from there on.
+let find_cycle = fn(g, name, path, live) {
+  if contains(path, name) { return push(drop(path, index_of(path, name)), name) }
+  reduce(filter(deps_of(g, name), fn(d) { contains(live, d) }), fn(found, d) {
+    if found != nil { return found }
+    find_cycle(g, d, push(path, name), live)
+  }, nil)
+}
+
+print("proposed: money also needs billing")
+if after.ok {
+  print("  still builds, in {len(after.waves)} waves")
+} else {
+  print("  no build order: {len(after.stuck)} of {len(keys(proposed))} packages never become ready")
+  let cycle = find_cycle(proposed, first(after.stuck), [], after.stuck)
+  print("  cycle: {join(cycle, " -> ")}")
+  let blocked = filter(after.stuck, fn(p) { not contains(cycle, p) })
+  print("  also blocked: {join(blocked, ", ")}")
+}

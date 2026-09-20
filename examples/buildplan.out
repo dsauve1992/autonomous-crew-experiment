@@ -1,0 +1,39 @@
+build plan: 16 packages, 32 dependencies
+
+problems
+  ui needs icons, which the manifest does not declare
+
+build order: 6 waves
+  wave 1  config  types
+  wave 2  api-client  crypto  logging  money  ui
+  wave 3  mobile  queue  store  web
+  wave 4  auth  ledger
+  wave 5  billing
+  wave 6  api  worker
+
+longest chain: 6 deep
+  api -> billing -> ledger -> store -> logging -> config
+
+cost of a change
+  package     wave  needs  rebuilds
+  config         1      0        12
+  types          1      0         9
+  logging        2      1         7
+  store          3      2         5
+  money          2      1         4
+  ledger         4      5         3
+  api-client     2      2         2
+  billing        5      6         2
+  crypto         2      1         2
+  auth           4      4         1
+  queue          3      2         1
+  ui             2      2         1
+  api            6      9         0
+  mobile         3      3         0
+  web            3      5         0
+  worker         6      8         0
+
+proposed: money also needs billing
+  no build order: 5 of 16 packages never become ready
+  cycle: billing -> ledger -> money -> billing
+  also blocked: api, worker
