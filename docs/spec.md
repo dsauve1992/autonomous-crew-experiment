@@ -1034,6 +1034,17 @@ mistake and not a lookup that missed. A list and a map are keys (see
 **Composite keys**), so those are fair questions with real answers. Absence is
 what `get(m, k, default)` is for.
 
+**The three also have three prices, and the gap is the widest in the
+language.** A string is searched, a list is scanned element by element with
+`==`, and a map is one hash lookup. Asking twenty thousand questions of five
+thousand names is **19.80s** when the names are a list and **0.20s** when they
+are a map — a hundred to one, for one character of difference at the call and
+none at all in the answer. Which container a program keeps its names in is
+usually decided by what else it does with them; when membership is the
+question being asked in a loop, it is decided by this. See **What the fold
+costs** under **Building lists**, which is the same choice arriving from the
+other side.
+
 ### Why there is no `replace`
 
 `replace(s, from, to)` is `join(split(s, from), to)`, and the rule is **add
@@ -1674,6 +1685,75 @@ argument only, because its second is deliberately any value at all:
 This is the same shape as **Taking and dropping**, where `first` and `rest`
 stay beside the `take` and `drop` that generalise them. A special case that
 reads as itself is kept; a special case that only saves typing is not.
+
+### What the fold costs
+
+That `dedupe` is quadratic, and so is every other fold on this page. The
+section has argued `push` against `concat` at length without saying so, and
+the argument above is complete without it — but a reader who takes `push` on
+that argument and writes the loop it is for should be told what the loop
+costs.
+
+**Both builtins copy, and so does `set`.** `push(xs, x)` builds a list of
+`len(xs) + 1`, `concat(a, b)` one of `len(a) + len(b)`, `set(m, k, v)` a map
+of `len(m) + 1`. That is not an oversight; it is what *nothing in Vine
+mutates* means, and it is what makes a list safe as a map key — see
+**Composite keys**. One copy is a copy. One copy per element is the square:
+
+```text
+reduce(xs, fn(a, x) { push(a, x) }, [])       0.15s  0.30s  1.06s  3.89s
+reduce(xs, fn(m, x) { set(m, x, x) }, {})     0.19s  0.47s  1.68s
+map(xs, fn(x) { x })                          0.03s  0.04s  0.04s  0.06s
+```
+
+at 8000, 16000, 32000 and 64000 elements. Doubling the input quadruples the
+first two and does nothing to the third. `reduce(xss, concat, [])`, the
+flattening this section offers as `concat`'s reason to exist, is the same
+curve at a quarter the size: 0.04s, 0.08s and 0.25s at 4000, 8000 and 16000
+one-element lists.
+
+**`map` and `filter` are flat because they have no accumulator.** Each builds
+its answer in one pass and never holds a partial one. A fold does hold one, by
+construction — that is what a fold is — and Vine has no loop, so a fold is the
+only way to build a container whose shape is not one-to-one with its input.
+The cost lands exactly where there is no alternative spelling.
+
+**So the shape to reach for is a map, not a longer list.** `dedupe` above asks
+`contains(acc, x)` of a list that is growing, which is a scan inside a copy;
+the same answer folded into a map is a hash lookup inside a copy, and the list
+comes back out with `keys`:
+
+```
+let dedupe = fn(xs) { keys(reduce(xs, fn(m, x) { set(m, x, true) }, {})) }
+```
+
+Over 8000 distinct elements that is **0.13s against 9.37s** — the same list,
+in the same order, seventy-two times faster. The order survives because a map's
+keys are in the order they first appeared, which **Map order** already
+promises and `set` on a key already present does not disturb. The two spellings agree on every pair and triple of the
+value list in `tests/properties/no_traceback.py`, which
+`tests/properties/composition_holds.py` enumerates.
+
+**What the map spelling costs is a list holding a function.** A function may
+not be a key, so `dedupe([fn() { 1 }, 1])` fails where the `contains` spelling
+answers. That is the whole of the difference, it is the rule **Looking up a
+key** states rather than a new one, and it is the reason both spellings are on
+this page instead of one.
+
+**These numbers are the implementation's, and they are not a promise.** What
+the language fixes is that `push` answers a new list; how much of the old one
+gets copied to do it is `vine/builtins.py`'s business, and a representation
+with a cheaper append would change every figure above without changing a
+single answer. What is closed is the shortcut that keeps the current
+representation: appending in place when nothing else can see the list. The
+accumulator of `reduce(xs, fn(acc, x) { push(acc, x) }, [])` is held by five
+references at the moment `push` runs, one of them the binding of `acc` in the
+function's own environment — a name the body is still free to mention. And
+the case where it is safe and the case where it is not are indistinguishable
+from the inside: `reduce(xs, push, [])`, where only the fold holds the list,
+and `let xs = [1, 2]` followed by `push(xs, 3)`, where a live name does, both
+count exactly three. So write a fold expecting the square, and do not write
+one expecting it to be fixed.
 
 ## Taking and dropping
 
