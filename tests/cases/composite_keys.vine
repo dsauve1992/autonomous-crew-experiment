@@ -1,0 +1,44 @@
+# A key is any value that holds no function, so a person and a day stay a
+# pair. See `Composite keys` in docs/spec.md.
+let rows = [
+  {who: "mary jane", date: "2026-01-05", hours: 13.0},
+  {who: "ada", date: "2026-01-05", hours: 4.0},
+  {who: "mary jane", date: "2026-01-06", hours: 13.0}
+]
+let totals = reduce(rows, fn(m, r) {
+  set(m, [r.who, r.date], get(m, [r.who, r.date], 0.0) + r.hours)
+}, {})
+print(totals)
+print(len(totals))
+print(map(keys(totals), fn(k) { "{k[0]} on {k[1]}" }))
+print(values(totals))
+
+# The same totals with the key spelled as text. Three rows in, three rows out,
+# and two of them are false: a name with a space in it comes back as a person
+# and a day that were never in the data, and mary jane's two different days
+# now read as one line printed twice.
+let flat = reduce(rows, fn(m, r) {
+  set(m, "{r.who} {r.date}", get(m, "{r.who} {r.date}", 0.0) + r.hours)
+}, {})
+print(map(keys(flat), fn(k) {
+  let p = split(k, " ")
+  "{p[0]} on {p[1]}"
+}))
+
+# Equality is `==` at every depth: type-strict one level down, and blind to a
+# map's order, because `==` is blind to it.
+print([1] == [1.0], contains(set({}, [1], "x"), [1.0]))
+print({a: 1, b: 2} == {b: 2, a: 1}, contains(set({}, {a: 1, b: 2}, "x"), {b: 2, a: 1}))
+print(get(set({}, {a: 1, b: 2}, "x"), {b: 2, a: 1}, "miss"))
+
+# Two `==` keys spelled differently: the one that arrived first keeps its
+# place and its spelling, and only the value changes.
+let m = set(set({}, {a: 1, b: 2}, "first"), {b: 2, a: 1}, "second")
+print(m)
+print(keys(m))
+
+# nil is a key, and so is a container with nothing in it.
+print({nil: "none", []: "empty list", {}: "empty map"})
+
+# repr is Vine source, keys and all.
+print(repr({["a"]: 1}))

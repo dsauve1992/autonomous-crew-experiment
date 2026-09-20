@@ -1,0 +1,5 @@
+# A composite key repeats the same way a scalar one does, and the message
+# quotes the whole key rather than the type of it. The two spellings below
+# are one key because `==` does not compare a map's order.
+let by = {region: "north", month: 3}
+print({{month: 3, region: "north"}: 1, (by): 2})

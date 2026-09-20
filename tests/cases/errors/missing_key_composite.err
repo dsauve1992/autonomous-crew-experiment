@@ -1,0 +1,5 @@
+runtime error: a map of 1 key has no key [1.0]
+ --> missing_key_composite.vine:4:13
+  |
+4 | print(totals[[1.0]])
+  |             ^

@@ -1,0 +1,4 @@
+# A key the map has not got, named in full. `[1]` and `[1.0]` are two keys
+# for the reason `1` and `1.0` are: `==` is type-strict one level down too.
+let totals = set({}, [1], "int")
+print(totals[[1.0]])

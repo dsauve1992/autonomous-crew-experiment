@@ -1,0 +1,12 @@
+{["mary jane", "2026-01-05"]: 13.0, ["ada", "2026-01-05"]: 4.0, ["mary jane", "2026-01-06"]: 13.0}
+3
+["mary jane on 2026-01-05", "ada on 2026-01-05", "mary jane on 2026-01-06"]
+[13.0, 4.0, 13.0]
+["mary on jane", "ada on 2026-01-05", "mary on jane"]
+false false
+true true
+x
+{{"a": 1, "b": 2}: "second"}
+[{"a": 1, "b": 2}]
+{nil: "none", []: "empty list", {}: "empty map"}
+{["a"]: 1}

@@ -1,0 +1,7 @@
+runtime error: this map literal gives the key {"region": "north", "month": 3} twice
+ --> duplicate_map_key_composite.vine:5:41
+  |
+5 | print({{month: 3, region: "north"}: 1, (by): 2})
+  |                                         ^
+  = note: the key is first given at 5:8
+  = help: to give a key a new value, use set(m, k, v)
