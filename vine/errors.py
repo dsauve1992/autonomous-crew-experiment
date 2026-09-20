@@ -18,11 +18,33 @@ class Pos:
 
 
 class Source:
-    """A named blob of Vine code. Owns the lines, so errors can quote them."""
+    """A named blob of Vine code. Owns the lines, so errors can quote them.
 
-    def __init__(self, text, name="<input>"):
+    `name` is what a report calls this code, and `origin` is the file it
+    came from. They are two things because a report must name the file the
+    way the reader wrote it -- `statement.vine`, not the absolute path it was
+    found at, which would put this machine's directories in every golden --
+    while `import` has to resolve a relative name against the directory the
+    importing file is actually in. Splitting them is what the test runner
+    needed: it runs a case in process under its bare file name, and a case
+    that imports its neighbour has to find that neighbour beside itself
+    rather than beside whoever ran ./check.
+
+    `origin` is a resolved path rather than a directory because it answers
+    two questions: an `import` here is resolved against `origin.parent`, and
+    a file that is already being loaded is recognised by `origin` itself,
+    which is what makes a cycle through the program being *run* a report
+    rather than a second copy of it.
+
+    It is None for code with no place on disk: `-e`, a prompt, a property's
+    generated program. See `eval_import`, which resolves against the working
+    directory when there is none.
+    """
+
+    def __init__(self, text, name="<input>", origin=None):
         self.text = text
         self.name = name
+        self.origin = origin
         self.lines = text.split("\n")
 
     def line_text(self, line):

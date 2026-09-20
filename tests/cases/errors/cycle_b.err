@@ -1,0 +1,7 @@
+runtime error: importing "cycle_b.vine" is already in progress
+ --> cycle_a.vine:5:9
+  |
+5 | let b = import "cycle_b.vine"
+  |         ^
+  = note: imported at cycle_b.vine:2:9
+  = help: a file cannot be part of loading itself; move what both files need into a third that neither imports

@@ -39,6 +39,18 @@ class StrLit(Node):
 
 
 @dataclass
+class Import(Node):
+    """`import "path"`: the bindings another file makes, as a map.
+
+    The path is a plain string held here rather than an expression, because
+    which files a program is made of is a fact about the program and not
+    about its data. See **Importing** in docs/spec.md.
+    """
+
+    path: str
+
+
+@dataclass
 class Ident(Node):
     name: str
 

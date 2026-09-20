@@ -1,0 +1,3 @@
+# The other half of cycle_a.vine, and the same loop entered from the far side.
+let a = import "cycle_a.vine"
+print(a)

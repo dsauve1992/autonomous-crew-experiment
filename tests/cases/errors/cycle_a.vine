@@ -1,0 +1,6 @@
+# Two files that each need the other. Neither is wrong on its own, which is
+# why this is a runtime error and not a syntax one: no single spelling
+# contains a cycle. Both halves are cases, and each reports the import that
+# closed the loop from wherever the loop was entered.
+let b = import "cycle_b.vine"
+print(b)

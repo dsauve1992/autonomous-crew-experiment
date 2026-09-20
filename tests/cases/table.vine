@@ -1,0 +1,10 @@
+# A file that binds names and prints nothing: the module half of
+# tests/cases/import.vine. Its golden is empty, and that is the check --
+# a module's top-level statements run when it is loaded, so a module that
+# printed would print in the middle of every report that used it.
+#
+# These four are the functions four programs in examples/ hold a copy of.
+let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
+let pad = fn(s, w) { s + spaces(w - len(s)) }
+let rjust = fn(s, w) { spaces(w - len(s)) + s }
+let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }

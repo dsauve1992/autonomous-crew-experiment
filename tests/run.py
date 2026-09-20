@@ -173,8 +173,12 @@ def actual_for(case):
         return "transcript", buffer.getvalue()
     buffer = io.StringIO()
     try:
+        # The case's own directory is where its imports resolve from. The
+        # name stays the bare file name, because that is what every `.err`
+        # golden quotes; a case that imports its neighbour would otherwise
+        # have to find it beside whoever ran ./check. See `Source`.
         run(case.read_text(encoding="utf-8"), case.name, out=buffer,
-            inp=input_for(case))
+            inp=input_for(case), origin=case.resolve())
     except VineError as exc:
         return "err", exc.render() + "\n"
     except FailSignal as refusal:

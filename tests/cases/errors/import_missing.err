@@ -1,0 +1,6 @@
+runtime error: cannot import "no_such_table.vine": No such file or directory
+ --> import_missing.vine:4:13
+  |
+4 | let table = import "no_such_table.vine"
+  |             ^
+  = help: 'import' takes a plain string, and finds that file beside the one doing the importing

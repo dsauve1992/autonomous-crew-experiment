@@ -83,6 +83,23 @@ FAIL_RULE = (
     "a failure that says nothing cannot be acted on"
 )
 
+# Offered wherever an `import` cannot be carried out. Both halves are rules
+# rather than facts about this program: the name is a literal because which
+# files a program is made of must be readable from the source, and it is
+# resolved beside the importing file because a module is a piece of the
+# program and the working directory is not.
+IMPORT_RULE = (
+    "'import' takes a plain string, and finds that file beside the one doing "
+    "the importing"
+)
+
+# Offered when an import comes back round to a file already being loaded. It
+# names the shape rather than the files, because the files are in the notes.
+CYCLE_RULE = (
+    "a file cannot be part of loading itself; move what both files need into "
+    "a third that neither imports"
+)
+
 # How deep Vine calls may nest. Here rather than in `interp.py`, where it was
 # until tick 36, for this module's reason: the number is now in a rule, and a
 # limit spelled in one file and offered from another is the duplication the

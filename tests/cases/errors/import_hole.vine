@@ -1,0 +1,4 @@
+# The name of a file a program is made of cannot be computed, so a hole in
+# one is refused where it is written rather than where it would be filled.
+let which = "table"
+let table = import "{which}.vine"

@@ -1,0 +1,6 @@
+syntax error: an imported file's name may not have a hole in it
+ --> import_hole.vine:4:20
+  |
+4 | let table = import "{which}.vine"
+  |                    ^
+  = help: 'import' takes a plain string, and finds that file beside the one doing the importing

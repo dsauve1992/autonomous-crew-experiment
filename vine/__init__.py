@@ -30,8 +30,12 @@ if hasattr(sys, "set_int_max_str_digits"):
     sys.set_int_max_str_digits(0)
 
 
-def run(text, name="<input>", out=None, inp=None):
+def run(text, name="<input>", out=None, inp=None, origin=None):
     """Parse and evaluate `text`. Raises VineError on any user-facing failure.
+
+    `origin` is the directory an `import` in this text resolves a relative
+    name against -- the directory the file came from. `None` for text with no
+    place on disk, where the working directory stands in; see `eval_import`.
 
     `inp` is the standard input `read()` answers with: `None` when the program
     was given none, or a zero-argument callable returning the text, called at
@@ -42,5 +46,5 @@ def run(text, name="<input>", out=None, inp=None):
     the sentence it chose rather than a report about itself. Every caller of
     `run` has to say what a refusal looks like from where it stands.
     """
-    source = Source(text, name)
+    source = Source(text, name, origin=origin)
     return Interpreter(source, out, inp).run(parse(source))

@@ -1,0 +1,5 @@
+["spaces", "pad", "rjust", "widest"]
+[ab   ]
+[...]
+true
+["  ab", "cdef", "   g"]

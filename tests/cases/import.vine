@@ -1,0 +1,19 @@
+# What `import` answers with, and what it protects.
+let table = import "table.vine"
+
+# The names the file bound, in the order it bound them.
+print(keys(table))
+
+# A name of this program's own, spelled the same as one of the module's.
+# `table.pad` goes on calling the module's `spaces` -- it closed over the
+# module's scope, not this one. Written as one file, this rebinding would
+# silently change what `pad` does, and nothing would say so.
+let spaces = fn(n) { join(map(range(n), fn(_) { "." }), "") }
+print("[" + table.pad("ab", 5) + "]")
+print("[" + spaces(3) + "]")
+
+# One file, loaded once: a second import of it is the same map.
+print(import "table.vine" == table)
+
+let names = ["ab", "cdef", "g"]
+print(map(names, fn(s) { table.rjust(s, table.widest(names)) }))

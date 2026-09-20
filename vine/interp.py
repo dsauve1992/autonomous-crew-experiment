@@ -1,9 +1,10 @@
 """The tree-walking evaluator."""
 
 import contextlib
+import pathlib
 import sys
 
-from .errors import Pos, RuntimeError_
+from .errors import Pos, RuntimeError_, Source, VineError
 from .nodes import (
     Binary,
     Block,
@@ -11,6 +12,7 @@ from .nodes import (
     FnLit,
     Ident,
     If,
+    Import,
     Index,
     Let,
     ListLit,
@@ -24,7 +26,9 @@ from .nodes import (
 )
 from .rules import (
     CALL_DEPTH_RULE,
+    CYCLE_RULE,
     FAIL_RULE,
+    IMPORT_RULE,
     FLOAT_CEILING,
     KEY_RULE,
     MAX_DEPTH,
@@ -137,6 +141,13 @@ class Interpreter:
         # on its way out. See `eval` and `call`.
         self.deep_pos = None
         self.deep_frames = []
+        # Every file this interpreter has loaded, by the path it resolved
+        # to, and the set it is part-way through loading. A file imported
+        # twice is loaded once and answers the same map both times, so its
+        # top-level statements run once however many files reach for it; the
+        # set is what makes a cycle a report rather than a hang.
+        self.modules = {}
+        self.loading = set()
         self.globals = Env()
         # The scope a program runs in. It outlives a single `run`, so a REPL
         # can feed this interpreter one entry at a time and keep its bindings.
@@ -222,6 +233,11 @@ class Interpreter:
         """
         if source is not None:
             self.source = source
+        if self.source.origin is not None:
+            # The file being run is part of the program the same way an
+            # imported one is, so an import that comes back round to it is a
+            # cycle and not a second copy of it.
+            self.loading.add(self.source.origin)
         with self.deep_enough():
             try:
                 return self.eval_stmts(program, self.top)
@@ -383,6 +399,109 @@ class Interpreter:
         for stmt in node.stmts:
             result = self.eval(stmt, env)
         return result
+
+    def eval_import(self, node, env):
+        """The bindings another file makes, as a map.
+
+        The file runs in a scope of its own -- `Env(self.globals)`, a sibling
+        of the top level rather than a child of it -- and that is the whole
+        of the design. The alternative, binding the imported names into the
+        caller's scope, is textual inclusion, and Vine's own rule that a
+        second `let` replaces the first makes textual inclusion unsafe in a
+        way nothing reports: a program that imports `pad` and then defines a
+        `spaces` of its own silently changes what `pad` does, because `pad`
+        would be closing over the caller's scope. Run it and `pad("ab", 5)`
+        answers `"ab..."`. Giving the file its own scope is what stops that,
+        and once it has one the only way in is a value, which is the map.
+
+        `env` is not read, and that is the same fact said from the other
+        side: an imported file cannot see the file that imported it.
+        """
+        here = self.source.origin
+        target = pathlib.Path(node.path)
+        if not target.is_absolute():
+            target = (here.parent if here is not None else pathlib.Path(".")) / target
+        try:
+            resolved = target.resolve()
+        except OSError:  # pragma: no cover - a path the OS will not even name
+            resolved = target
+        if resolved in self.modules:
+            return self.modules[resolved]
+        if resolved in self.loading:
+            raise RuntimeError_(
+                f"importing {to_repr(node.path)} is already in progress",
+                node.pos,
+                self.source,
+            ).help(CYCLE_RULE)
+        try:
+            text = resolved.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise RuntimeError_(
+                f"cannot import {to_repr(node.path)}: {exc.strerror}",
+                node.pos,
+                self.source,
+            ).help(IMPORT_RULE) from None
+        except UnicodeDecodeError as exc:
+            raise RuntimeError_(
+                f"cannot import {to_repr(node.path)}: not UTF-8 text "
+                f"(byte 0x{exc.object[exc.start]:02x} at offset {exc.start})",
+                node.pos,
+                self.source,
+            ) from None
+        module = self.load(node, resolved, text)
+        self.modules[resolved] = module
+        return module
+
+    def load(self, node, resolved, text):
+        """Run `text` as a file of its own, and collect what it bound.
+
+        The source is named the way the importing file wrote it rather than
+        by its resolved path: a report about this file has to quote a name
+        its reader can find in their own source, and an absolute path would
+        put this machine's directories into every golden. Its `origin` is its
+        own directory, so a module importing a module resolves beside itself.
+
+        The `source` swap is what `run(program, source)` does for the REPL,
+        for the same reason and with the same one-line shape -- errors raised
+        while this file runs must quote this file.
+        """
+        from .parser import parse
+
+        source = Source(text, node.path, origin=resolved)
+        module_env = Env(self.globals)
+        outer = self.source
+        self.loading.add(resolved)
+        try:
+            program = parse(source)
+            self.source = source
+            self.eval_stmts(program, module_env)
+        except VineError as error:
+            raise self.imported_at(error, node) from None
+        finally:
+            self.source = outer
+            self.loading.discard(resolved)
+        return {to_key(name): value for name, value in module_env.vars.items()}
+
+    def imported_at(self, error, node):
+        """Tell a report from inside a module which line reached for it.
+
+        The caret is in the module and the reader is holding the importing
+        file, so without this the report names a file they did not open and
+        never says why it was read.
+
+        The note goes after any the error already carries and before any
+        help, which puts it where a call-site note already sits: those read
+        innermost first, and an import is the outermost step of all. A chain
+        of imports builds itself this way, one note per `load` the failure
+        passes on its way out, and that is also the whole of what a cycle
+        report needs -- so there is no second walk of the chain anywhere.
+        """
+        first_help = next(
+            (i for i, (label, _, _) in enumerate(error.notes) if label == "help"),
+            len(error.notes),
+        )
+        error.notes.insert(first_help, ("note", "imported at {pos}", node.pos))
+        return error
 
     def eval_let(self, node, env):
         env.define(node.name, self.eval(node.value, env))
@@ -662,6 +781,7 @@ Interpreter.DISPATCH = {
     Logical: Interpreter.eval_logical,
     Unary: Interpreter.eval_unary,
     Binary: Interpreter.eval_binary,
+    Import: Interpreter.eval_import,
     Index: Interpreter.eval_index,
     Call: Interpreter.eval_call,
 }

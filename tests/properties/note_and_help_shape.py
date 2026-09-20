@@ -76,12 +76,19 @@ Measured, this tick, by recording the line each `.note(` and `.help(` call
 came from while the grid and `MISTAKES` ran -- the dynamic set and the static
 one this file greps for are the same 46 lines.
 
+Tick 43 added four sites with `import`: three helps in the parser and the
+interpreter for a name that is not a string, a name with a hole in it and a
+file that is not there, and one for a cycle. All four need the keyword, which
+the grid never writes, so all four are in `MISTAKES`.
+
 **What nothing here reaches.** A note pointing into a *different source* than
-the caret renders `name:line:col` rather than `line:col`, and only the REPL
-has two sources alive at once. `tests/cases/repl/notes.repl` is the one case
-that prints that form, and it is a golden -- so the rendering of a cross-source
-note is still compared only with itself. The clauses above are checked on the
-error object, which the REPL catches and does not hand back.
+the caret renders `name:line:col` rather than `line:col`. Until tick 43 only
+the REPL had two sources alive at once and `tests/cases/repl/notes.repl` was
+the one case that printed that form, compared only with itself. An import has
+two as well -- the caret is in the imported file and `imported at {pos}` names
+the line that reached for it -- so `import "loop.vine"` now checks the clauses
+above on a cross-source note, on the error object. The REPL's own remains a
+golden, because the REPL catches its errors and does not hand them back.
 """
 
 import io
@@ -112,7 +119,14 @@ POSITION = re.compile(r"\d+:\d+")
 # site, add the program that reaches it and move this number in the same
 # commit; if the program is genuinely impossible, say so beside the number.
 SITES = re.compile(r"\.note\(|\.help\(")
-EXPECTED_SITES = 50  # the 47th is read()'s, reached by the grid's zero-argument call
+EXPECTED_SITES = 54  # the 47th is read()'s, reached by the grid's zero-argument call
+# Where the programs run, so that an `import` in one resolves somewhere fixed.
+# A generated program has no file, and without this its imports would be
+# looked for beside whoever ran ./check. The path names no real file: what is
+# used of it is its directory, which is where `tests/fixtures/loop.vine` is.
+FIXTURES = (
+    pathlib.Path(__file__).resolve().parent.parent / "fixtures" / "<report>.vine"
+)
 VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.
@@ -160,6 +174,15 @@ MISTAKES = [
     # written, because the parser stops a literal at 200 -- so no program
     # the grid can write reaches this site at all.
     "print(reduce(range(1001), fn(a, i) { [a] }, []))",
+    # The four import sites. The grid varies types and every one of these
+    # needs the keyword, which it never writes.
+    'import "no_such_table.vine"',   # a neighbour that is not there
+    "import 1",                      # a name that is not a string at all
+    'import "{1}.vine"',             # a name with a hole in it
+    # A file that imports itself, which is also the only program here whose
+    # note points into a different source than its caret -- see the last
+    # paragraph of the docstring above.
+    'import "loop.vine"',
 ]
 
 
@@ -172,7 +195,7 @@ def reports():
     """
     for source in list(no_traceback.programs()) + MISTAKES:
         try:
-            run(source, "<report>", io.StringIO())
+            run(source, "<report>", io.StringIO(), origin=FIXTURES)
         except VineError as error:
             yield source, error
         except Exception:

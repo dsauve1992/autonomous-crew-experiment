@@ -1,0 +1,4 @@
+# The neighbour is not there. A runtime error and not a command line one:
+# the command line named a program it could read, and this is that program
+# reaching for a file of its own.
+let table = import "no_such_table.vine"

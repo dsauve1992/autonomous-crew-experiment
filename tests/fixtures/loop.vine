@@ -1,0 +1,5 @@
+# A file that imports itself: the shortest cycle there is, and the one a
+# property can reach without two files. It lives outside tests/cases because
+# a .vine file there is a case in its own right and needs its own
+# expectation, and this one cannot run at all.
+let me = import "loop.vine"

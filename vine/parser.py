@@ -10,6 +10,7 @@ from .rules import (
     EXPONENT_RULE,
     HOLE_RULE,
     FAIL_RULE,
+    IMPORT_RULE,
     RETURN_RULE,
 )
 from .nodes import (
@@ -19,6 +20,7 @@ from .nodes import (
     FnLit,
     Ident,
     If,
+    Import,
     Index,
     Let,
     ListLit,
@@ -363,6 +365,8 @@ class Parser:
             if tok.value == "do":
                 self.next()
                 return self.block()
+            if tok.value == "import":
+                return self.import_expr()
         if tok.kind == "ident":
             self.next()
             return Ident(tok.pos, tok.value)
@@ -383,6 +387,34 @@ class Parser:
         if tok.kind in ("op", "kw") and tok.value in INFIX and self.opens_a_line():
             err.help(CONTINUATION_RULE)
         raise err
+
+    def import_expr(self):
+        """`import "path"`: an expression, because it has a value to give.
+
+        The name is a plain string token and not an expression, which is the
+        one restriction this construct carries. A program that could compute
+        the name of a file it is made of would make its own shape depend on
+        its data -- and *which files a program is* has to be readable from
+        the source, by a person and by anything that ever walks the imports
+        without running them. A cycle is the first thing that wants that.
+
+        An interpolated string is refused by name rather than as `a string`,
+        which is what `describe` calls both kinds. The message a reader needs
+        here is about the hole.
+        """
+        tok = self.next()
+        nxt = self.peek()
+        if nxt.kind == "istr":
+            raise self.error(
+                "an imported file's name may not have a hole in it", nxt
+            ).help(IMPORT_RULE)
+        if nxt.kind != "str":
+            raise self.error(
+                f"'import' needs the name of a file, found {self.describe(nxt)}",
+                nxt,
+            ).help(IMPORT_RULE)
+        self.next()
+        return Import(tok.pos, nxt.value)
 
     def opens_a_line(self):
         """Whether the token here is the first of a statement on its own line.

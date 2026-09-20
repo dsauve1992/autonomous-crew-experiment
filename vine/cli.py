@@ -1,5 +1,6 @@
 """Command line entry point."""
 
+import pathlib
 import sys
 
 from . import __version__, run
@@ -98,10 +99,16 @@ def main(argv):
         return 2
 
     kind, argument = programs[0]
+    origin = None
     if kind == "-e":
         text, name = argument, "<argument>"
     else:
         name = argument
+        # Where this program came from. Its imports resolve beside it, not
+        # beside whoever typed the command: `vine reports/monthly.vine` from
+        # a home directory has to find `reports/table.vine`, which is the
+        # file's neighbour and not the reader's.
+        origin = pathlib.Path(name).resolve()
         try:
             with open(name, encoding="utf-8") as handle:
                 text = handle.read()
@@ -122,7 +129,7 @@ def main(argv):
             return 2
 
     try:
-        run(text, name, inp=stdin_text)
+        run(text, name, inp=stdin_text, origin=origin)
     except VineError as exc:
         sys.stderr.write(exc.render() + "\n")
         return 1

@@ -110,10 +110,10 @@ RESULT = re.compile(r"\S\s+#\s*(\S.*)$")
 # blindness is the realistic way a document-reading check goes wrong, and only
 # an exact number sees it. A tick that adds or removes an example edits this
 # line in the same commit, which is the point: the count is a claim too.
-EXPECTED = 128
+EXPECTED = 130
 # The same claim for report blocks, and it is the tighter of the two: a report
 # that loses its tag stops being read and starts being parsed as a program.
-REPORTS = 19
+REPORTS = 21
 
 REPORT = "report"
 HEADLINE = re.compile(r"^(syntax error|runtime error|error): ")

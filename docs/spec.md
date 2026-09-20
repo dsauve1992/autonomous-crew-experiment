@@ -46,7 +46,7 @@ name. See **Errors** for what each way of ending means.
   is written down the page. `|>` is the only operator that works from the left,
   and it can be, because no expression starts with one.
 - Identifiers are `[A-Za-z_][A-Za-z0-9_]*`.
-- Keywords: `let fn if else do return fail true false nil and or not`.
+- Keywords: `let fn if else do return fail import true false nil and or not`.
 - Numbers are `123` (int), and `1.5` or `1e-9` (float). See **Literals**.
 - Strings are double-quoted and do not span lines. Escapes: `\n \t \r \" \\
   \{ \}` and `\u{...}`. A `{` opens a string interpolation — see Strings.
@@ -1000,11 +1000,14 @@ is the feature: an example here is fed to an interpreter with no standard
 input, so every example that reads would fail. The run is
 `tests/cases/reading.vine`, whose standard input is the file beside it.
 
-**It takes no argument, and there is no `read(path)`.** Vine never names a
-file. The shell already resolves paths, reports a missing one, and knows what
-the reader meant by `~` and `*`; a `read("log.csv")` would answer the same
-question a second time, relative to a working directory the program cannot
-see. What that costs is real and is the price of the decision: a program that
+**It takes no argument, and there is no `read(path)`.** A Vine program never
+names the file its *data* comes from. The shell already resolves paths,
+reports a missing one, and knows what the reader meant by `~` and `*`; a
+`read("log.csv")` would answer the same question a second time, relative to a
+working directory the program cannot see. `import "table.vine"` does name a
+file and is not the same question — see **Importing**, which sets the two side
+by side: a module is a piece of the program, and the working directory has no
+idea where a program's own parts live. What that costs is real and is the price of the decision: a program that
 wants **two** inputs cannot be given two. It has to be given them joined —
 `cat a.csv b.csv | vine report.vine` — and if it must tell them apart, the
 telling has to be in the text. Adding `read(path)` later would take that price
@@ -1114,6 +1117,246 @@ the second log needs the file edited. That is what `read()` buys, and it is
 the only thing it buys: the first two columns above get *worse* by a hair,
 since parsing a CSV line in Vine is `split` and `int(s, default)` rather than
 the lexer's job. The point is the file the program did not ship with.
+
+## Importing
+
+```
+import "table.vine"
+```
+
+`import` answers with a **map** from every name another file binds at its top
+level to that name's value. It is an expression, because it has a value to
+give — which is what separates it from `fail` and `return`, the two keywords
+that are statements precisely because they have none.
+
+```text
+let table = import "table.vine"
+
+print(table.rjust("7", 4))              # "   7"
+print(keys(table))                      # ["spaces", "pad", "rjust", "widest"]
+```
+
+Those are `text` rather than examples this document runs, and the reason is
+the feature: an example here is a string handed to an interpreter, with no
+file and so no neighbours. The run is `tests/cases/import.vine`, and the file
+it imports is `tests/cases/table.vine` beside it.
+
+### What it is for
+
+Six programs in `examples/` are 803 lines, and 70 of them are a function whose
+name is defined in another file too. Four names — `widest`, `spaces`, `pad`
+and `rjust` — are character for character identical in **four** files;
+`slice`, `digits`, `all_digits`, `is_date`, `money` and `complaint` are
+identical in two.
+
+The measurement that decided this is the other one. Of the thirteen names
+shared between files, **four are not copies at all**:
+
+- `index_of` is a linear search written with `reduce` in one file and with
+  `filter` and `first` in the other.
+- `cell` and `row` are one name over two unrelated functions each.
+- `sum` is `reduce(xs, fn(a, b) { a + b }, 0)` in one file and the same line
+  seeded `0.0` in two others.
+
+That last pair differ on exactly two inputs — a list of ints, where they
+answer `6` and `6.0`, and the empty list, where they answer `0` and `0.0` —
+and *both are right*: one file sums request counts and two sum money. So the
+argument for this feature is not that copying wastes 70 lines. It is that a
+copy is invisible once it has drifted, and four of these thirteen had drifted
+before anybody looked. A name in one file is a thing with one definition; the
+same name in four files is four definitions that happen to agree today, and
+nothing in this repository could have told you which of them still did.
+
+Imports do not settle the `sum` question. They make it a question: one file
+holding `sum` and a caller that needs an int has to say which it wants, where
+three files holding `sum` said nothing and disagreed.
+
+### It gives the file a scope, and that is the whole design
+
+The obvious import binds the other file's names into this file's scope. That
+is textual inclusion, and **Bindings** is why Vine cannot have it: a second
+`let` on a name in the same scope replaces the first, *and closures made
+earlier see the new value*. So a program that imports `pad` and then binds a
+`spaces` of its own silently changes what `pad` does. Run it:
+
+```
+let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
+let pad = fn(s, w) { s + spaces(w - len(s)) }
+let spaces = fn(n) { join(map(range(n), fn(_) { "." }), "") }
+pad("ab", 5)                       # "ab..."
+```
+
+Nothing there is a mistake the language can see. `pad` is correct, the second
+`spaces` is correct, and the file that would have supplied `pad` is not even
+on screen. The report a reader gets is a column of dots in a table.
+
+An imported file therefore runs in a scope of its own, a sibling of the
+importing file's rather than a child of it. Its functions close over *it*, so
+the importer cannot reach into them; and the same fact from the other side, an
+imported file cannot see the file that imported it. Once a file has a scope
+nothing can reach into, the only way in is a value, and the value is the map.
+
+**The correct workaround gives you that much today, in one file**, and it is
+what this feature has to beat:
+
+```
+let table = do {
+  let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
+  let pad = fn(s, w) { s + spaces(w - len(s)) }
+  {spaces: spaces, pad: pad}
+}
+let spaces = fn(n) { join(map(range(n), fn(_) { "." }), "") }
+table.pad("ab", 5)                 # "ab   "
+```
+
+A `do` block is a scope and a map is a handle, so the surprise above is
+already avoidable and always was. What that costs is three lines per file —
+the `do {`, the `}`, and the map naming everything twice — *on top of* the
+copy, which it does not remove. There is no workaround at all for the other
+half. What `import` buys is what `read()` bought: the thing that is not in
+this file. A shared function in four files is four functions; in one file it
+is one, and fixing it is one edit.
+
+### The name is a plain string
+
+```
+import "{which}.vine"
+```
+
+```report
+syntax error: an imported file's name may not have a hole in it
+ --> report.vine:1:8
+  |
+1 | import "{which}.vine"
+  |        ^
+  = help: 'import' takes a plain string, and finds that file beside the one doing the importing
+```
+
+Not an expression, and this is the one restriction the construct carries.
+*Which files a program is made of* is a fact about the program, and a program
+that could compute it would make its own shape depend on its data. It is also
+what lets the shape be read without running anything: a cycle is the first
+thing that wants that, and a reader asking what a program consists of is the
+second.
+
+### It is looked for beside the file doing the importing
+
+Not in the working directory. `vine reports/monthly.vine` run from anywhere
+finds `reports/table.vine`, because that is the file's neighbour and not the
+reader's; a module that imports a module resolves beside *itself* in turn. At
+a prompt and under `-e` there is no file, and the working directory stands in.
+
+**This is not `read(path)` arriving by another door**, and the difference is
+which thing is named. **Reading** refuses a path because the shell resolves
+one already, and better: it knows what `~` and `*` mean and the program does
+not. Every word of that argument is about a *data* file — the thing that
+changes between runs, the thing the program exists to be independent of. A
+module is not data. It is a piece of the program, it changes when the program
+does, and the shell must **not** resolve it, because the working directory has
+no idea where a program's own parts live. The two questions have opposite
+answers, which is how you can tell they are two.
+
+```
+import "no_such_table.vine"
+```
+
+```report
+runtime error: cannot import "no_such_table.vine": No such file or directory
+ --> report.vine:1:1
+  |
+1 | import "no_such_table.vine"
+  | ^
+  = help: 'import' takes a plain string, and finds that file beside the one doing the importing
+```
+
+A runtime error rather than the command line's: the command line named a
+program it could read, and this is that program reaching for a file of its
+own.
+
+### A file is loaded once
+
+However many files import it, and however many times one file does. Its
+statements run once, and every `import` of it answers the same map — so
+`import "table.vine" == import "table.vine"` is `true`, and a module that
+prints prints once. That matters because a module's top level is ordinary
+Vine: it may `print`, it may `read()`, and it may `fail`.
+
+- **`print` in a module** writes to the same standard output, in the middle of
+  whatever the importing program was doing. This is a poor thing for a module
+  to do and Vine does not refuse it, for the reason it does not refuse
+  `print(nil)`.
+- **`read()` in a module** answers the same string it answers anywhere else.
+  One program, one input; an import does not make a second one.
+- **`fail` in a module** ends the program, and **Refusing** is unchanged: what
+  `fail` ends is the run, and an imported file is part of the run.
+
+### A cycle is a runtime error
+
+Two files that each import the other cannot be loaded, and the file being run
+counts as loaded from the start — so a module that imports its way back to the
+program is a cycle too, rather than a second copy of it.
+
+```text
+runtime error: importing "cycle_a.vine" is already in progress
+ --> cycle_b.vine:2:9
+  |
+2 | let a = import "cycle_a.vine"
+  |         ^
+  = note: imported at cycle_a.vine:5:9
+  = help: a file cannot be part of loading itself; move what both files need into a third that neither imports
+```
+
+That is `text` because no single file can produce it; it is the golden of
+`tests/cases/errors/cycle_a.vine`, and `cycle_b.vine` beside it is the same
+loop entered from the far side, reporting the other import.
+
+**It is a runtime error and not a syntax error**, and the rule it is decided
+by is the one the crew wrote down after `fail`: the grammar judges spellings,
+and a cycle is not one. Neither file above is misspelled; each is a correct
+program on its own. What is wrong is the set of files, which is a fact about a
+run — and the report is at the import that closed the loop, in the file that
+was reached last, because that is the line whose reader can see both ends.
+
+The `note` is how the chain is said. A report from inside an imported file
+names a file its reader may not have opened, so every `import` the failure
+passes on its way out adds a line saying where that file was reached from.
+This is the machinery the REPL already had: a note carries the source it
+points into, and renders `name:line:col` rather than `line:col` when that is
+not the source the caret is in.
+
+### What a module is
+
+An ordinary map, with nothing special about it. `len` counts its names,
+`keys` lists them in the order the file bound them, `m.name` and `m["name"]`
+both reach a value, and asking for a name the file does not bind is the map's
+own message — `a map of 4 keys has no key "nope"`. It is not a new type, and
+there is no rule for it to break: the `do` block above builds the same value
+by hand.
+
+The one thing a module cannot be is a **map key**, because it holds functions
+and **Composite keys** says a key may hold none. That is not a rule about
+modules; it is the rule about functions, arriving somewhere new.
+
+### What this does not add
+
+**A way to import some of a file's names.** `import "table.vine"` answers all
+of them, and the importer picks what it wants out of the map with a name of
+its own. There is no `import pad from "table.vine"`, and the corpus is why:
+`from` is a *parameter* of `slice`, in both of the two files that hold a copy
+of it — the most-copied function in this repository is the one a `from`
+keyword would break. A word a program in this language would use for a
+position in a string is the expensive kind of word to take, and nothing is
+bought by taking it. `import` itself appears nowhere in any `.vine` file, and
+that is why it was free.
+
+**A way to hide a name.** Every top-level binding a file makes is in the map
+it answers with; there is no `pub`, no leading underscore rule, no export
+list. A module that wants a private helper has the same tool every other Vine
+scope has — put it inside the function that needs it.
+
+**A second file's `fail`, `print` or `read` behaving differently.** Listed
+here because all three were candidates for a rule and none of them earned one.
+A file is a file wherever it is reached from.
 
 ## Conversions
 
@@ -3042,18 +3285,18 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Twenty-one rules, and every help is one of them. Twenty live in
+Twenty-three rules, and every help is one of them. Twenty-two live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
 listed against the section that states it at length, because a help is a
 reminder of this document and never a replacement for it.
 
-The twentieth is the command line's, and it is elsewhere because a problem
-with the command line has no position and so no report to hang a help on —
+The last is the command line's, and it is elsewhere because a problem with
+the command line has no position and so no report to hang a help on —
 `vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
-it. It is a rule offered for the same reason as the other nineteen, so it is on
-the same list.
+it. It is a rule offered for the same reason as the other twenty-two, so it is
+on the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
 - `every float is finite; the largest float is about 1.8e308` — **repr and str**
@@ -3075,6 +3318,8 @@ the same list.
 - `a literal brace is written '\{'` — **Strings**
 - `a hole holds one expression, with no format after it; for decimal places write "{fixed(x, 2)}"` — **Formatting**
 - `a value may nest 1000 deep; building a deeper one is not an error until something reads it` — **Bindings**
+- `'import' takes a plain string, and finds that file beside the one doing the importing` — **Importing**
+- `a file cannot be part of loading itself; move what both files need into a third that neither imports` — **Importing**
 - `vine's options are -e, -h/--help and -v/--version; any other argument is a file name` — **Running it**
 
 The list is exhaustive in both directions, and `tests/properties/help_roster.py`
@@ -3085,9 +3330,8 @@ visible in a golden file, because a golden is a copy of the message it checks.
 
 ## Not in v0.2
 
-Deliberately absent, roughly in the order they look worth adding: a
-module/import system, a `match` expression, a second input, user-defined
-operators, and a bytecode compiler. Anything here is fair game for a later
+Deliberately absent, roughly in the order they look worth adding: a `match`
+expression, a second input, user-defined operators, and a bytecode compiler. Anything here is fair game for a later
 tick — but adding one means adding its tests and updating this file in the
 same commit.
 
@@ -3117,23 +3361,31 @@ correct refusal that told the shell it had succeeded. See **Refusing**. That is
 the second absence this list has learned about by a program arriving rather than
 by anybody noticing, which is now a pattern and not an anecdote.
 
-Early `return` was the fifth, at the head of the list, from tick 1 until tick
-26 took it. What took it was not an argument: it was running the flattening
-that would have made it unnecessary and watching it fail on an empty list. See
-**Why `return` earns its keyword**. The four this list has carried since tick
-1 have now been confirmed absent by seven ticks without one of them being
-argued either way, which is what a question looks like once it has stopped
-being asked — and the thirty-eight ticks of silence about input above is what
-it looks like when it was never asked. Whoever reopens
-one: the cheapest move is to write the program the feature is for, in the Vine
-there is, and read it.
+A module system was the first entry from tick 1 until tick 43 took it, and it
+is the one item here that went the way this list says a question *should* go
+rather than the way the two above went. It was written down, it was carried,
+and it was argued — deferred by every handoff from tick 32 on, each time
+because something else was smaller. What settled it was not the 70 duplicated
+lines that made somebody notice; it was counting the duplicates and finding
+four of the thirteen shared names had already drifted apart. See
+**Importing**.
 
-Audited in tick 7, rechecked in ticks 21 and 26: those four are absent. `import` is not a keyword, so `import "x"` is two statements on one
-line and says so —
-`expected end of line between statements, found the string "x"`. `match` is
-not a keyword either, so `match x { 1 => 2 }` fails at `x` for the same reason
-and never reaches the `=>`; tick 7 wrote that it failed *at* the `=>`, which
-was a guess at a parser that stops earlier than it thought. There is no syntax
+Early `return` was the fifth, at the head of the list, from tick 1 until tick
+26 took it. What took it was not an argument either: it was running the
+flattening that would have made it unnecessary and watching it fail on an
+empty list. See **Why `return` earns its keyword**. The three this list still
+carries from tick 1 have now been confirmed absent by eleven ticks without one
+of them being argued either way, which is what a question looks like once it
+has stopped being asked — and the thirty-eight ticks of silence about input
+above is what it looks like when it was never asked. Whoever reopens one: the
+cheapest move is to write the program the feature is for, in the Vine there
+is, and read it.
+
+Audited in tick 7, rechecked in ticks 21, 26 and 43: those three are absent.
+`match` is not a keyword, so `match x { 1 => 2 }` is two statements on one
+line and fails at `x` — `expected end of line between statements, found the
+name 'x'` — never reaching the `=>`; tick 7 wrote that it failed *at* the
+`=>`, which was a guess at a parser that stops earlier than it thought. There is no syntax
 that binds an operator, and `vine/interp.py` walks the tree. No case guards
 any of this, deliberately — a test that a feature is missing passes for as
 long as nobody is working on it, and fails on the branch of whoever is, which

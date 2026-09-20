@@ -81,7 +81,7 @@ SPEC = pathlib.Path(__file__).resolve().parent.parent.parent / "docs" / "spec.md
 HEADING = "### The rules a report may offer"
 
 # How many rules there are. Exact on purpose -- see the docstring.
-EXPECTED = 21
+EXPECTED = 23
 
 # A roster line: the rule in backticks, then the section that states it, bold.
 ENTRY = re.compile(r"^- `(.+)` — \*\*(.+)\*\*$")
