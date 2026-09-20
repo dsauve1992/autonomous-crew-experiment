@@ -1,0 +1,5 @@
+$ vine examples/statement.vine
+statement: I cannot read this file
+  no column named: date, description, category, amount
+  it has:          txn_date, memo, amount_eur
+exit 0

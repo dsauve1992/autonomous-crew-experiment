@@ -23,13 +23,27 @@
 # the line carrying the field so far, the fields already finished, and whether
 # it is inside a quote.
 let fields_of = fn(line) {
-  let last = reduce(split(line, ""), fn(st, c) {
-    if c == "\"" { set(st, "quoted", not st.quoted) }
-    else if c == "," and not st.quoted {
-      set(set(st, "done", push(st.done, st.cur)), "cur", "")
+  # A quote inside a quoted field is written twice, so a `"` while quoted is
+  # not yet a decision: it is either the end of the field or half of one
+  # character, and which depends on the character after it. A fold cannot
+  # look ahead, so `pending` is the look-behind that stands in for it.
+  let step = fn(st, c) {
+    if st.pending {
+      let seen = set(st, "pending", false)
+      if c == "\"" { set(seen, "cur", seen.cur + "\"") }
+      else if c == "," {
+        set(set(set(seen, "quoted", false), "done", push(seen.done, seen.cur)), "cur", "")
+      }
+      else { set(set(seen, "quoted", false), "cur", seen.cur + c) }
     }
+    else if st.quoted {
+      if c == "\"" { set(st, "pending", true) } else { set(st, "cur", st.cur + c) }
+    }
+    else if c == "\"" { set(st, "quoted", true) }
+    else if c == "," { set(set(st, "done", push(st.done, st.cur)), "cur", "") }
     else { set(st, "cur", st.cur + c) }
-  }, {quoted: false, cur: "", done: []})
+  }
+  let last = reduce(split(line, ""), step, {quoted: false, pending: false, cur: "", done: []})
   # Trimming each field is what carries a file whose lines end "\r\n": the
   # trim on the whole text removes the last one and `split` leaves every other
   # one on the end of a field — see **Reading** in docs/spec.md.
@@ -66,9 +80,9 @@ let missing = filter(wanted, fn(n) { at[n] < 0 })
 # to say so and stop saying anything else.
 let report = fn() {
   if len(missing) > 0 {
-    print("statement: this file has no {join(missing, " and ")} column")
-    print("  it has: {join(header, ", ")}")
-    print("  I need: {join(wanted, ", ")}")
+    print("statement: I cannot read this file")
+    print("  no column named: {join(missing, ", ")}")
+    print("  it has:          {join(header, ", ")}")
     return nil
   }
 

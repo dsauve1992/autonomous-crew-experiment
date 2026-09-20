@@ -1,0 +1,13 @@
+# The same program as examples/statement.vine, not one character changed,
+# over a second month's file. That claim is what read() was bought on and
+# nothing had tested it; here it is structural rather than asserted, because
+# there is one program file and this case names it.
+#
+# April's export came out of an upgraded tool. Its header is capitalised, its
+# columns are in a different order, it has a Currency column the program has
+# never heard of, and its lines end the way a Windows machine ends them.
+#
+# The input lives here rather than in examples/ because the runner names a
+# case's `.in` after the case: a second input for one program needs a second
+# file to name it.
+examples/statement.vine

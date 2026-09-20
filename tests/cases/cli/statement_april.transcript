@@ -1,0 +1,31 @@
+$ vine examples/statement.vine
+statement: 52 entries, 2024-04-01 to 2024-04-30
+
+totals
+  paid in      10800.00
+  paid out      4514.45
+  net           6285.55
+
+out, by category
+  software     1126.00   24.9%    7  #########
+  marketing     916.00   20.3%    3  ########
+  hosting       716.25   15.9%    6  ######
+  travel        672.90   14.9%    6  #####
+  hardware      618.80   13.7%    4  #####
+  (none)        212.00    4.7%    1  #
+  meals         170.55    3.8%   16  #
+  office         45.95    1.0%    2
+  fees           36.00    0.8%    3
+
+out, six largest by merchant
+  Kestrel Analytics            930.00
+  Northwind Hosting            716.25
+  Pike & Sons, Ltd.            618.80
+  Say "Cheese" Photography     540.00
+  Hotel Verity                 412.00
+  Bellweather Print            376.00
+
+questions
+  line 20: "-1,240.00" is not an amount
+  212.00 with no category, over 1 entry
+exit 0

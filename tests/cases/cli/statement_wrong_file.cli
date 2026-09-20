@@ -1,0 +1,11 @@
+# The same program again, over a file it cannot read: an export whose columns
+# are named something else entirely. This is the guard in
+# examples/statement.vine firing -- a guard nobody has watched fire does not
+# work, and this one is the reason the whole report is wrapped in a function.
+# Vine has no exit and `return` is only legal inside one, so a program that
+# decides it cannot read this file has no other way to stop.
+#
+# Note the exit status. It is 0: the program refused its input and told the
+# shell it succeeded, because Vine has no way to say otherwise. See
+# log/0040-vine-programmer.md.
+examples/statement.vine
