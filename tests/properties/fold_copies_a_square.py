@@ -26,6 +26,26 @@ every figure here too small, silently, and the program that would notice is
 the one nobody wrote. An added builtin fails the roster clause the day it is
 added, which is the same reason `roster_names_every_builtin.py` exists.
 
+**The tombstone pair is the second finding, and it is tick 44's seconds in
+this file's unit.** `examples/pipeline.vine` folds a map of the steps that
+have started and not ended. At most a handful are ever live -- but nothing in
+Vine takes a key out of a map, so an ended step is held as `nil` and the
+accumulator grows to every pair the log ever mentioned. Tick 44 measured that
+on two logs of the same length, one whose key set grows and one whose does
+not, and got 2.261s against 0.999s at 2400 events. Seconds do not travel.
+The same two programs counted here are **n²** against **2n - 1**: one square,
+one line, from the same number of events. That is the finding, and it is the
+same on every machine forever.
+
+Both of them are ordinary folds over `set`, so neither discovers anything
+about `set` that the fold above it does not. What the *pair* holds is the
+thing no single program can say: the curve is decided by whether the key set
+grows, and in Vine that is not the program's choice. If a way to take a key
+out of a map ever arrives -- **Not in v0.2** carries it now -- the first of
+these two is the program that should stop being a square, and this file is
+where that shows up as a number rather than as a feeling that things got
+faster.
+
 **The dedupe pair is the finding.** The section offers the map spelling as
 *the shape to reach for* against the `contains` spelling, on 0.13s against
 9.37s. Both copy `n(n-1)/2` -- the same square, since `set` copies a map the
@@ -38,11 +58,18 @@ and one of them alone pays the comparisons.
 Sabotage, each against the committed tree, and each run to the end:
 
 - `push` appending in place -- the shortcut the section says is closed --
-  breaks 6 of the 48 count assertions here, every one of them reading *copied
+  breaks 6 of the count assertions here, every one of them reading *copied
   0, not 45*. Three goldens break too: `building_lists`, `immutability` and
   `lists`. So the repository already watched this one, and what it watched was
   the **answer**. What this adds is the price, which is the half that a
-  representation change is allowed to move and a golden cannot see.
+  representation change is allowed to move and a golden cannot see. (Six
+  against the 48 assertions of tick 37's list and six against the 93 of this
+  one: the two programs added in tick 45 fold `set` and this sabotage does not
+  reach them.)
+- `set` writing into the map it was handed breaks **12 of 93** -- both folds
+  over `set`, both tombstone programs, and `dedupe by keys` -- and four
+  goldens: `immutability`, `map_keys`, `map_order` and `maps`. Same split as
+  `push`: the goldens hold the answer, this holds the price.
 - `contains` on a list answered by the host's `in` rather than by `equal`
   breaks the 3 comparison assertions on the dedupe pair, at *compared 0, not
   45*, and 12 clauses of `composition_holds.py`. The second is the one that
@@ -236,6 +263,33 @@ PROGRAMS = {
         "}}\n"
         "print(len(dedupe(range({n}))))",
         lambda n: (square(n), square(n)),
+    ),
+    # A map that cannot forget. 2n events over n keys: event 2i opens key i
+    # and event 2i+1 ends it. At most one key is ever live, and `set` is the
+    # only way into a map, so an ended key is held as nil and the map grows to
+    # n. The opens copy 0, 1, ... n-1 and the closes copy 1, 2, ... n, which
+    # is n(n-1) + n = n*n. The 2n comparisons are the `j % 2 == 0` of the 2n
+    # events. `examples/pipeline.vine` is this fold; see **What the fold
+    # costs**.
+    "a fold over a map that cannot forget": (
+        "let held = reduce(range({n} * 2), fn(m, j) {{\n"
+        "  let k = int(j / 2)\n"
+        "  if j % 2 == 0 {{ set(m, k, j) }} else {{ set(m, k, nil) }}\n"
+        "}}, {{}})\n"
+        "print(len(held))",
+        lambda n: (n * n, 2 * n),
+    ),
+    # The same 2n events over one key, which is the same program handed a log
+    # whose live set does not grow. The map is one entry from the first event
+    # on, so every set after the first copies exactly one: 2n - 1, and linear.
+    # The gap between this line and the one above is the whole finding, in the
+    # unit that travels.
+    "the same fold over one key": (
+        "let held = reduce(range({n} * 2), fn(m, j) {{\n"
+        "  if j % 2 == 0 {{ set(m, 0, j) }} else {{ set(m, 0, nil) }}\n"
+        "}}, {{}})\n"
+        "print(len(held))",
+        lambda n: (2 * n - 1, 2 * n),
     ),
     # The same answer through a map: the same square of copies, and keys
     # carrying the n of them out at the end. No comparison anywhere.
