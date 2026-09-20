@@ -1,0 +1,11 @@
+$ vine -e 'print(len(read()))'
+57
+exit 0
+
+$ vine -e 'print(read() |> trim |> split("\n") |> len)'
+3
+exit 0
+
+$ vine -e 'print(1 + 1)'
+2
+exit 0

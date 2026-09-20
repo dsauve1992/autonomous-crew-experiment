@@ -1,0 +1,11 @@
+vine — ^D to exit, blank line to abandon an unfinished entry
+>>> read()
+runtime error: there is no input to read
+ --> <repl:1>:1:5
+  |
+1 | read()
+  |     ^
+  = help: a program reads the standard input it was given; redirect a file into it with 'vine prog.vine < file'
+>>> let n = 1 + 1
+>>> n
+2

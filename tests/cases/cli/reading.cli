@@ -1,0 +1,11 @@
+# read() over a real command line. The runner gives every .cli case a pipe on
+# standard input, empty unless the case has a `.in`; this one's is the file
+# beside it. Inheriting ./check's own stdin instead would make this case green
+# from a pipe and red from a terminal.
+-e 'print(len(read()))'
+-e 'print(read() |> trim |> split("\n") |> len)'
+
+# A program that never reads never touches the pipe it is standing on. What
+# that buys is that `yes | vine -e 'print(1)'` finishes; this line is only
+# where it is visible at all.
+-e 'print(1 + 1)'

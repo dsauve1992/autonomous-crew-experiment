@@ -1,0 +1,24 @@
+# What `read()` answers, and what the first thing every reading program does
+# to it answers in turn. Its standard input is `reading.in`, the file beside
+# it. A case with no `.in` is given no input at all, which is a different
+# state and is `errors/read_without_input.vine`.
+
+let text = read()
+print(repr(text))
+print(len(text))
+
+# Called again it answers the same string. Not the text once and "" after --
+# the second call is where a report that reads to count and reads again to
+# sum would print a plausible zero in the right column.
+print(read() == text)
+print(len(read()))
+
+# A text file ends in a newline and a list of lines does not end in an empty
+# one, so the trim is not decoration. One row too many is the symptom.
+print(len(split(text, "\n")))
+print(len(split(trim(text), "\n")))
+
+let rows = read() |> trim |> split("\n") |> map(fn(line) { split(line, ",") })
+print(len(rows))
+print(repr(first(rows)))
+print(reduce(rows, fn(a, r) { a + int(r[2], 0) }, 0))

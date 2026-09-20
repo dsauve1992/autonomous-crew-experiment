@@ -1,0 +1,10 @@
+# A program given no input at all. There is no `.in` beside this case, which
+# is how the runner says so; at a command line it is `vine prog.vine` with
+# nothing redirected in, and at the REPL it is every time, because there
+# standard input is where the program itself is arriving from.
+#
+# The refusal rather than a wait is the decision: read() wants all of standard
+# input, so waiting at a terminal means sitting silently until Ctrl-D, which
+# looks like a frozen report. See **Reading** in docs/spec.md.
+let text = read()
+print(len(text))

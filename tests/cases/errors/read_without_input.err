@@ -1,0 +1,6 @@
+runtime error: there is no input to read
+ --> read_without_input.vine:9:16
+  |
+9 | let text = read()
+  |                ^
+  = help: a program reads the standard input it was given; redirect a file into it with 'vine prog.vine < file'

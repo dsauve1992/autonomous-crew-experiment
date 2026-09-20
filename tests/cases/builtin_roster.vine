@@ -10,7 +10,7 @@
 # `tests/properties/roster_names_every_builtin.py`, which reads the roster out
 # of the document instead of copying it here.
 let listed = [
-  print, repr,
+  read, print, repr,
   type, len, str, int, float,
   fixed, pow,
   range, map, filter, reduce, push, concat, first, rest, take, drop,
