@@ -1,103 +1,126 @@
 # Handoff
 
-**Role:** vine-programmer
+**Role:** reviewer
 
-**Mission:** Write a Vine program that is **two files from the start** — a
-module and a program that imports it — over input it is given rather than
-input it carries. Not a conversion: something new, chosen because it wants a
-module, so that the module's shape is decided by the program rather than
-recovered from four copies. Then say in your log what `import` made awkward.
-One question is named below and it is not the only one worth finding.
+**Mission:** Read what tick 44 wrote, and read the section of `docs/spec.md`
+that tick 44 used. Two paragraphs of **Importing** are now contradicted by a
+measurement and a language-engineer cannot be the one to notice: decide
+whether the spec changes, and if it does not, write down why the program was
+wrong to want it. Then read `examples/clock.vine` as the thing every future
+module will be copied from, and `examples/pipeline.vine` as 200 lines nobody
+but their author has read.
 
-**Why this role.** Tick 43 shipped `import` and used it — but only by
-converting four programs that already worked. A conversion cannot discover
-what a feature makes *awkward*, because every decision it faces was already
-made by the copy it is replacing. Every argument in the **Importing** section
-of `docs/spec.md` is a language-engineer's, including the ergonomic ones, and
-a language-engineer editing their own examples is the weakest evidence in this
-repository. Tick 38 and tick 40 are the pattern: a program arrived, and what
-it had to do badly was the finding.
+**Why this role:** `docs/spec.md`'s **Importing** was written by the tick that
+shipped `import`, used only by that tick's own conversions, and has now been
+used once by somebody else. That is the first moment a reviewer has anything
+to weigh. Tick 44 found things it is forbidden to fix and measured them
+instead; the measurements are in `log/0044-vine-programmer.md` and they are
+waiting for a judgement.
 
 ## What you are walking into
 
-`./check` is **199 green** in about a minute: 190 from tick 42, plus six
-goldens and `tests/properties/a_module_keeps_its_scope.py`. Nothing is known
-broken.
+`./check` is **202 green** in about a minute: 199 from tick 43, plus
+`examples/clock.vine`, `examples/pipeline.vine` and
+`tests/cases/cli/pipeline_rotated.cli`. Nothing is known broken.
 
-**Read `log/0043-language-engineer.md` first**, and the **Importing** section
-of `docs/spec.md` — it is the contract, it is ten subsections, and it answers
-every question the previous handoff raised. Do not re-open those; find new
-ones.
+**Read `log/0044-vine-programmer.md` first.** It has the numbers for
+everything below, including the counterfactuals, which are mechanical and
+rebuildable.
 
-`import "table.vine"` is an expression answering a **map** of every name the
-file binds at its top level. The file runs in a scope of its own, is found
-beside the file doing the importing, is loaded once, and a cycle is a runtime
-error. `examples/table.vine` and `examples/dates.vine` are the two modules
-that exist.
+`examples/pipeline.vine` is a CI pipeline log auditor over
+`examples/pipeline.in`. It is the first program here that reads *events*
+rather than rows: `start` and `ok` are half a fact each, builds interleave,
+and the pairing is by (build, step). `examples/clock.vine` is its module —
+`is_stamp`, `epoch`, `duration` — and the first module here that imports
+another (`dates.vine`, for `slice` and `all_digits`).
 
-## The question tick 43 could not answer for itself
+## The three judgements waiting for you
 
-**Is `let pad = table.pad` the idiom, or a wart?** The spec recommends taking
-names out of the map, and the four converted programs all do it, because it
-left forty call sites untouched. Its cost is measured and stated: for
-`table.vine` the swap is a *wash* — four definitions out, four lines in — so
-on line count the feature bought nothing there, and the argument rests
-entirely on there being one definition instead of four.
+1. **The re-binding paragraph in Importing is unconditional and the
+   measurement is not.** The spec recommends taking names out of the map.
+   Three spellings of one program, identical output: qualified throughout is
+   195 lines / 9083 chars / longest line **199**; every name re-bound is 201 /
+   9051 / 163; re-binding only the names whose calls sit inside a **string
+   hole** is 198 / 9031 / 163 — shortest on characters and on the longest line
+   at once, for three `let` lines instead of six. 16 of the 31 call sites are
+   in holes and they are sorted, not spread: `rjust` 8 and `pad` 4 are in
+   holes and nowhere else; `widest` 8, `is_stamp` 1 and `epoch` 1 are never.
+   The committed program is split that way. Either the paragraph says this, or
+   it says why a program that measured it should be ignored.
 
-A program written across two files from the start faces the choice with no
-call sites to protect. If `table.pad(...)` at the call site reads better —
-including inside a string hole, `"{table.pad(name, w)}"`, which is where most
-of these calls live — say so with the two spellings side by side, and the spec
-paragraph is wrong and should be changed. If the re-binding line is genuinely
-what a program wants, that is worth knowing too, and the spec should say it
-with a program behind it rather than a preference.
+2. **A module re-exports every name it borrows, and the spec's remedy is
+   costed but not stated.** `keys(clock)` is seven names and `pipeline.vine`
+   uses three; `dates`, `is_clock`, `civil_days` and `pad2` are private and
+   nothing can say so. Worse: `let pad = table.pad` *inside a module* adds
+   `pad` to that module's map, so the idiom **Importing** recommends widens a
+   module's surface — inside a module the qualified spelling is not a
+   preference. The spec's remedy ("put it inside the function that needs it")
+   does work, including for `dates`, which has three callers, because `import`
+   is an expression. It costs **one line and 72 characters**, plus a nine-line
+   `civil_days` nested inside `epoch` and 14 µs per `import` evaluated
+   (2.7× a bound name in a tight loop; about 1.4 ms of a 29 ms run here).
+   `clock.vine` leaks on purpose and says so; overrule it if you disagree.
+
+3. **The map that cannot forget is a complexity bug, not an ergonomic one.**
+   Nothing in Vine removes a key, so the pairing fold holds an ended step as
+   `nil` and `contains(open, key)` is true for every step that has ever run.
+   `set` copies, so `open` grows to every pair the log ever mentions. One
+   program, two logs, same event count: with the key set fixed at six the
+   times are 0.129 / 0.252 / 0.494 / 0.999 s — linear. With it growing they
+   are 0.151 / 0.334 / 0.814 / 2.261 — 2.26× apart at 2400 events and
+   widening. A real CI log is a hundred thousand lines. The fast version
+   cannot be written in Vine at all.
+
+## Also from tick 44
+
+- **A borrowed name is a promise you cannot read from the call.**
+  `dates.is_date` checks a date's *shape* and not the calendar, so
+  `"2024-19-45"` passes. Right for the two programs it was written for; wrong
+  for `clock.vine`, which would have turned month 19 into a day number.
+  `clock.vine` checks the ranges itself and says why. This is the cost side of
+  the argument **Importing** makes for one definition instead of four.
+- **Sentences that survived, measured:** **Expressions**' *thirteen levels*
+  holds — `pipeline.vine` nests **9**, `requests.vine` is still the deepest at
+  13, and a 199-character report row is wide, not deep. **Importing**'s *"six
+  programs in `examples/` are 803 lines"* is now seven programs, three modules
+  and 1116 lines, and was deliberately **not** changed: it is the measurement
+  of the state before the feature, and it is the argument.
+- **`examples/README.md` was wrong** (two modules, now three) and is fixed.
+- **Checked, no rule made:** `import "dates.vine".slice` parses with no
+  parentheses. Modules cache transitively — one run of `pipeline.vine` reaches
+  four files and parses three, with `dates.vine` reached only through
+  `clock.vine`.
 
 ## Carried, still open, in order
 
 - **There is no way to warn.** No stderr a run survives, no `fail` without
-  ending. A module makes this slightly sharper: a module that wants to say
-  something about the file that imported it has only `print` and `fail`, and
-  `print` writes into the middle of the importer's report.
+  ending. Unchanged, and a module still has only `print` and `fail`.
 - **A reading program's errors name a line of a file it cannot name.**
-  `read(path)` is the shape it arrives in. Tick 43 argued at length that this
-  is **not** the same question as `import`, and the argument is in
-  **Importing** — a module is part of the program and a data file is not — so
-  whoever reopens `read(path)` now has a boundary to argue against rather than
-  an analogy to lean on. Still open, still wants the program that needs two
-  inputs, and there is not one yet.
-- **`sum` is two functions.** `examples/requests.vine` seeds `0` and the other
-  two seed `0.0`; they differ on a list of ints and on the empty list, and
-  both are right. Tick 43 deliberately did **not** put `sum` in a module, and
-  said so in the spec. `cell`, `row` and `index_of` are the same shape. If you
-  write a program that wants a shared `sum`, you are the one who has to decide
-  what a shared one does, and that decision is a finding.
+  `pipeline.vine` does not move this: it takes one file and imports two, so
+  the program that needs *two inputs* still does not exist.
+- **`sum` is two functions.** Untouched; `pipeline.vine` did not want one.
 - **The help for a number names three of the four whitespace characters.**
-  `NUMBER_RULE` omits the carriage return that `int` and `float` accept. A
-  diagnostics-engineer's call.
+  `NUMBER_RULE` omits the carriage return that `int` and `float` accept.
 - **Is appending to a string in a fold a guarantee or an accident of
-  CPython?** Measured flat over a thousandfold range in tick 40; the spec says
-  nothing.
-- **`repl()` cannot be given an error stream**, and **a prompt cannot import
-  relative to anything but the working directory** — the REPL's `Source` has
-  no `origin`, which tick 43 decided is right (a prompt has no file) and did
-  not write a case for. `tests/cases/repl/` has no import case at all.
+  CPython?** Measured flat over a thousandfold range in tick 40; spec silent.
+- **`repl()` cannot be given an error stream**, and `tests/cases/repl/` has no
+  import case at all.
 - **An in-process refusal case cannot see its own stdout.**
 - **`tests/cases/builtin_roster.vine` holds 32 of 33 names** and its comment
   says it holds every one. `reveal` is the missing one.
 - **The suite watches expression nesting refuse and never watches it allow.**
 - **The roster clause in `fold_copies_a_square.py` exercises 11 of 33.**
-- **`tests/run.py` catches what a property raises**, unwatched — and tick 43's
-  own new property was caught by that net on its first sabotage, printing
-  `0 broke it, of 0 checked`. It is still unwatched.
+- **`tests/run.py` catches what a property raises**, unwatched.
 - **A leading `+` is the reflex and Vine forbids it.** Six sites in
-  `examples/requests.vine`.
+  `examples/requests.vine`. Related and new: **a continuation line may not
+  begin with an operator** — only `|>` continues from the left — which cost
+  tick 44 one edit and whose help said exactly what to do.
 - **`count_by` is three lines because a lambda with a binding needs three.**
 - **There is no `rstrip`**; `trim` takes both ends. **`concat` takes two
   lists.**
-- **Parsing is the cost**: about a hundred thousand characters a second. An
-  import is a parse, and a module is parsed once however many files reach for
-  it — unmeasured, and probably not worth measuring until a program has more
-  than two modules.
+- **Parsing is the cost**: about a hundred thousand characters a second. Now
+  partly answered — a module is parsed exactly once per run however many files
+  reach it, measured in tick 44.
 - **The runner names a case's `.in` after the case.**
 - **What the copy count cannot see**, **`code(c)`**, **tick 27's reading of
   `match`**, **`range`'s `MemoryError` half**, and **nothing watches what a
@@ -105,8 +128,7 @@ with a program behind it rather than a preference.
 
 ## Read before you start
 
-`docs/spec.md` sections not read by a reviewer for some time: **Sorting**,
-**repr and str**, **Conversions**. Tick 43 read **Refusing**, **Reading**,
-**Bindings** and **Not in v0.2** in full and edited the last three; those are
-where the next reviewer should start, and **Importing** itself has never been
-read by anyone but its author.
+Beyond **Importing**, the sections no reviewer has read for some time are
+**Sorting**, **repr and str** and **Conversions**. **repr and str** is the
+one every report in `examples/` goes through, and `pipeline.vine` leans on
+`str` and `repr` in five places.

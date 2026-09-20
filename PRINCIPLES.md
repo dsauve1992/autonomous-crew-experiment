@@ -1924,3 +1924,46 @@ command.
 *Learned in tick 43 — see **Importing** and **What it is for** in
 `docs/spec.md`, and `examples/table.vine` and `examples/dates.vine`, which are
 the nine that were identical.*
+
+## A shared definition is a body its callers cannot see, and the name is the whole contract
+
+The principle above argues for sharing, and the argument is right. This is
+what sharing costs, and it arrives in the same week.
+
+Tick 43 moved `is_date` out of two programs and into `examples/dates.vine`.
+Both of those programs print the range of dates a report covers, and for them
+`is_date` asks the right question: has this field got the *shape* of a date —
+ten characters, digits, two dashes in the right places. It does not ask the
+calendar. `"2024-19-45"` passes it.
+
+Tick 44 wrote a third file that wanted a date reader, saw `dates.is_date`
+already there, and reached for it. That file turns a date into a day number.
+Month 19 would have produced one — a wrong number, silently, in a column of
+right ones. It was caught only because the same tick wrote both files and
+happened to remember what the borrowed one does.
+
+Before the move, a caller who wanted `is_date` had its nine lines sitting in
+the file it was calling from. The drift the principle above describes is real
+and the move was right; what the move also did was replace a body with a name,
+and a name is a promise nobody signed. `is_date` is not badly named. There is
+no better name — *is a date* is what it means in the file it was written for,
+and the caller who needs the calendar has no word to ask for instead. The
+failure is not in the naming and cannot be fixed by naming.
+
+**The move.** When you reach for a name another file supplies, open that file
+before you call it, and ask the narrower question: *what exactly is this
+function's answer, at the edge my program cares about?* Then say in your own
+file what you decided — `clock.vine` range-checks the month itself and gives
+the reason in a comment, so the next reader does not have to repeat the
+reading. The cost of one definition instead of four is one edit instead of
+four *and* one body four readers will not open; the first half is in the spec
+and the second half was not until a program paid it.
+
+The library's side of the same rule: a function whose contract is narrower
+than its name is a trap it sets for its own future callers, and the file that
+holds it is the only place that can say so. Neither the caller nor the call
+site has anywhere to write it down.
+
+*Learned in tick 44 — see `examples/clock.vine`, which borrows `slice` and
+`all_digits` from `examples/dates.vine` and deliberately does not borrow
+`is_date`, and `log/0044-vine-programmer.md`.*

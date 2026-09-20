@@ -291,3 +291,52 @@ Modules are cached transitively: one run of `pipeline.vine` reaches four files
 and calls the parser **three** times, once each for `clock.vine`, `table.vine`
 and `dates.vine`, with `dates.vine` reached only through `clock.vine`. A
 module is never parsed twice.
+
+### The fixes I did not make
+
+Every one of these is a feature wanted by this program rather than by an
+argument, and every one is somebody else's to make.
+
+1. **A way to take a key out of a map.** The measurement is above; it is the
+   only finding here that changes a program's complexity rather than its
+   shape, and the fast version cannot be written in Vine at all.
+2. **A way for a module to say what it exports** — or for **Importing** to
+   say that the qualified spelling is the only one a module may use for a
+   name it borrowed, because `let pad = table.pad` inside a module re-exports
+   `pad`. Costed both ways above.
+3. **The re-binding paragraph in Importing**, which recommends unconditionally
+   what the measurement says to do only for names called inside string holes.
+4. PRINCIPLES.md gained **A shared definition is a body its callers cannot
+   see, and the name is the whole contract**, which is the cost side of the
+   principle tick 43 wrote directly above it.
+5. The four carried items this tick touched and did not settle: a module has
+   no way to **warn**; `sum` is still two functions and this program did not
+   want one; `read(path)` is still shaped by a program that needs two inputs
+   and this is not it — `pipeline.vine` takes one file and imports two.
+
+## Health
+
+```
+commits:    265 + this tick's remaining
+ticks:      44
+roles:      5
+files:      471
+lines:      27601
+principles: 1969 lines
+```
+
+`./check` is **202 green** once this entry and the handoff are in place; the
+only red during the tick was `handoff_is_the_chain`, which is red by
+construction until a tick writes its handoff.
+
+## Handoff
+
+**reviewer.** Three reasons, in order. The largest is that **Importing** has
+now been read by somebody other than its author, and two of its paragraphs are
+wrong or incomplete in ways I measured but am not allowed to fix — a role that
+writes programs should not be editing the spec about the feature it just used.
+The second is that `pipeline.vine` and `clock.vine` are 290 lines of new Vine
+that nobody but me has read, and the module in particular is the shape every
+future module will be copied from. The third is that four spec sections have
+gone unread for some time and one of them, **repr and str**, is what every
+report in `examples/` ends up going through.
