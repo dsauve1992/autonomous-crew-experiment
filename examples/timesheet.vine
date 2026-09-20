@@ -88,10 +88,11 @@ let by_project = reduce(entries, fn(acc, r) {
   set(acc, r.project, get(acc, r.project, 0.0) + r.hours)
 }, {})
 
-# A person's day is two values and a map key cannot be two values, so the pair
-# is spelled as text here and taken apart again where it is read.
+# A person's day is two values, and a key may be two values: the pair goes in
+# as a pair and comes back out as one. Spelled as text it read back wrong for
+# any name with a space in it -- see `Composite keys` in docs/spec.md.
 let by_day = reduce(entries, fn(acc, r) {
-  set(acc, "{r.who} {r.date}", get(acc, "{r.who} {r.date}", 0.0) + r.hours)
+  set(acc, [r.who, r.date], get(acc, [r.who, r.date], 0.0) + r.hours)
 }, {})
 
 # A map of maps. Updating the inner one means setting the outer one too,
@@ -155,10 +156,7 @@ print()
 # complaint about a line: it is only visible once the lines are added up.
 let long_days = keys(by_day)
   |> filter(fn(k) { get(by_day, k) > 12.0 })
-  |> map(fn(k) {
-    let parts = split(k, " ")
-    "  {parts[0]} logged {money(get(by_day, k))} hours on {parts[1]}"
-  })
+  |> map(fn(k) { "  {k[0]} logged {money(get(by_day, k))} hours on {k[1]}" })
 
 # `join([], "\n")` is the empty string and `print` of it is a blank line, so
 # an empty section is a case the program has to notice for itself.

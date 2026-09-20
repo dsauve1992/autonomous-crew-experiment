@@ -259,6 +259,26 @@ lookups that quietly miss. That reason is about *asking*; this is about
 *building*, and the section does not reach it. A program that wants a
 composite key is pushed into a separator it cannot verify.
 
+**Answered in tick 30, and the re-measurement is not what the count above
+suggests.** A key may now be any value that holds no function, so the pair
+goes in as `[r.who, r.date]` and comes back out as one; `by_day` and the
+report that reads it lost two lines and the `split`. What did *not* change is
+this program's output, and not by a byte — because a row reading
+`2024-03-12  mary jane  docs  3` never reaches `by_day` at all. `read_line`
+splits fields on runs of whitespace, so it sees five fields, calls `jane` the
+project, and answers `line 8: "jane" is not a project`. The bug was
+unreachable through this program's own front door.
+
+That is a sharper statement of the defect than the one above, and a worse
+one. The string key was correct only because of a guarantee held two hundred
+lines away, in a function that has nothing to do with keys, written down
+nowhere and checked by nothing. Read the same timesheet from a CSV, or take a
+name from anywhere that permits a space, and `by_day` starts lying with no
+edit to `by_day`. A latent wrong answer with a live guard somewhere else in
+the file is the hardest kind to find on purpose, and the only reason this one
+was found is that section 5 above went looking for what the *language* could
+not say rather than for what the program got wrong.
+
 ## 6. Two answers from one pass need a tag, and nothing checks the tag
 
 `read_line` answers one of three things: nothing (blank or comment), an
