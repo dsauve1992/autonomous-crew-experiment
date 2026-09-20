@@ -19,32 +19,43 @@ a map program's count is zero however long the list, while the same walk
 written as a fold over `push` is a square -- which is the sentence the section
 opens with, standing up without a clock.
 
-**Eleven builtins copy and twenty-one do not**, and the roster clause below
-holds that split against `REGISTRY` in both directions. It is there because
+**Twelve builtins copy and twenty-two do not**, and the roster clause below
+holds that split against `REGISTRY` in both directions. (It said *twenty-one*
+from the day it was written and the table held twenty-two; the roster clause
+checks the table against `REGISTRY` and cannot read the sentence above it, so
+a count in prose beside a count in code is a third thing nobody holds.) It is there because
 the count is a *floor*: a builtin that copies and is not in the table makes
 every figure here too small, silently, and the program that would notice is
 the one nobody wrote. An added builtin fails the roster clause the day it is
 added, which is the same reason `roster_names_every_builtin.py` exists.
 
-**The tombstone pair is the second finding, and it is tick 44's seconds in
+**The tombstone group is the second finding, and it is tick 44's seconds in
 this file's unit.** `examples/pipeline.vine` folds a map of the steps that
-have started and not ended. At most a handful are ever live -- but nothing in
-Vine takes a key out of a map, so an ended step is held as `nil` and the
-accumulator grows to every pair the log ever mentioned. Tick 44 measured that
-on two logs of the same length, one whose key set grows and one whose does
-not, and got 2.261s against 0.999s at 2400 events. Seconds do not travel.
-The same two programs counted here are **n²** against **2n - 1**: one square,
-one line, from the same number of events. That is the finding, and it is the
-same on every machine forever.
+have started and not ended. At most a handful are ever live -- but until tick
+46 nothing in Vine took a key out of a map, so an ended step was held as `nil`
+and the accumulator grew to every pair the log ever mentioned. Tick 44
+measured that on two logs of the same length, one whose key set grows and one
+whose does not, and got 2.261s against 0.999s at 2400 events. Seconds do not
+travel. The same two programs counted here are **n²** against **2n - 1**: one
+square, one line, from the same number of events, and the same on every
+machine forever.
 
-Both of them are ordinary folds over `set`, so neither discovers anything
-about `set` that the fold above it does not. What the *pair* holds is the
-thing no single program can say: the curve is decided by whether the key set
-grows, and in Vine that is not the program's choice. If a way to take a key
-out of a map ever arrives -- **Not in v0.2** carries it now -- the first of
-these two is the program that should stop being a square, and this file is
-where that shows up as a number rather than as a feeling that things got
-faster.
+Tick 46 added `remove` and four more rows, and the four are what the sentence
+above could not settle. *the same fold with remove* is **0**: the map is empty
+before every open and one entry before every close, so nothing is ever carried
+anywhere. *the same fold rebuilt in Vine* is **n** -- removal written as four
+lines of ordinary Vine over `keys`, which **What the fold costs** used to call
+"the same square with a larger constant" and which is linear. That row is the
+finding: the square was never a property of the problem, and the sentence that
+said it was had stood for two ticks and been reasoned from twice. The last two
+rows hold a window of three open keys rather than one, because a builtin that
+costs zero is not a ratio -- there the builtin is **4n - 7** and the
+composition **8n - 8**, which is a constant apart and not a curve apart.
+
+None of the six discovers anything about `set` or `remove` that a fold above
+them does not. What the *group* holds is the thing no single program can say:
+the curve is decided by whether the key set grows, that is now the program's
+choice, and both ways of making the choice cost the same shape.
 
 **The dedupe pair is the finding.** The section offers the map spelling as
 *the shape to reach for* against the `contains` spelling, on 0.13s against
@@ -129,6 +140,10 @@ COPIERS = {
     "sort": lambda args, result: len(result),
     "filter": lambda args, result: len(result),
     "set": lambda args, result: len(args[0]),
+    # `remove` answers what it kept, and answers the map itself when the key
+    # was not there -- so `counted` scores that call zero before the table is
+    # asked, which is the truth: nothing was carried anywhere.
+    "remove": lambda args, result: len(result),
     "keys": lambda args, result: len(result),
     "values": lambda args, result: len(result),
 }
@@ -290,6 +305,68 @@ PROGRAMS = {
         "}}, {{}})\n"
         "print(len(held))",
         lambda n: (2 * n - 1, 2 * n),
+    ),
+    # The same 2n events again, with `remove` closing the key instead of
+    # setting it to nil. The map is empty before every open and one entry
+    # before every close, so `set` copies nothing and `remove` answers a map
+    # of nothing: **zero**, at every n. The 2n comparisons are the guard, as
+    # above -- the removal itself compares nothing, because a key's slot is a
+    # hash and not a scan.
+    "the same fold with remove": (
+        "let held = reduce(range({n} * 2), fn(m, j) {{\n"
+        "  let k = int(j / 2)\n"
+        "  if j % 2 == 0 {{ set(m, k, j) }} else {{ remove(m, k) }}\n"
+        "}}, {{}})\n"
+        "print(len(held))",
+        lambda n: (0, 2 * n),
+    ),
+    # And the same fold again with removal written in Vine rather than called:
+    # `keys` filtered and folded back into a map, which is what **Not in v0.2**
+    # said would be "the same square with a larger constant" and is not. Each
+    # close copies the one key out of `keys` and keeps none of it, so this is
+    # **n** -- linear, like the builtin and unlike the tombstone. That is the
+    # finding of tick 46, and it is the number that took the curve out of the
+    # argument for the builtin. Its n extra comparisons over the row above are
+    # the `j != k` of the filter, one per surviving key.
+    "the same fold rebuilt in Vine": (
+        "let without = fn(m, k) {{\n"
+        "  reduce(filter(keys(m), fn(j) {{ j != k }}), fn(acc, j) {{ set(acc, j, get(m, j)) }}, {{}})\n"
+        "}}\n"
+        "let held = reduce(range({n} * 2), fn(m, j) {{\n"
+        "  let k = int(j / 2)\n"
+        "  if j % 2 == 0 {{ set(m, k, j) }} else {{ without(m, k) }}\n"
+        "}}, {{}})\n"
+        "print(len(held))",
+        lambda n: (n, 3 * n),
+    ),
+    # One key live is the case where the builtin costs nothing at all, which
+    # is not a ratio. These two hold a window of three instead -- close the key
+    # opened two events ago -- so both spellings pay a constant per event and
+    # the constant can be compared. `set` copies 2 and `remove` answers 2 in
+    # the steady state, with the first two opens cheaper: 4n - 7.
+    "a window of three, with remove": (
+        "let held = reduce(range({n} * 2), fn(m, j) {{\n"
+        "  let k = int(j / 2)\n"
+        "  if j % 2 == 0 {{ set(m, k, j) }} else {{ remove(m, k - 2) }}\n"
+        "}}, {{}})\n"
+        "print(len(held))",
+        lambda n: (4 * n - 7, 2 * n),
+    ),
+    # The same window, rebuilt in Vine: `keys` carries three, `filter` keeps
+    # two, and the fold back in copies 0 + 1. Twice the builtin's copies and
+    # two and a half times its comparisons -- a constant, not a curve, which
+    # is why the builtin's argument had to be found somewhere other than here.
+    # See **Taking a key out** in docs/spec.md.
+    "a window of three, rebuilt in Vine": (
+        "let without = fn(m, k) {{\n"
+        "  reduce(filter(keys(m), fn(j) {{ j != k }}), fn(acc, j) {{ set(acc, j, get(m, j)) }}, {{}})\n"
+        "}}\n"
+        "let held = reduce(range({n} * 2), fn(m, j) {{\n"
+        "  let k = int(j / 2)\n"
+        "  if j % 2 == 0 {{ set(m, k, j) }} else {{ without(m, k - 2) }}\n"
+        "}}, {{}})\n"
+        "print(len(held))",
+        lambda n: (8 * n - 8, 5 * n - 3),
     ),
     # The same answer through a map: the same square of copies, and keys
     # carrying the n of them out at the end. No comparison anywhere.

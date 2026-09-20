@@ -15,8 +15,8 @@ let listed = [
   fixed, pow,
   range, map, filter, reduce, push, concat, first, rest, take, drop,
   reverse, sort, contains,
-  keys, values, get, set,
-  split, join, upper, lower, trim,
+  keys, values, get, set, remove,
+  split, join, upper, lower, trim, reveal,
 ]
 print(len(listed))
 print(listed |> filter(fn(f) { type(f) == "function" }) |> len)

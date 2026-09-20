@@ -882,11 +882,12 @@ Lists: `range(n)` `range(a, b)` `map(xs, f)` `filter(xs, f)` `reduce(xs, f, init
 `reverse(xs)` `sort(xs)` `sort(xs, key)` `contains(xs, x)`
 
 Maps: `keys(m)` `values(m)` `get(m, k)` `get(m, k, default)` `set(m, k, v)`
+`remove(m, k)`
 
 Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 `reverse(s)` `contains(s, sub)` `reveal(s)`
 
-`push` and `set` return new values; nothing in Vine mutates.
+`push`, `set` and `remove` return new values; nothing in Vine mutates.
 
 Nearly every name above has a section of its own — **Printing**,
 **Reading**, **Conversions**, **Text**, **Looking up a key**, **Range**, **Powers**,
@@ -2053,6 +2054,167 @@ because the rule is `==` and `nil == nil`; carving it out would also have to
 carve out `[nil]`, and a list with a hole in it is exactly the data a
 composite key is for.
 
+### Taking a key out
+
+`remove(m, k)` is `m` without the key `k`. It answers a new map, the way `set`
+answers a new map, and it is the only way a Vine program can make a map
+smaller.
+
+```
+let m = {a: 1, b: 2, c: 3}
+remove(m, "b")          # {"a": 1, "c": 3}
+m                       # {"a": 1, "b": 2, "c": 3}
+remove(m, "z") == m     # true
+remove({}, "a")         # {}
+```
+
+**A key that is not there is not an error**, and the map itself comes back.
+That is this family's rule — `take(xs, 5)` on three elements answers the
+three, `drop` past the end answers `[]`, and no container builtin here fails
+for being asked about something that is not there. What decides it rather than
+inherits it is that only one of the two halves can be turned into the other
+with a spelling the language already has. A program that wants a missing key
+to stop it writes `m[k]` first, which fails and names the key; a `remove` that
+refused could only be made tolerant by writing a `contains` guard at every
+call, and a fold closing a key it may or may not have opened is the ordinary
+case, not the exception. `remove(remove(m, k), k)` is `remove(m, k)`.
+
+**What it is for is that a fold could not let go.** `set` was the only way
+into a map and there was no way out, so a fold holding *what is currently
+open* held an ended entry as `nil`: `contains` was true of it forever, the
+question had to be `!= nil` throughout, and the accumulator grew to everything
+the input had ever named. `examples/pipeline.vine` is the program — it pairs a
+CI runner's `start` and `ok` lines, and on its own log it names twenty-six
+(build, step) pairs and never has more than two of them open at once. What
+that cost is in **What the fold costs**, and it was a square.
+
+**The square is not the argument for this builtin, and the paragraph that said
+it was is now corrected.** Removal can be written in Vine:
+
+```
+let without = fn(m, k) {
+  reduce(filter(keys(m), fn(j) { j != k }),
+    fn(acc, j) { set(acc, j, get(m, j)) }, {})
+}
+without({a: 1, b: 2, c: 3}, "b")     # {"a": 1, "c": 3}
+```
+
+**What the fold costs** used to say that this was "the same square with a
+larger constant". It is a square — in `L`, the size of the map — and the
+length of the log is `n`. A fold whose live set is bounded pays that square as
+a constant per event and is linear in `n`, exactly like the builtin. Counted in
+elements copied by `tests/properties/fold_copies_a_square.py`, over `2n`
+events that open and close a single key:
+
+```text
+                                        n = 10    20    40
+a fold over a map that cannot forget       100   400  1600
+the same fold with remove                    0     0     0
+the same fold rebuilt in Vine               10    20    40
+```
+
+and over a window of three open keys, where the builtin's own constant is
+visible instead of being zero:
+
+```text
+a window of three, with remove              33    73   153
+a window of three, rebuilt in Vine          72   152   312
+```
+
+So the composition is the same curve at twice the copies and, at the window,
+two and a half times the comparisons. In seconds on one machine, over a window
+of six at 2000, 4000, 8000 and 16000 events: 0.028, 0.047, 0.094 and 0.196
+with `remove`, 0.087, 0.166, 0.326 and 0.665 rebuilt in Vine, and 0.039,
+0.102, 0.286 and 0.874 with tombstones — two lines and a square. **A constant
+is not a reason under add what cannot be composed, refuse what can.**
+
+**The reason is the second cost.** By **A composition has two costs** the
+question is what the composition looks like written wrong, and this one has
+five one-token mistakes and not one of them fails:
+
+```
+let m = {a: 1, b: 2, c: 3}
+reduce(filter(keys(m), fn(j) { j == "b" }),
+  fn(a, j) { set(a, j, get(m, j)) }, {})    # {"b": 2} — `==` for `!=`
+reduce(filter(keys(m), fn(j) { j != "b" }),
+  fn(a, j) { set(a, j, get(a, j)) }, {})    # {"a": nil, "c": nil} — `a` for `m`
+reduce(filter(keys(m), fn(j) { j != "b" }),
+  fn(a, j) { set(a, j, get(m, j)) }, m)     # {"a": 1, "b": 2, "c": 3} — `m` for `{}`
+reduce(filter(values(m), fn(j) { j != "b" }),
+  fn(a, j) { set(a, j, get(m, j)) }, {})    # {1: nil, 2: nil, 3: nil} — `values` for `keys`
+reduce(filter(keys(m), fn(j) { j != "b" }),
+  fn(a, j) { set(a, j, j) }, {})            # {"a": "a", "c": "c"} — the `get` dropped
+```
+
+Every one answers a map. The third is the worst of them: `m` for `{}` is a
+removal that removes nothing, which is the tombstone bug back again and
+silent, in the one program written to get rid of it. This is `push` against
+`concat(xs, [x])` with five brackets instead of one — see **Building lists** —
+and it is the whole of why the name goes in.
+
+**And the name written wrong is not available.** `remove(k, m)`, the two
+arguments swapped, is `remove target must be a map, got list` at a composite
+key and `got string` at an ordinary one. It answers only where the key is
+itself a map, which is the one shape in which the two arguments have the same
+type:
+
+```
+remove({a: 1}, {a: 1, b: 2})    # {"a": 1}
+```
+
+That is the test **Why there is no `replace`** applies to the builtin as well
+as to the composition, and it is where `replace` failed: one narrow shape
+against the composition's five.
+
+**Why `remove` and not `without`, `delete` or `unset`.** No `.vine` file in
+this repository binds any of the four, so the corpus eliminates nothing — a
+different result from the one that chose `import` in tick 43, and worth saying
+so, because a grep that comes back empty looks like an answer and is not one.
+What decides it is the shelf it goes on. Every builtin here is a verb or a
+noun and none is a preposition, so `without` would be the only one, and it
+would read as a promise that `set` and `push` are the mutating pair; *nothing
+in Vine mutates* is said once, in **Builtins**, and no name is asked to say it
+again. `delete` is the word for destroying a thing rather than for answering a
+map that does not have it, and it is not what this document has called the
+operation for forty-five ticks.
+
+**The key is decided by `==`, at every depth**, which is `get`'s rule and
+`set`'s and not the host's idea of what hashes alike. See **Composite keys**.
+
+```
+let pairs = {[1, 2]: "x", [3, 4]: "y"}
+remove(pairs, [1, 2])           # {[3, 4]: "y"}
+len(remove(pairs, [1.0, 2]))    # 2
+remove({}, print)               # error: a map key may not be a function
+```
+
+**A key removed and given again arrives at the end.** `set` on a key the map
+already has keeps that key's place — see **Map order** — and `remove` takes
+the place away with the key, so the two do not cancel:
+
+```
+let m = {a: 1, b: 2, c: 3}
+keys(set(m, "a", 9))                # ["a", "b", "c"]
+keys(set(remove(m, "a"), "a", 9))   # ["b", "c", "a"]
+```
+
+That is not a wart, it is the rule one level along: a map's order is the order
+its keys first appeared, and a key that was taken out and given back appeared
+again. `examples/pipeline.vine` reads its unfinished steps straight out of the
+fold's map, so it reads them in the order they were last opened rather than
+first — which is what that program wants and is worth knowing before a program
+wants the other.
+
+**There is no `remove` for a list**, and here the rule refuses in its ordinary
+form. Taking an element out of a list by value is `filter`, which is one pass
+and carries each survivor once; by index it is `concat(take(xs, i), drop(xs,
+i + 1))`. Both are compositions at the right curve, and neither has the
+five wrong spellings above — a `filter` written with the comparison the wrong
+way round leaves a list the reader can see is wrong, the way a crooked column
+is. What `remove` would add on a list is a second question about what its
+argument means, which is the thing `take`'s negative count was refused for.
+
+
 ## Range
 
 `range(n)` is the integers from 0 up to but not including `n`, and
@@ -2444,15 +2606,17 @@ it climbs towards is a number rather than infinity, because the two curves are
 one curve. Reach for the map for the large constant, and do not reach for it
 expecting a different shape.
 
-**And an accumulator cannot shrink, so the square is over every key the input
-ever mentioned.** `set` is the only way into a map and nothing takes a key out
-of one, so a fold that holds *what is currently open* cannot let go: a key
-that is finished with is held as `nil`, `contains` is true of it forever, and
-the accumulator grows to the whole input rather than staying at the handful
-that are live. `examples/pipeline.vine` is the program this is about — it
-pairs a CI runner's `start` and `ok` lines, a few steps are open at any moment,
-and its map ends up holding every (build, step) pair the log ever named. The
-two shapes, counted: 2n events over n keys, and the same 2n events over one.
+**An accumulator that cannot shrink pays its square over every key the input
+ever mentioned**, and until tick 46 no accumulator here could shrink. `set`
+was the only way into a map and nothing took a key back out, so a fold holding
+*what is currently open* could not let go: a key that was finished with was
+held as `nil`, `contains` was true of it forever, and the accumulator grew to
+the whole input rather than staying at the handful that were live.
+`examples/pipeline.vine` is the program this is about — it pairs a CI runner's
+`start` and `ok` lines, never has more than two steps open at once, and its
+map used to end up holding every one of the twenty-six (build, step) pairs its
+log names. The two shapes, counted: 2n events over n keys, and the same 2n
+events over one.
 
 ```text
                                             n = 10    20    40
@@ -2464,9 +2628,29 @@ the same fold over one key                       19    39    79
 same program — what differs is the log. In seconds on one machine, over 300,
 600, 1200 and 2400 events: 0.151, 0.334, 0.814 and 2.261 with the key set
 growing against 0.129, 0.252, 0.494 and 0.999 with it fixed at six, which is
-one curve doubling with its input and one not. There is no spelling that
-avoids it: rebuilding a map without one key is a fold over `keys`, which is
-the same square with a larger constant. See **Not in v0.2**.
+one curve doubling with its input and one not.
+
+**This section used to end by saying there was no spelling that avoids it, and
+that was false.** What it said was that rebuilding a map without one key is a
+fold over `keys`, which is *the same square with a larger constant* — and it
+is a square in the size of the map, which is not the quantity the rest of the
+paragraph is about. The log's length is `n` and the live set is `L`; a fold
+that rebuilds a bounded map once per event pays `O(L²)` per event, which is a
+**constant**, and is linear in `n`. So the four ordinary lines of Vine under
+**Taking a key out** take the square away too, and they always could have:
+
+```text
+                                            n = 10    20    40
+the same fold with remove                         0     0     0
+the same fold rebuilt in Vine                    10    20    40
+```
+
+Two ticks reasoned from the false sentence and one of them built a builtin on
+it. `remove(m, k)` is still the right thing to have — its argument is in
+**Taking a key out** and it is about spellings and not about curves — but the
+program that was paying the square above was never obliged to, and no reader
+of this section could have known that from this section. A claim that
+something costs a square has to say a square *in what*.
 
 **What the map spelling costs is a list holding a function.** A function may
 not be a key, so `dedupe([fn() { 1 }, 1])` fails where the `contains` spelling
@@ -3399,9 +3583,8 @@ visible in a golden file, because a golden is a copy of the message it checks.
 
 ## Not in v0.2
 
-Deliberately absent, roughly in the order they look worth adding: a way to
-take a key out of a map, a `match` expression, a second input, user-defined
-operators, and a bytecode compiler. Anything here is fair game for a later
+Deliberately absent, roughly in the order they look worth adding: a `match`
+expression, a second input, user-defined operators, and a bytecode compiler. Anything here is fair game for a later
 tick — but adding one means adding its tests and updating this file in the
 same commit.
 
@@ -3414,7 +3597,7 @@ added `read()`; see **Reading**. What made it visible was a program, exactly as
 the paragraph above recommends: tick 38 wrote the first one that minded and
 spent sixty of its hundred and seventy-four lines manufacturing a log.
 
-The third entry above is what is left of it. `read()` takes no argument, so a
+The second entry above is what is left of it. `read()` takes no argument, so a
 program is given one input and a program that wants two must be given them
 joined. `read(path)` would answer that and would also give Vine a second
 opinion about where files are, after the shell's; whoever reopens it should
@@ -3431,24 +3614,27 @@ correct refusal that told the shell it had succeeded. See **Refusing**. That is
 the second absence this list has learned about by a program arriving rather than
 by anybody noticing, which is now a pattern and not an anecdote.
 
-**The first entry above is the third of those, and it arrived one tick after
-that sentence was written.** Nothing takes a key out of a map, so a fold that
-holds what is currently open cannot let go of it and its accumulator grows to
-the whole input. Nobody listed the absence while every accumulator in the
-corpus only ever grew — which was every one of them until tick 44, when
+**Taking a key out of a map was the third of those, and it was on this list
+for exactly two ticks.** It went on in tick 45 and came off in tick 46; see
+**Taking a key out**. Nobody had listed the absence while every accumulator in
+the corpus only ever grew, which was every one of them until tick 44, when
 `examples/pipeline.vine` became the first program here whose state is meant to
-*shrink*. **What the fold costs** has the curve: a square over every key the
-log ever named, where the live set is six. Whoever reopens this already has
-the program, which is the part this list keeps saying is expensive.
+*shrink*. That is the third absence this list has learned about by a program
+arriving rather than by anybody noticing, and it is now three for three.
 
-It is also the first question **add what cannot be composed** does not settle,
-and that is worth more than the entry. Removal composes: `keys` filtered and
-folded back into a map is four lines of ordinary Vine. What is wrong with the
-composition is not its length but its *curve* — it pays the square the removal
-was wanted to avoid — and the rule as **Formatting** wrote it is about
-spellings, where `round` was the cheap answer that did not reach `"5.00"` at
-all. A composition that reaches the answer by the wrong road is a case that
-rule has not met.
+**What it got wrong is worth more than the entry.** The entry was written
+saying that removal is the first question **add what cannot be composed** does
+not settle: removal composes — `keys` filtered and folded back into a map is
+four lines of ordinary Vine — but the composition was said to pay *the square
+the removal was wanted to avoid*, which would have been a case the rule had
+never met. Tick 46 counted it and it pays no such thing. The square is in the
+size of the map and the fold is over the length of the log, so a bounded live
+set makes the composition linear, exactly like a builtin. The rule settled the
+question in its ordinary form after all, and settled it the other way: what
+`remove` buys is a spelling that cannot be got wrong, where the composition
+has five one-token mistakes that all answer a map. **A cost written as a curve
+has to name the quantity it is a curve in**, or it is a sentence the next two
+ticks will reason from without being able to check it.
 
 A module system was the first entry from tick 1 until tick 43 took it, and it
 is the one item here that went the way this list says a question *should* go
