@@ -1,0 +1,26 @@
+pipeline: 5 builds, 21 steps, 2024-06-03 08:14:22 to 2024-06-04 00:31:07
+
+builds
+  build-4812  ok          6 steps   7m 09s
+  build-4813  failed      4 steps   7m 22s  at test
+  build-4814  ok          4 steps   7m 26s
+  build-4815  ok          3 steps   6m 50s
+  build-4816  unfinished  4 steps  38m 26s  lint still open
+
+steps, 1h 03m 47s in all
+  step      runs    total  slowest
+  test         5  47m 55s  33m 07s  build-4816
+  build        5   8m 44s   3m 30s  build-4816
+  deps         4   5m 45s   1m 41s  build-4816
+  checkout     5      40s       9s  build-4813
+  package      1      31s      31s  build-4812
+  lint         1      12s      12s  build-4812
+
+questions
+  line 25: build-4814 deps started again, still open from line 24
+  line 32: build-4815 deps ended "ok" with no start
+  line 36: "2024-06-03 24:05:00" is not a timestamp
+  line 39: build-4814 lint ended before line 38 started it
+  line 41: build-4815 package: "cancelled" is not start, ok or fail
+  line 51: expected 5 fields, found 2
+  build-4816 lint started 2024-06-04 00:31:07 and never ended

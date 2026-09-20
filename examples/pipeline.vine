@@ -1,0 +1,195 @@
+# What is this pipeline spending its time on, and what did it not finish? A
+# report over a CI runner's event log as it comes off the machine:
+#
+#     vine examples/pipeline.vine < examples/pipeline.in
+#
+# Every other program in `examples/` reads *rows* -- one line, one record,
+# complete on its own. This one reads *events*, and a line here means nothing
+# by itself: `start` and `ok` are half a fact each, and the durations this
+# report is made of exist only once the two halves are put together. Builds
+# run at the same time, so the halves are interleaved and the pairing is by
+# (build, step) rather than by adjacency.
+#
+# That is also where every question in the report comes from. A log is written
+# by a machine that may die between the two halves, retry without saying so,
+# or be one of several with clocks that disagree -- so a step can start twice,
+# end without starting, end before it started, or never end at all. Those are
+# not malformed lines. Each one is a well-formed line whose *pair* is wrong,
+# which is a kind of mistake nothing else in this directory can make.
+
+# `clock.vine` is beside this file and was written for it: nineteen characters
+# of timestamp in, seconds out, and seconds back into something a column can
+# hold. `table.vine` is the shared one.
+let clock = import "clock.vine"
+let table = import "table.vine"
+
+# Deliberately *not* `let duration = clock.duration`, which is what the four
+# converted programs of tick 43 do and what **Importing** recommends. See the
+# log for tick 44: with six call sites the qualified spelling is the one that
+# reads, and inside a module it is not a choice at all.
+
+# ---------------------------------------------------------------- a line --
+
+# The runner pads its columns, so the separator is a run of spaces rather than
+# one: five fields, and the timestamp is two of them.
+let words_of = fn(line) { split(line, " ") |> filter(fn(w) { len(w) > 0 }) }
+
+let complaint = fn(n, why) { {ok: false, line: n, why: why} }
+
+# The trim is not decoration: a text file ends in a newline and a list of
+# lines does not end in an empty one.
+let lines = read() |> trim |> split("\n")
+
+let read_event = fn(n, line) {
+  if len(trim(line)) == 0 { return nil }
+  let w = words_of(line)
+  if len(w) != 5 { return complaint(n, "expected 5 fields, found {len(w)}") }
+  let at = "{w[0]} {w[1]}"
+  if not clock.is_stamp(at) { return complaint(n, "{repr(at)} is not a timestamp") }
+  if not contains(["start", "ok", "fail"], w[4]) {
+    return complaint(n, "{w[2]} {w[3]}: {repr(w[4])} is not start, ok or fail")
+  }
+  {ok: true, line: n, at: at, secs: clock.epoch(at), build: w[2], step: w[3], event: w[4]}
+}
+
+let parsed = map(range(len(lines)), fn(i) { read_event(i + 1, lines[i]) })
+  |> filter(fn(p) { p != nil })
+
+# ------------------------------------------------------------- the pairing --
+
+# A fold carrying three things: the steps that have started and not ended, the
+# runs that are finished, and everything that could not be made sense of, in
+# the order the lines arrive.
+#
+# `open` is where the language is felt. Nothing in Vine takes a key out of a
+# map -- `set` is the only way in and there is no way back out -- so a step
+# that has ended is held as `nil`, and `contains(open, key)` is `true` for
+# every step that has *ever* run. The question has to be `!= nil` throughout,
+# and the map never shrinks.
+let pair = fn(st, e) {
+  let key = [e.build, e.step]
+  let held = get(st.open, key, nil)
+  let note = fn(why) { set(st, "problems", push(st.problems, "line {e.line}: {why}")) }
+  if e.event == "start" {
+    let carried = if held == nil { st } else {
+      note("{e.build} {e.step} started again, still open from line {held.line}")
+    }
+    set(carried, "open", set(carried.open, key, e))
+  }
+  else if held == nil {
+    note("{e.build} {e.step} ended {repr(e.event)} with no start")
+  }
+  else if e.secs < held.secs {
+    # Two machines, two clocks. The step is closed anyway -- a second end for
+    # it would otherwise be reported as a step that never started -- but it
+    # has no duration, and a negative one run through `clock.duration` would
+    # come out looking like a real number.
+    set(note("{e.build} {e.step} ended before line {held.line} started it"),
+      "open", set(st.open, key, nil))
+  }
+  else {
+    let run = {build: e.build, step: e.step, at: held.at, secs: e.secs - held.secs,
+      outcome: e.event}
+    set(set(st, "runs", push(st.runs, run)), "open", set(st.open, key, nil))
+  }
+}
+
+let state = reduce(parsed, fn(st, p) {
+  if p.ok { pair(st, p) } else { set(st, "problems", push(st.problems, "line {p.line}: {p.why}")) }
+}, {open: {}, runs: [], problems: []})
+
+let runs = state.runs
+let events = filter(parsed, fn(p) { p.ok })
+if len(events) == 0 { fail "pipeline: no events in this log" }
+
+# The tombstones again: every key ever opened is still here, and the live ones
+# are the steps nobody ever ended.
+let unfinished = keys(state.open) |> filter(fn(k) { get(state.open, k) != nil })
+
+# ------------------------------------------------------------- the builds --
+
+let spans = reduce(events, fn(acc, e) {
+  let known = get(acc, e.build, nil)
+  if known == nil { set(acc, e.build, {first: e, last: e}) }
+  else {
+    let first = if e.secs < known.first.secs { e } else { known.first }
+    let last = if e.secs > known.last.secs { e } else { known.last }
+    set(acc, e.build, {first: first, last: last})
+  }
+}, {})
+
+let runs_of = fn(id) { filter(runs, fn(r) { r.build == id }) }
+let failed_of = fn(id) { filter(runs_of(id), fn(r) { r.outcome == "fail" }) }
+let open_of = fn(id) { filter(unfinished, fn(k) { k[0] == id }) }
+
+let build_row = fn(id) {
+  let span = get(spans, id)
+  let broke = failed_of(id)
+  let still = open_of(id)
+  let outcome = if len(broke) > 0 { "failed" }
+    else if len(still) > 0 { "unfinished" }
+    else { "ok" }
+  let note = if len(broke) > 0 { "at {first(broke).step}" }
+    else if len(still) > 0 { "{first(still)[1]} still open" }
+    else { "" }
+  {id: id, outcome: outcome, note: note, secs: span.last.secs - span.first.secs,
+    steps: len(runs_of(id))}
+}
+
+let builds = keys(spans) |> sort(fn(id) { get(spans, id).first.secs }) |> map(build_row)
+
+# ------------------------------------------------------------ the steps --
+
+let counted = reduce(runs, fn(acc, r) { set(acc, r.step, get(acc, r.step, 0) + 1) }, {})
+let spent = reduce(runs, fn(acc, r) { set(acc, r.step, get(acc, r.step, 0) + r.secs) }, {})
+let worst = reduce(runs, fn(acc, r) {
+  let known = get(acc, r.step, nil)
+  if known == nil or r.secs > known.secs { set(acc, r.step, r) } else { acc }
+}, {})
+
+let steps = keys(spent) |> sort(fn(s) { 0 - get(spent, s) })
+let total_spent = reduce(values(spent), fn(a, b) { a + b }, 0)
+
+# ------------------------------------------------------------- the report --
+
+let by_time = sort(events, fn(e) { e.secs })
+let plural = fn(n, one, many) { if n == 1 { one } else { many } }
+
+print("pipeline: {len(builds)} builds, {len(runs)} steps, {first(by_time).at} to {by_time[len(by_time) - 1].at}")
+print()
+
+let id_w = table.widest(map(builds, fn(b) { b.id }))
+let outcome_w = table.widest(map(builds, fn(b) { b.outcome }))
+let count_w = table.widest(map(builds, fn(b) { "{b.steps} {plural(b.steps, "step", "steps")}" }))
+let elapsed_w = table.widest(map(builds, fn(b) { clock.duration(b.secs) }))
+print("builds")
+print(join(map(builds, fn(b) {
+  let count = "{b.steps} {plural(b.steps, "step", "steps")}"
+  # `trim` takes both ends and there is no rstrip, so the last column carries
+  # its own separator rather than leaving a space a golden cannot show.
+  let tail = if len(b.note) == 0 { "" } else { "  " + b.note }
+  "  {table.pad(b.id, id_w)}  {table.pad(b.outcome, outcome_w)}  {table.rjust(count, count_w)}  {table.rjust(clock.duration(b.secs), elapsed_w)}{tail}"
+}), "\n"))
+print()
+
+let step_w = table.widest(concat(steps, ["step"]))
+let runs_w = table.widest(concat(map(steps, fn(s) { str(get(counted, s)) }), ["runs"]))
+let spent_w = table.widest(concat(map(steps, fn(s) { clock.duration(get(spent, s)) }), ["total"]))
+let worst_w = table.widest(concat(map(steps, fn(s) { clock.duration(get(worst, s).secs) }), ["slowest"]))
+print("steps, {clock.duration(total_spent)} in all")
+print("  {table.pad("step", step_w)}  {table.rjust("runs", runs_w)}  {table.rjust("total", spent_w)}  {table.rjust("slowest", worst_w)}")
+print(join(map(steps, fn(s) {
+  let slowest = get(worst, s)
+  "  {table.pad(s, step_w)}  {table.rjust(str(get(counted, s)), runs_w)}  {table.rjust(clock.duration(get(spent, s)), spent_w)}  {table.rjust(clock.duration(slowest.secs), worst_w)}  {slowest.build}"
+}), "\n"))
+print()
+
+# A step that never ended is not a line anybody can point at -- it is the
+# absence of one -- so it is said last, after every complaint that has a line.
+let stranded = map(unfinished, fn(k) {
+  let e = get(state.open, k)
+  "  {k[0]} {k[1]} started {e.at} and never ended"
+})
+let questions = concat(map(state.problems, fn(p) { "  " + p }), stranded)
+print("questions")
+print(if len(questions) == 0 { "  none" } else { join(questions, "\n") })
