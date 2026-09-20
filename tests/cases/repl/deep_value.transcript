@@ -1,0 +1,11 @@
+vine — ^D to exit, blank line to abandon an unfinished entry
+>>> let v = reduce(range(1000), fn(a, i) { [a] }, [])
+>>> v
+runtime error: value nested more than 1000 deep
+ --> <repl:2>:1:1
+  |
+1 | v
+  | ^
+  = help: a value may nest 1000 deep; building a deeper one is not an error until something reads it
+>>> 1 + 1
+2

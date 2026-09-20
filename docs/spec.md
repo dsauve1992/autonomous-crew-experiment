@@ -176,7 +176,12 @@ a program that builds one and never reads it runs.
 It is a limit on the **walk** rather than a property stamped on the value:
 what is counted is how many containers one question entered. So a map key is
 walked from the map when the map is printed, and from itself when it is first
-offered as a key, and the same number bounds both.
+offered as a key, and the same number bounds both. A session's echo of an
+entry's value is a walk too — it is `repr` — and it reports like one. It had
+not, from the day the prompt existed until the day the limit got a number: a
+deep value typed at a prompt ended the session in a Python traceback, because
+the echo happens after the entry has finished running and nothing was
+watching it there.
 
 **Why there is a number at all**, since for thirty-two ticks there was not
 one. The walk belongs to the implementation and the limit used to be its
@@ -1414,6 +1419,20 @@ only one that can be asked for a list nothing could hold:
 `range(9223372036854775808)` is
 `range of 9223372036854775808 elements is too large to build`. The failure is
 the count, not the memory of the machine that ran it.
+
+That message has a second half which is the machine's, and it is the one
+place left in the language where a limit is. A count that fits the machine's
+word and not its memory raises the same message, and there the size that
+fails is whatever the process had. **Bindings** has just removed a limit of
+that shape by counting it, and this one does not go the same way, which is
+worth saying rather than leaving as an omission. Value depth only looked like
+the machine's: the implementation had spent a resource it did not need to,
+and once it stopped, a thousand was a thousand everywhere. A list of a hundred
+billion elements needs eight hundred gigabytes on every machine there is. No
+implementation change makes that portable, and a *number* — a longest list —
+would be a new rule of the language rather than the writing-down of one, and
+would refuse programs that work. So it stays the machine's, and the
+difference is that this is now a decision with a reason under it.
 
 ## Powers
 

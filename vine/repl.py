@@ -20,7 +20,6 @@ import sys
 from .errors import Source, SyntaxError_, VineError
 from .interp import Interpreter
 from .parser import parse
-from .values import to_repr
 
 PROMPT = ">>> "
 CONTINUE = "... "
@@ -121,13 +120,18 @@ class Repl:
             return True
         self.finish()
 
+        # The echo is inside the `try` because it is a walk of the value and
+        # can fail the way any other walk can: a value too deep to `repr` is
+        # a report, not a traceback that ends the session. `render` is the
+        # interpreter's rather than this file's so that the echo runs under
+        # the same ceiling `run` does -- by the time `run` has returned,
+        # CPython's limit is back where it was.
         try:
             value = self.interp.run(program, source)
+            if value is not None:
+                self.write(self.interp.render(value, program.pos) + "\n")
         except VineError as exc:
             self.write(exc.render() + "\n")
-            return True
-        if value is not None:
-            self.write(to_repr(value) + "\n")
         return True
 
     def finish(self):

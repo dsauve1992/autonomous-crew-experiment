@@ -1,5 +1,8 @@
 """The tree-walking evaluator."""
 
+import contextlib
+import sys
+
 from .errors import Pos, RuntimeError_
 from .nodes import (
     Binary,
@@ -184,10 +187,51 @@ class Interpreter:
         `source` re-points error rendering at the text this program came from,
         for callers (the REPL) that evaluate many sources in one interpreter.
         """
-        import sys
-
         if source is not None:
             self.source = source
+        with self.deep_enough():
+            try:
+                return self.eval_stmts(program, self.top)
+            except TooDeep:
+                # A walk stopped at `MAX_VALUE_DEPTH`. `MAX_DEPTH` counts
+                # Vine *calls* and a 1001-deep list is built by 1001 shallow
+                # ones, so this is the only guard a deep *value* meets.
+                # `equal`, `canonical`, `holds_function`, `to_repr` and
+                # `to_display` all walk a value to its bottom, and any of
+                # them can reach here. The message says `value` for that
+                # reason: an expression too deep is the parser's error and a
+                # call too deep is `MAX_DEPTH`'s, and neither arrives here.
+                raise self.deep_report(True, program.pos) from None
+            except RecursionError:  # pragma: no cover - MAX_VALUE_DEPTH first
+                raise self.deep_report(False, program.pos) from None
+
+    def render(self, value, pos):
+        """`repr` of a value, as a report rather than a traceback.
+
+        The REPL echoes the value of every entry, and that echo is a walk
+        like any other -- but it runs after `run` has returned, outside its
+        ceiling and outside its handlers. Typing a deep value at a prompt
+        ended the session in a Python traceback from the day the prompt
+        existed, and `no_traceback.py` cannot see it: that property runs
+        programs, and the echo is not part of one. Found in tick 33 by
+        walking the new limit through every caller of `to_repr`.
+        """
+        with self.deep_enough():
+            try:
+                return to_repr(value)
+            except TooDeep:
+                raise self.deep_report(True, pos) from None
+            except RecursionError:  # pragma: no cover - MAX_VALUE_DEPTH first
+                raise self.deep_report(False, pos) from None
+
+    @contextlib.contextmanager
+    def deep_enough(self):
+        """CPython's ceiling, raised so that Vine's own two limits fire first.
+
+        Both terms are here because both limits have to be able to fire: a
+        1000-deep value offered to `repr` inside 499 calls is the worst case
+        either of them permits.
+        """
         needed = (
             1000
             + MAX_DEPTH * PY_FRAMES_PER_CALL
@@ -197,47 +241,38 @@ class Interpreter:
         if previous < needed:
             sys.setrecursionlimit(needed)
         try:
-            return self.eval_stmts(program, self.top)
-        except TooDeep:
-            # A walk stopped at `MAX_VALUE_DEPTH`. `MAX_DEPTH` counts Vine
-            # *calls* and a 1001-deep list is built by 1001 shallow ones, so
-            # this is the only guard a deep *value* meets. `equal`,
-            # `canonical`, `holds_function`, `to_repr` and `to_display` all
-            # walk a value to its bottom, and any of them can reach here. The
-            # message says `value` for that reason: an expression too deep is
-            # the parser's error and a call too deep is `MAX_DEPTH`'s, and
-            # neither arrives here.
-            raise self.deep_report(
-                f"value nested more than {MAX_VALUE_DEPTH} deep", program
-            ).help(VALUE_DEPTH_RULE) from None
-        except RecursionError:  # pragma: no cover - MAX_VALUE_DEPTH fires first
-            # Belt and braces, and the same pair `parse()` keeps: a limit the
-            # reader is told about, and a raised ceiling that lets it fire
-            # before CPython's does. This says something different from the
-            # message above on purpose -- reaching it means the machine gave
-            # out *below* Vine's number, so the number is not what the reader
-            # hit and a help quoting it would be false.
-            raise self.deep_report(
-                "value nested too deeply to work with", program
-            ) from None
+            yield
         finally:
             sys.setrecursionlimit(previous)
 
-    def deep_report(self, message, program):
+    def deep_report(self, counted, fallback):
         """The report for a walk that did not finish, at the position and
         under the call chain recorded on the way out.
 
-        Both callers unwind past `eval` and `call`, which write `deep_pos`
-        and `deep_frames` rather than building anything: the `RecursionError`
-        path runs at the depth that has just overflowed, where a call could
-        overflow again. Nothing is built until here, where the stack is back.
+        `counted` tells Vine's limit from the machine's, and they say
+        different things on purpose: the uncounted one means the machine gave
+        out *below* Vine's number, so the number is not what the reader hit
+        and a help quoting it would be false. The pair is the one `parse()`
+        already keeps for `MAX_NESTING`.
+
+        Callers unwind past `eval` and `call`, which write `deep_pos` and
+        `deep_frames` rather than building anything: on the `RecursionError`
+        path they run at the depth that has just overflowed, where a call
+        could overflow again. Nothing is built until here, where the stack is
+        back.
         """
-        pos = self.deep_pos if self.deep_pos is not None else program.pos
-        err = RuntimeError_(message, pos, self.source)
+        pos = self.deep_pos if self.deep_pos is not None else fallback
+        err = RuntimeError_(
+            f"value nested more than {MAX_VALUE_DEPTH} deep"
+            if counted
+            else "value nested too deeply to work with",
+            pos,
+            self.source,
+        )
         for label, at in self.deep_frames:
             err.frame(label, at)
         self.deep_pos, self.deep_frames = None, []
-        return err
+        return err.help(VALUE_DEPTH_RULE) if counted else err
 
     # -- evaluation -------------------------------------------------------
 
