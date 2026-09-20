@@ -2276,6 +2276,15 @@ about the program, so each of them carries `the largest float is about
 1.8e308`. It is one string in `vine/rules.py`, because three of the seven
 used to say it in two different sentences and four said nothing at all.
 
+One message whose complaint cannot be checked by eye offers nothing, and that
+is a decision. `value nested too deeply to work with` would want the depth
+allowed, and the language has not got one: **Bindings** calls that a gap
+rather than a decision, because the limit is the implementation's stack and
+two machines can disagree. A help is a rule of the language, so *there is no
+fixed limit* would print a hole in the voice of a rule and settle in a report
+a question nobody has settled. The day the depth is counted and has a number,
+this message needs a help and the roster needs a line.
+
 That split is the contract, not decoration. The caret is where the failure
 was *detected*, which is not always where it was caused: a note may name the
 cause, and labelling the two differently is what keeps a message from
@@ -2374,9 +2383,18 @@ adds the value **written out in escapes** as a note -- see **Conversions**,
 which is the only place the language can tell the two apart without
 consulting a Unicode table. Everywhere else the reader has something better
 than a rendering: a second position. The caret is on the token whose *kind*
-the parser is objecting to, and a duplicate map key is reported with the
-position of the first one, so neither message has to say which of two
-look-alike values it means.
+the parser is objecting to, and a duplicate map key is reported at the second
+of the two with the position of the first in a note, so neither message has to
+say which of two values it means.
+
+The two keys need not look alike. `{{a: 1, b: 2}: 1, {b: 2, a: 1}: 2}` gives
+one key twice — order is not part of a map's identity, see **Composite keys**
+— and the headline quotes the spelling under the caret, which is the second.
+The spelling a map built with `set` would keep is the *first*, because **Map
+order** keeps what the data first said. Quoting that one instead would set the
+headline against its own caret, and it would buy nothing: both spellings are
+already in the report, one under the caret and one at the position the note
+carries.
 
 Messages are written in Vine's words and never the implementation's. The
 parser calls a token `ident`; nobody writing Vine has been told what that is.

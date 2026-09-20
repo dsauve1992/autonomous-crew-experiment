@@ -5,4 +5,8 @@
 # was nearly invisible: `duplicate_map_key_lookalike.vine` is this message
 # where the two spellings render alike. Pinned here rather than changed: the
 # two positions are what disambiguate the report, and both are in it.
+# Tick 32 took that reading to **Errors**, which had justified it for two
+# keys that *look* alike -- the only kind there was when the sentence was
+# written. The document now says which spelling the headline quotes and
+# which one `set` would have kept, so this is settled there and not here.
 {{a: 1, b: 2}: 1, {b: 2, a: 1}: 2}

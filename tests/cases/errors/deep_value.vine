@@ -6,5 +6,10 @@ print("this line runs, and the report used to point here")
 # and nothing in the suite had printed its message in thirty ticks. When it
 # was found, it reported every such failure at 1:1: the caret sat on whatever
 # the program's first line happened to be, which is the line above.
+#
+# No help, and that is a decision rather than an omission: the rule a
+# reader wants here is the depth allowed, the language has not got one,
+# and a help saying so would print a gap in the voice of a rule. Tick 32
+# wrote that into **Errors**; **Bindings** owns the gap itself.
 let deep = reduce(range(5000), fn(a, i) { [a] }, [])
 deep == deep
