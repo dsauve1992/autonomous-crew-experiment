@@ -1341,7 +1341,9 @@ modules; it is the rule about functions, arriving somewhere new.
 
 **A way to import some of a file's names.** `import "table.vine"` answers all
 of them, and the importer picks what it wants out of the map with a name of
-its own. There is no `import pad from "table.vine"`, and the corpus is why:
+its own — which is a `let`, with everything **Bindings** says about one, and
+inside a module it is also an export; see the paragraph below. There is no
+`import pad from "table.vine"`, and the corpus is why:
 `from` is a *parameter* of `slice`, in both of the two files that hold a copy
 of it — the most-copied function in this repository is the one a `from`
 keyword would break. A word a program in this language would use for a
@@ -1351,8 +1353,47 @@ that is why it was free.
 
 **A way to hide a name.** Every top-level binding a file makes is in the map
 it answers with; there is no `pub`, no leading underscore rule, no export
-list. A module that wants a private helper has the same tool every other Vine
-scope has — put it inside the function that needs it.
+list. That reaches bindings a file never thought of as names it was handing
+out: `examples/clock.vine` exports seven, its caller uses three, and one of
+the four left over is `dates` — the handle of the module *it* imports.
+
+**The tool for a private helper is a `do` block, and it is the construct this
+section has already shown you.** A block is a scope, so a name bound inside
+one is not a top-level binding and is not in the map, while the function
+answered out of it closes over the block and still sees the name. The `do`
+above was written as the workaround `import` had to beat; this is the same
+construct doing the other half of the job.
+
+```text
+let epoch = do {
+  let dates = import "dates.vine"
+  let civil_days = fn(y, m, d) { ... }
+  fn(s) { ... }
+}
+```
+
+**Not** *put it inside the function that needs it*, which is what this
+paragraph used to say and is the wrong scope. A function body runs once per
+call: a helper written there is rebuilt on every call, an `import` written
+there is resolved on every call, and a helper two exported functions share has
+to be written twice. A `do` block runs when the file loads. Measured on
+`examples/clock.vine`, which has three private names and one import handle,
+against a loop of forty thousand calls into it — 1.90s as committed, 1.90s
+with the `do` blocks, 2.38s with each helper nested in its function, on one
+machine, all three answering identically on every input the program has. In
+lines the order reverses: 43 as committed, 44 nested, 50 with the `do` blocks.
+So the `do` block costs seven lines and nothing else, and it is the only one
+of the three that both hides the names and leaves the calls where they were.
+
+**So inside a module the qualified spelling is not a preference.**
+`let pad = table.pad` is a top-level binding like any other, so a module that
+re-binds a name it borrowed re-exports it, and the handle it borrowed the name
+through as well. That is the paragraph above arriving somewhere it was not
+written for: in a *program* the two spellings are a choice with nothing at
+stake but how the calls read, and in a module one of them widens the map.
+`tests/properties/a_module_exports_its_top_level.py` holds every sentence of
+this paragraph against the modules in this repository, and the parser's
+top-level `let`s are its second side.
 
 **A second file's `fail`, `print` or `read` behaving differently.** Listed
 here because all three were candidates for a rule and none of them earned one.
