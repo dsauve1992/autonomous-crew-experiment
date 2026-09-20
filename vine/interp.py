@@ -84,6 +84,11 @@ class Interpreter:
         self.source = source
         self.out = out if out is not None else sys.stdout
         self.depth = 0
+        # Where the innermost expression still being evaluated was written,
+        # and the calls it is inside, recorded only while a RecursionError is
+        # on its way out. See `eval` and `call`.
+        self.deep_pos = None
+        self.deep_frames = []
         self.globals = Env()
         # The scope a program runs in. It outlives a single `run`, so a REPL
         # can feed this interpreter one entry at a time and keep its bindings.
@@ -177,10 +182,23 @@ class Interpreter:
             sys.setrecursionlimit(needed)
         try:
             return self.eval_stmts(program, self.top)
-        except RecursionError:  # a belt-and-braces net; MAX_DEPTH should win
-            raise RuntimeError_(
-                "evaluation nested too deeply", program.pos, self.source
-            ) from None
+        except RecursionError:
+            # Not belt and braces, whatever this said until tick 31.
+            # `MAX_DEPTH` counts Vine *calls*, and a 5000-deep list is built
+            # by 5000 shallow ones -- so for a deep *value* this is the only
+            # guard there is. `equal`, `canonical`, `holds_function`,
+            # `to_repr` and `to_display` all walk a value to its bottom, and
+            # any of them can reach here. The message says `value` for that
+            # reason: an expression too deep is the parser's error and a call
+            # too deep is MAX_DEPTH's, and neither of them arrives here.
+            pos = self.deep_pos if self.deep_pos is not None else program.pos
+            err = RuntimeError_(
+                "value nested too deeply to work with", pos, self.source
+            )
+            for label, at in self.deep_frames:
+                err.frame(label, at)
+            self.deep_pos, self.deep_frames = None, []
+            raise err from None
         finally:
             sys.setrecursionlimit(previous)
 
@@ -190,7 +208,21 @@ class Interpreter:
         method = self.DISPATCH.get(type(node))
         if method is None:  # pragma: no cover - guards against a missing case
             self.fail(f"cannot evaluate {type(node).__name__}", node.pos)
-        return method(self, node, env)
+        try:
+            return method(self, node, env)
+        except RecursionError:
+            # The stack ran out somewhere under this node. `run` turns that
+            # into a Vine error, and by then there is nothing left on the
+            # stack to say where it happened -- so the innermost evaluation
+            # still running claims the position on the way past. Innermost
+            # wins because it writes first and the `is None` keeps it.
+            #
+            # Nothing is built here on purpose. This handler runs at the
+            # depth that has just overflowed, so a call it made could
+            # overflow again; an attribute store pushes no frame.
+            if self.deep_pos is None:
+                self.deep_pos = node.pos
+            raise
 
     def eval_literal(self, node, env):
         return node.value
@@ -420,6 +452,14 @@ class Interpreter:
                 # a nested call's -- leaves through here, and none of them
                 # knows what called it. See VineError.frame().
                 raise err.frame(callee.label, pos)
+            except RecursionError:
+                # The same fact as the branch above, recorded rather than
+                # framed: the error this belongs to does not exist yet, since
+                # nothing may be built at the depth that has just overflowed.
+                # `run` builds it and replays these in the order they arrive,
+                # which is the order `frame` would have seen them.
+                self.deep_frames.append((callee.label, pos))
+                raise
             finally:
                 self.depth -= 1
         self.fail(f"cannot call {type_name(callee)}", pos)

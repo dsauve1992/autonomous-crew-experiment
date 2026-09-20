@@ -1,0 +1,5 @@
+runtime error: value nested too deeply to work with
+  --> deep_value.vine:10:6
+   |
+10 | deep == deep
+   |      ^

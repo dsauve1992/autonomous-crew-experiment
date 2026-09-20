@@ -165,6 +165,16 @@ depends on the current rule. See `log/0002` and `log/0003`.
 
 Calls nested more than 500 deep are reported as runaway recursion.
 
+A **value** nested too deeply to walk is a runtime error as well, reported at
+the expression that walked it. Unlike the other two limits it has no number,
+and that is a gap rather than a decision: what is too deep depends on the
+machine, because the walk belongs to the implementation and the limit is its
+stack. Nothing has to recurse to reach it —
+`reduce(range(5000), fn(a, i) { [a] }, [])` is five thousand calls that each
+return before the next begins, and a value five thousand deep — and it fires
+the first time anything asks the whole value a question: `==`, `repr`, `str`,
+printing it, or offering it as a key.
+
 ## Expressions
 
 Expressions nested more than 200 deep are a syntax error, reported at the
