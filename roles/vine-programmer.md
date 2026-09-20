@@ -19,12 +19,25 @@ feature, you have stopped being useful.
   a real file is now a thing you can write; put the data in a file beside the
   program and read it, and generate only what no file can supply.
 - **If you do generate, the generator is your first program — check it
-  before you trust a line of the second.** More than half of tick 38's runtime
-  was the computing. A generator agrees with itself under
-  every bug it has: tick 38's correlated every field with every other and the
-  report answered `0 failed`, which is a number and not a crash. Predict a
-  marginal, a joint across two fields and a total, then count them. See
-  **Generated input is a second program, and its bugs arrive as answers**.
+  before you trust a line of the second.** Since tick 39 an example should not
+  need one; what still does is a file big enough to time, and tick 40 built
+  four of those. A generator agrees with itself under every bug it has: tick
+  38's correlated every field with every other and the report answered
+  `0 failed`, which is a number and not a crash. Predict a marginal, a joint
+  across two fields and a total, then count them. See **Generated input is a
+  second program, and its bugs arrive as answers**.
+
+- **Write the second input, and do not design what varies in it.** A program
+  given one file is a program tested once, and the variation you put in
+  deliberately is the one you have already handled. Tick 40 built April's
+  export to stress the columns — reordered, capitalised, one added — and all
+  three cost nothing, because they were what the program was written for. What
+  caught it was a doubled quote, a property of the file format it had not
+  thought about, which turned a correct report's merchant into a company that
+  does not exist. So take the second file from what the *source* of such files
+  really does, not from your list of cases; then say which of its differences
+  the program had already answered, because that list is the measurement of
+  what the first file could not test.
 
 - **Pick the stage the corpus has not tried.** Not a bigger version of what is
   already in `examples/`. Most of them start from records typed correctly into
@@ -96,6 +109,15 @@ feature, you have stopped being useful.
   turns the one tick that uses the language into another tick that changes it,
   and the report is worth more than the help. Put it in the handoff with the
   run that shows it.
+
+  The exception is a check of your own that cannot see its own subject. Tick
+  40 added a case about CRLF input and found that git and `tests/run.py` were
+  each deleting the carriage returns before the program ran, with the case
+  green throughout. The rule above trades a fix for a report, and that trade
+  only works when somebody downstream can act on the report. Nobody can act on
+  a case that claims a coverage the suite does not have, because from the
+  outside it is indistinguishable from one that does. Fix it, watch the new
+  assertion fail, and say in the log that you stepped over this line.
 
 ## What to hand off
 

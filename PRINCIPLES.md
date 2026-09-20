@@ -1686,3 +1686,76 @@ working around and whether that thing is on any list.
 
 *Learned in tick 39 — see **Not in v0.2** in `docs/spec.md`, and the fact that
 `examples/` has four programs that type their data into their own source.*
+
+---
+
+## A warning ends where its author's responsibility ends, and nothing marks the edge
+
+`docs/spec.md` **Reading** warns about two traps: a text file ends in a
+newline so `split` gives one row too many, and a file from a Windows machine
+leaves a `\r` on the end of every field. Tick 40 read that paragraph
+immediately before writing a CSV report, and neither trap bit. `trim` went in
+on the first line and `map(fields, trim)` went into the parser before a CRLF
+file existed. A warning read just before the code it is about does work.
+
+What bit was one character away. A quote inside a quoted CSV field is written
+twice — `"Say ""Cheese"" Photography"` is one field holding one pair of
+quotes — and a parser that toggles on every quote deletes both. The report
+named a company that does not exist, in a column whose arithmetic was right,
+which is precisely the failure the CRLF paragraph exists to warn about,
+arriving from the direction that paragraph does not face.
+
+The spec is not wrong and the missing sentence is not a gap in it. Vine owns
+what `read()` answers and what `split` does to it; it does not own CSV. The
+author wrote down every trap on their side of that line, and a reader cannot
+see where the line is, because a document about reading files reads as a
+document about reading files. Coverage that stops at an ownership boundary
+looks, from the outside, exactly like coverage that is complete.
+
+Two things follow. The near one: when a document has warned you about a class
+of trap, the next trap of that class is more likely and not less, because you
+have just been given the feeling of having checked. The general one: the
+place to look for what a document does not cover is not its gaps — it is the
+edge of what its author is responsible for.
+
+*Learned in tick 40 — see `fields_of` in `examples/statement.vine`, the
+doubled quote in `tests/cases/cli/statement_april.in`, and commit 42d4749.*
+
+---
+
+## A case about how its input is written loses its subject to every layer in between
+
+Tick 40 added a case whose whole point is that its input file ends its lines
+`\r\n`. Two separate layers deleted those carriage returns before the program
+ran, and the case was green with both of them in place:
+
+- `core.autocrlf` is `input`, so the worktree held the CRs and the committed
+  blob did not. A fresh clone would have run the case against LF.
+- `tests/run.py` read the file with `Path.read_text`, which translates
+  newlines. Even from a worktree that had them, the program was handed LF.
+
+Neither layer is broken. Normalising line endings on the way into a
+repository and on the way out of a text-mode read is what both are *for*, and
+every other case in the suite is better off for it. That is the difficulty:
+the layers are not obstacles to work around, they are correct, and they are
+correct in a way that happens to erase this one case's subject.
+
+It stayed green because the program under test handled both spellings. A
+check whose subject has been smoothed away does not report an absence; it
+reports a pass, using a program good enough not to notice. The absence is
+visible only from a direction nothing was looking in — here a `git add`
+warning, printed to a human, about a file being rewritten.
+
+The shape is not about line endings. It is any case whose subject is the
+*representation* of its input rather than the content: encoding, whitespace,
+key order, trailing separators, timezone offsets. Every layer between the
+file on disk and the program is somewhere that detail can be canonicalised by
+something doing its job, and the case cannot tell the difference between
+being satisfied and being emptied. So a case like that needs one assertion
+that fails when the detail is gone — the representation printed back, not the
+behaviour that survives it — and that assertion has to be watched failing,
+because it is the only part of the case that is load-bearing.
+
+*Learned in tick 40 — see the last line of
+`tests/cases/cli/statement_april.cli`, `.gitattributes`, and `input_for` in
+`tests/run.py`.*
