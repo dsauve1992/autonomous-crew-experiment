@@ -1,0 +1,64 @@
+3000 requests, 8 endpoints, 245 accounts
+49 failed, 66 not found
+
+by endpoint
+  endpoint         reqs   share   5xx    rate     mean     p95  mean ok
+  /v1/search        926   30.9%     8    0.9%      270     390      220
+  /v1/items         722   24.1%     0    0.0%       81     144       82
+  /v1/orders        448   14.9%     4    0.9%      188     260      138
+  /v1/auth/token    335   11.2%     0    0.0%       58      97       58
+  /v1/orders/new    239    8.0%     9    3.8%      553     724      379
+  /v1/items/bulk    180    6.0%    20   11.1%     1767    3867     1469
+  /v1/reports       120    4.0%     8    6.7%     2927    4950     2803
+  /v1/health         30    1.0%     0    0.0%        5       9        5
+
+requests by hour, peak 280
+   0:00     5  #
+   1:00     6  #
+   2:00    34  #####
+   3:00    37  ######
+   4:00    64  ##########
+   5:00   111  ################
+   6:00   144  #####################
+   7:00   157  #######################
+   8:00   226  #################################
+   9:00   266  ######################################
+  10:00   274  ########################################
+  11:00   256  #####################################
+  12:00   280  ########################################
+  13:00   280  ########################################
+  14:00   221  ################################
+  15:00   201  #############################
+  16:00   150  ######################
+  17:00   113  #################
+  18:00    72  ###########
+  19:00    64  ##########
+  20:00    24  ####
+  21:00    11  ##
+  22:00     3  #
+  23:00     1  #
+
+slowest five requests
+   10203ms  /v1/items/bulk  500  acct-260
+   10203ms  /v1/orders/new  500  acct-306
+    8808ms  /v1/search      500  acct-118
+    8808ms  /v1/orders      500  acct-210
+    8418ms  /v1/search      500  acct-131
+
+where the time goes: 1215.9s of service time
+  /v1/reports      28.9% of the time     4.0% of the calls
+  /v1/items/bulk   26.2% of the time     6.0% of the calls
+  /v1/search       20.6% of the time    30.9% of the calls
+  /v1/orders/new   10.9% of the time     8.0% of the calls
+  /v1/orders        7.0% of the time    14.9% of the calls
+  /v1/items         4.9% of the time    24.1% of the calls
+  /v1/auth/token    1.6% of the time    11.2% of the calls
+  /v1/health        0.0% of the time     1.0% of the calls
+
+costliest five accounts
+  acct-104     113.6s over 257 calls    442ms each
+  acct-118     103.8s over 249 calls    416ms each
+  acct-142      97.2s over 258 calls    376ms each
+  acct-131      91.1s over 228 calls    399ms each
+  acct-159      76.1s over 215 calls    354ms each
+  those five: 40.2% of the calls, 39.6% of the time

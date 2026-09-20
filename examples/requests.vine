@@ -1,0 +1,174 @@
+# What is hurting the API today, and where is its time going? A report over a
+# request log of three thousand entries, which is the smallest size at which
+# the questions below have answers worth reading: a failure rate over twenty
+# requests is noise, and a busiest hour over twenty is whichever hour got
+# three.
+#
+# Every other program in `examples/` starts from records typed into the source,
+# and none of them could: three thousand lines of map literal is not a file
+# anyone writes or reads. Vine cannot read one either -- `print` is the only
+# builtin that touches the outside world -- so the log is generated below from
+# a hash of the row number, and the report is written as though it had been
+# read from disk. The generator is the first third of this file and the report
+# is the rest; nothing in the report knows how the log was made.
+
+# ---------------------------------------------------------------- the log --
+
+let N = 3000
+
+# There is no random number in Vine and no state to put a seed in, so `hash`
+# is the whole of it: a number per row per field, from an affine map wrapped
+# twice. The salt multiplies rather than shifts, which matters -- a salt added
+# to the row number leaves every field a constant apart from every other, and
+# then the endpoint a row asks for predicts whether it fails.
+let hash = fn(i, salt) {
+  let a = ((i + 1) * (48271 + salt * 106039)) % 2147483647
+  ((a + 2654435761) * 16807) % 2147483647
+}
+let roll = fn(i, salt) { hash(i, salt) % 100 }
+
+# share is out of a hundred, base is the latency floor in milliseconds, fail
+# is the percentage of calls that 500.
+let endpoints = [
+  {path: "/v1/search",     share: 31, base: 120,  fail: 1},
+  {path: "/v1/items",      share: 24, base: 45,   fail: 0},
+  {path: "/v1/orders",     share: 15, base: 80,   fail: 1},
+  {path: "/v1/auth/token", share: 11, base: 30,   fail: 0},
+  {path: "/v1/orders/new", share: 8,  base: 210,  fail: 4},
+  {path: "/v1/items/bulk", share: 6,  base: 900,  fail: 9},
+  {path: "/v1/reports",    share: 4,  base: 1500, fail: 6},
+  {path: "/v1/health",     share: 1,  base: 3,    fail: 0},
+]
+
+# To draw from those shares, each endpoint needs the running total of the ones
+# above it. There is no scan and no prefix sum, so each total is its own fold
+# over a prefix -- eight folds over eight rows, which is free here and would
+# not be over the log.
+let upto = fn(k) { reduce(take(endpoints, k + 1), fn(a, e) { a + e.share }, 0) }
+let table = map(range(len(endpoints)), fn(k) { set(endpoints[k], "upto", upto(k)) })
+let pick = fn(r) { first(filter(table, fn(e) { r < e.upto })) }
+
+# Five accounts are most of the traffic and the rest is a long tail, which is
+# what a B2B API looks like from the inside.
+let whales = ["acct-104", "acct-118", "acct-131", "acct-142", "acct-159"]
+
+let request = fn(i) {
+  let e = pick(roll(i, 1))
+  let bad = roll(i, 4)
+  let status = if bad < e.fail { 500 } else if bad < e.fail + 2 { 404 } else { 200 }
+  # A 500 here is a timeout, so it costs the full three seconds rather than
+  # the endpoint's usual latency. That is the detail the report has to see
+  # past: it drags a mean up without a single successful call getting slower.
+  let floor = if status == 500 { 3000 } else { e.base }
+  let j = hash(i, 3) % 100
+  {
+    # Three draws averaged: traffic humps over the middle of the day instead
+    # of lying flat, which one draw would.
+    hour: int((hash(i, 2) % 24 + hash(i, 9) % 24 + hash(i, 11) % 24) / 3.0),
+    path: e.path,
+    status: status,
+    ms: floor + int(floor * j * j / 4000.0),
+    acct: if roll(i, 7) < 40 { whales[hash(i, 6) % 5] }
+          else { "acct-{200 + hash(i, 6) % 240}" },
+  }
+}
+
+let log = map(range(N), request)
+
+# -------------------------------------------------------------- the report --
+
+let sum = fn(xs) { reduce(xs, fn(a, b) { a + b }, 0) }
+let count_by = fn(xs, key) {
+  reduce(xs, fn(m, x) {
+    let k = key(x)
+    set(m, k, get(m, k, 0) + 1)
+  }, {})
+}
+let mean = fn(xs) { if len(xs) == 0 { 0.0 } else { sum(xs) / len(xs) } }
+# The ninety-fifth percentile, by taking the element there: sorted, an index
+# five per cent short of the end. Nobody asks a latency for its mean alone.
+let p95 = fn(xs) { if len(xs) == 0 { 0 } else { sort(xs)[int(len(xs) * 95 / 100.0)] } }
+
+let widest = fn(xs) { reduce(xs, fn(w, s) { if len(s) > w { len(s) } else { w } }, 0) }
+let spaces = fn(n) { join(map(range(n), fn(_) { " " }), "") }
+let pad = fn(s, w) { s + spaces(w - len(s)) }
+let rjust = fn(s, w) { spaces(w - len(s)) + s }
+
+let by_path = count_by(log, fn(r) { r.path })
+let accounts = count_by(log, fn(r) { r.acct })
+let failures = filter(log, fn(r) { r.status == 500 })
+
+print("{len(log)} requests, {len(keys(by_path))} endpoints, {len(keys(accounts))} accounts")
+print("{len(failures)} failed, {len(filter(log, fn(r) { r.status == 404 }))} not found")
+print()
+
+# ---- by endpoint ---
+# Volume, failures and latency in one table, because the three only mean
+# anything together: nine per cent of six per cent of the traffic is fifteen
+# requests, and a p95 of three seconds on an endpoint nobody calls is not an
+# incident.
+let paths = keys(by_path) |> sort(fn(p) { -get(by_path, p) })
+let pw = widest(concat(paths, ["endpoint"]))
+let row = fn(p) {
+  let rows = filter(log, fn(r) { r.path == p })
+  let ok = filter(rows, fn(r) { r.status == 200 })
+  let bad = filter(rows, fn(r) { r.status == 500 })
+  let times = map(rows, fn(r) { r.ms })
+  "  {pad(p, pw)}{rjust(str(len(rows)), 7)}{rjust(fixed(len(rows) * 100.0 / N, 1), 7)}%" +
+    "{rjust(str(len(bad)), 6)}{rjust(fixed(len(bad) * 100.0 / len(rows), 1), 7)}%" +
+    "{rjust(str(int(mean(times))), 9)}{rjust(str(p95(times)), 8)}" +
+    "{rjust(str(int(mean(map(ok, fn(r) { r.ms })))), 9)}"
+}
+print("by endpoint")
+print("  {pad("endpoint", pw)}{rjust("reqs", 7)}{rjust("share", 8)}{rjust("5xx", 6)}" +
+  "{rjust("rate", 8)}{rjust("mean", 9)}{rjust("p95", 8)}{rjust("mean ok", 9)}")
+print(join(map(paths, row), "\n"))
+print()
+
+# ---- by hour ---
+# A count per hour of the day, with the bar scaled to the busiest one. The
+# question is whether the load has a shape, and a column of numbers hides it.
+let by_hour = count_by(log, fn(r) { r.hour })
+let peak = reduce(values(by_hour), fn(a, b) { if b > a { b } else { a } }, 0)
+# The bar rounds up rather than down, so an hour that had traffic shows some.
+# Rounding down draws nothing for the five requests at midnight, and nothing
+# is what an hour with no traffic at all should look like.
+let bar = fn(n) { join(map(range(int((n * 40 + peak - 1) / peak)), fn(_) { "#" }), "") }
+print("requests by hour, peak {peak}")
+print(join(map(sort(keys(by_hour)), fn(h) {
+  "  {rjust(str(h), 2)}:00{rjust(str(get(by_hour, h)), 6)}  {bar(get(by_hour, h))}"
+}), "\n"))
+print()
+
+# ---- the slow tail ---
+print("slowest five requests")
+print(join(sort(log, fn(r) { -r.ms }) |> take(5) |> map(fn(r) {
+  "  {rjust(str(r.ms), 6)}ms  {pad(r.path, pw)}  {r.status}  {r.acct}"
+}), "\n"))
+print()
+
+# ---- where the time goes ---
+# Counting requests answers what the service is asked for. Adding up the
+# milliseconds answers what it spends, and the two rankings are not the same
+# list: an endpoint at four per cent of the calls can be a fifth of the work,
+# and it is the second number that says what is worth making faster.
+let time_by_path = reduce(log, fn(m, r) { set(m, r.path, get(m, r.path, 0) + r.ms) }, {})
+let total_ms = sum(values(time_by_path))
+print("where the time goes: {fixed(total_ms / 1000.0, 1)}s of service time")
+print(join(keys(time_by_path) |> sort(fn(p) { -get(time_by_path, p) }) |> map(fn(p) {
+  let share = get(time_by_path, p) * 100.0 / total_ms
+  "  {pad(p, pw)}{rjust(fixed(share, 1), 7)}% of the time{rjust(fixed(get(by_path, p) * 100.0 / N, 1), 8)}% of the calls"
+}), "\n"))
+print()
+
+# The same sum, grouped by who asked for it -- and then the one number a table
+# of five rows cannot show, which is how much of the bill those five are.
+let time_by_acct = reduce(log, fn(m, r) { set(m, r.acct, get(m, r.acct, 0) + r.ms) }, {})
+print("costliest five accounts")
+print(join(keys(time_by_acct) |> sort(fn(a) { -get(time_by_acct, a) }) |> take(5) |> map(fn(a) {
+  "  {pad(a, 10)}{rjust(fixed(get(time_by_acct, a) / 1000.0, 1), 8)}s over {get(accounts, a)} calls" +
+    "{rjust(str(int(get(time_by_acct, a) / get(accounts, a))), 7)}ms each"
+}), "\n"))
+let top = keys(time_by_acct) |> sort(fn(a) { -get(time_by_acct, a) }) |> take(5)
+print("  those five: {fixed(sum(map(top, fn(a) { get(accounts, a) })) * 100.0 / N, 1)}% of the calls, " +
+  "{fixed(sum(map(top, fn(a) { get(time_by_acct, a) })) * 100.0 / total_ms, 1)}% of the time")
