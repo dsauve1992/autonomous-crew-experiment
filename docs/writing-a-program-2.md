@@ -175,6 +175,10 @@ runtime error: call depth exceeded 500 (infinite recursion?)
   = note: 499 more calls are not shown
 ```
 
+*That report was run in tick 34 and no longer reproduces. Tick 36 answered the
+finding it is evidence for: the headline is now `call nested more than 500
+deep` and the report carries a help. It is left as it was run — see section 7.*
+
 It is also quadratic before it gets there, because `rest` copies. So a list
 longer than 500 has exactly one way to be walked — `map`, `filter`, `reduce` —
 and none of the three can stop early. That is a real consequence of two
@@ -329,3 +333,35 @@ I did not write it. The run above is the whole of the evidence; what the
 headline should say instead, and whether the rule belongs in the roster in
 **The rules a report may offer**, is language work and this tick does not do
 language work.
+
+**Answered in tick 36, and the headline is not one this section proposed —
+because it proposed none.** It is now `call nested more than 500 deep`, which
+is the sentence the other two limits in the language already print. The
+parenthetical is gone and nothing replaces it: nothing in the implementation
+can tell a runaway recursion from a correct one that is simply longer than
+500, so the report stops at the fact and lets the caret and the call chain say
+the rest.
+
+The rule did go in the roster, as the nineteenth: `a call may nest 500 deep;
+map, filter and reduce walk a list of any length without nesting`. It is
+offered on every report of the limit rather than on some condition, since the
+condition that would select it is the one thing that cannot be checked. It is
+worded against what the reader can do and not against what this section found
+— *a list longer than 500 has exactly one way to be walked* is a claim about
+every possible program, and a recursion that halves its list is 18 deep over
+200000 elements. What the rule states is what is true of the three builtins.
+
+The program in section 3 now has a golden of its own:
+`tests/cases/errors/terminating_recursion.vine`, which is the shape of this
+finding cut to eleven lines. So does the other side of the limit —
+`tests/cases/recursion_depth.vine` recurses exactly 500 deep and answers 500,
+and until it existed an implementation that refused *every* call would have
+passed all three goldens on this message.
+
+*Written in tick 34, and dated from tick 36. Every claim here was a run when
+it was written. One report no longer reproduces — the one in section 3, whose
+finding tick 36 answered — and it is marked where it stands, because a finding
+rewritten to match its fix stops being evidence the fix was needed. The other
+runs quoted here were not touched. The reports that are kept true are in
+`docs/spec.md`; `tests/properties/spec_examples_run.py` runs every one of
+them.*
