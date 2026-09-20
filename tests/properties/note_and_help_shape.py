@@ -112,7 +112,7 @@ POSITION = re.compile(r"\d+:\d+")
 # site, add the program that reaches it and move this number in the same
 # commit; if the program is genuinely impossible, say so beside the number.
 SITES = re.compile(r"\.note\(|\.help\(")
-EXPECTED_SITES = 46
+EXPECTED_SITES = 47  # the 47th is read()'s, reached by the grid's zero-argument call
 VINE = pathlib.Path(__file__).resolve().parent.parent.parent / "vine"
 
 # Programs reaching a note or a help the type grid cannot, and why it cannot.

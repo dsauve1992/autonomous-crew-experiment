@@ -12,6 +12,10 @@ Each case is a source file under tests/cases with a sibling expectation:
                               run in a real subprocess; the transcript records
                               stdout, stderr and the exit status of each
 
+Any case may also have a sibling foo.in, which is its standard input -- what
+`read()` answers with. A case without one is given no input at all, and
+`read()` refuses; see `input_for`.
+
 Expectations are written by hand on purpose. There is deliberately no flag to
 regenerate them from actual output: a golden file that can rewrite itself to
 match a regression is not a test.
@@ -67,6 +71,24 @@ EXPECTATIONS = {
 GREEN, RED, DIM, RESET = "\033[32m", "\033[31m", "\033[2m", "\033[0m"
 
 
+def input_for(case):
+    """The standard input a case is run with, or None if it is given none.
+
+    A case may have a sibling `.in` file, and that file is its standard input.
+    A case without one is run with *no* input -- not with empty input -- so
+    that `read()`'s refusal is an ordinary `.err` case like any other. The
+    two are different states and only the first is reachable in-process.
+
+    `.cli` cases are the exception, below: they are real subprocesses, and a
+    subprocess is always handed a stdin of some kind. Theirs is an empty pipe.
+    """
+    sibling = case.with_suffix(".in")
+    if not sibling.exists():
+        return None
+    text = sibling.read_text(encoding="utf-8")
+    return lambda: text
+
+
 def expectation_for(case):
     for suffix in EXPECTATIONS[case.suffix]:
         candidate = case.with_suffix(suffix)
@@ -108,6 +130,8 @@ class Keyboard:
 def run_cli(case):
     """Run each command line in the case, and record what a terminal saw."""
     chunks = []
+    supply = input_for(case)
+    stdin = supply() if supply else ""
     for line in case.read_text(encoding="utf-8").splitlines():
         if not line.strip() or line.startswith("#"):
             continue
@@ -116,6 +140,12 @@ def run_cli(case):
             cwd=ROOT,
             capture_output=True,
             text=True,
+            # Every command line gets a pipe on stdin, empty unless the case
+            # has a `.in`. Inheriting ./check's stdin instead would make any
+            # case that calls `read()` depend on how ./check was started --
+            # green from a pipe and red from a terminal, or the other way
+            # about.
+            input=stdin,
         )
         chunk = f"$ vine {line}\n" + done.stdout
         if done.stderr:
@@ -134,7 +164,8 @@ def actual_for(case):
         return "transcript", buffer.getvalue()
     buffer = io.StringIO()
     try:
-        run(case.read_text(encoding="utf-8"), case.name, out=buffer)
+        run(case.read_text(encoding="utf-8"), case.name, out=buffer,
+            inp=input_for(case))
     except VineError as exc:
         return "err", exc.render() + "\n"
     return "out", buffer.getvalue()

@@ -110,6 +110,7 @@ COPIERS = {
 # container it was handed. Stated rather than implied, because "it does not
 # copy" and "nobody thought about it" look identical in an absence.
 NON_COPIERS = {
+    "read": "answers the string it was handed; nothing is built per element",
     "print": "answers nil",
     "repr": "answers a string",
     "type": "answers a string",

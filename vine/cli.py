@@ -46,6 +46,21 @@ def listing(programs):
     return ", ".join(names[:-1]) + " and " + names[-1]
 
 
+def stdin_text():
+    """The program's standard input, decoded -- what `read()` answers with.
+
+    Handed to `run` unevaluated, so a program that never calls `read()` never
+    touches the pipe it is on. A terminal is the one input there is no point
+    waiting for: nothing was redirected in, and a report that sat there
+    looking frozen would be worse than the refusal `read()` gives instead.
+    The UnicodeDecodeError this may raise is caught in `read()`, which has a
+    position to hang the message on and this does not.
+    """
+    if sys.stdin is None or sys.stdin.isatty():
+        return None
+    return sys.stdin.buffer.read().decode("utf-8")
+
+
 def main(argv):
     if not argv:
         from .repl import repl
@@ -106,7 +121,7 @@ def main(argv):
             return 2
 
     try:
-        run(text, name)
+        run(text, name, inp=stdin_text)
     except VineError as exc:
         sys.stderr.write(exc.render() + "\n")
         return 1

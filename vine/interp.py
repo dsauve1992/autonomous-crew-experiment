@@ -93,11 +93,18 @@ class Env:
 
 
 class Interpreter:
-    def __init__(self, source, out=None):
+    def __init__(self, source, out=None, inp=None):
         import sys
 
         self.source = source
         self.out = out if out is not None else sys.stdout
+        # The program's standard input: `None` when it was given none, a
+        # zero-argument callable until `read()` asks for it, and the text
+        # afterwards. Lazy because a program that never reads must not drain
+        # the pipe it happens to be on -- `yes | vine -e 'print(1)'` would
+        # otherwise never finish. Filled in place on first use, which is what
+        # makes `read()` answer the same string every time it is called.
+        self.inp = inp
         self.depth = 0
         # Where the innermost expression still being evaluated was written,
         # and the calls it is inside, recorded only while a RecursionError is

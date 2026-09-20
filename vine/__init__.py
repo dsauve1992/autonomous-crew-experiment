@@ -30,7 +30,12 @@ if hasattr(sys, "set_int_max_str_digits"):
     sys.set_int_max_str_digits(0)
 
 
-def run(text, name="<input>", out=None):
-    """Parse and evaluate `text`. Raises VineError on any user-facing failure."""
+def run(text, name="<input>", out=None, inp=None):
+    """Parse and evaluate `text`. Raises VineError on any user-facing failure.
+
+    `inp` is the standard input `read()` answers with: `None` when the program
+    was given none, or a zero-argument callable returning the text, called at
+    most once and only if the program asks.
+    """
     source = Source(text, name)
-    return Interpreter(source, out).run(parse(source))
+    return Interpreter(source, out, inp).run(parse(source))

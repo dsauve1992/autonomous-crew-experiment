@@ -22,6 +22,7 @@ is not.
 ```sh
 python3 -m vine                 # open an interactive session
 python3 -m vine script.vine     # run a file
+python3 -m vine script.vine < data.csv  # run a file over some input
 python3 -m vine -e 'print(1+1)' # run one line
 python3 -m vine --version       # print the version
 ./check                         # run the test suite
@@ -659,7 +660,7 @@ ago.
 
 ## Builtins
 
-Output: `print(...)` `repr(x)`
+Input and output: `read()` `print(...)` `repr(x)`
 
 General: `type(x)` `len(x)` `str(x)` `int(x)` `int(s, default)` `float(x)`
 `float(s, default)`
@@ -678,7 +679,7 @@ Strings: `split(s, sep)` `join(xs, sep)` `upper(s)` `lower(s)` `trim(s)`
 `push` and `set` return new values; nothing in Vine mutates.
 
 Nearly every name above has a section of its own — **Printing**,
-**Conversions**, **Text**, **Looking up a key**, **Range**, **Powers**,
+**Reading**, **Conversions**, **Text**, **Looking up a key**, **Range**, **Powers**,
 **map, filter and reduce**, **Building lists**, **Taking and dropping**,
 **Sorting**, **repr and str**, **Revealing**, **Formatting**. A builtin whose
 whole contract
@@ -762,6 +763,126 @@ Answering the first argument instead would read well in exactly that pipeline
 and be a lie in the other two shapes `print` has: `print()` has no argument to
 answer with, and `print(a, b)` has two. A builtin that hands back one of its
 arguments only sometimes is worse than one that never does.
+
+## Reading
+
+`read()` answers all of standard input, as one string. It is the only builtin
+that takes anything *from* the outside world, and with `print` it is the whole
+of Vine's contact with it.
+
+```sh
+vine report.vine < requests.csv
+producer | vine report.vine
+```
+
+```text
+let rows = read() |> trim |> split("\n") |> map(fn(line) { split(line, ",") })
+print(len(rows))
+```
+
+That block is `text` rather than an example this document runs, and the reason
+is the feature: an example here is fed to an interpreter with no standard
+input, so every example that reads would fail. The run is
+`tests/cases/reading.vine`, whose standard input is the file beside it.
+
+**It takes no argument, and there is no `read(path)`.** Vine never names a
+file. The shell already resolves paths, reports a missing one, and knows what
+the reader meant by `~` and `*`; a `read("log.csv")` would answer the same
+question a second time, relative to a working directory the program cannot
+see. What that costs is real and is the price of the decision: a program that
+wants **two** inputs cannot be given two. It has to be given them joined —
+`cat a.csv b.csv | vine report.vine` — and if it must tell them apart, the
+telling has to be in the text. Adding `read(path)` later would take that price
+away and break nothing; taking it away now, after programs are written against
+one input, could not be undone.
+
+**It answers the same string every time it is called.** Not the text once and
+`""` afterwards. Nothing else in Vine answers differently on a second call,
+and the wrong answer here is the dangerous kind: a program that reads once to
+count and again to sum would print a plausible zero in the right column, in a
+report whose arithmetic was all correct. So input is a *value* the program was
+given, not an action it performs. `print` is the action; `read` is not, and
+that asymmetry is the point. It is read from the pipe lazily, on the first
+call, so a program that never calls it never drains what it is standing on:
+`yes | vine -e 'print(1)'` finishes.
+
+**A program given no input refuses rather than waits.**
+
+```
+let text = read()
+```
+
+```report
+runtime error: there is no input to read
+ --> report.vine:1:16
+  |
+1 | let text = read()
+  |                ^
+  = help: a program reads the standard input it was given; redirect a file into it with 'vine prog.vine < file'
+```
+
+Standard input at a terminal is a person, and `read()` wants *all* of it, so
+waiting means sitting silently until Ctrl-D — a report that looks frozen, from
+a command line whose only mistake was a missing `<`. The refusal names the
+mistake. The same refusal is what `read()` gives at the REPL, for a different
+reason with the same shape: there, standard input is where the program itself
+is arriving from, so there is none left to read.
+
+Both of those are the reversible direction. A later tick that wants `read()`
+to wait for typing can allow it and break nothing; one that wanted to stop
+waiting could not.
+
+**Empty input is not the same as no input.** `vine report.vine < /dev/null`
+answers `""`, and `< /dev/null` is how a program that reads is told there is
+nothing to read. The difference matters to `split`, which is the next thing
+every reading program does:
+
+```
+split("", "\n")            # [""] — one empty line, not no lines
+split("a\nb\n", "\n")      # ["a", "b", ""] — the trailing newline is a field
+```
+
+Neither is a surprise from `split`, and both are a surprise the first time a
+file goes through it, because a text file ends in a newline and a list of
+lines does not end in an empty one. `trim` is the answer and it is the reason
+`read() |> trim |> split("\n")` is the spelling above. A row count that is one
+too high is the symptom.
+
+**Standard input is UTF-8, the way source is.** A byte sequence that is not
+fails with the same sentence about the same byte that `vine somebinary` gives
+for a program file — see **Errors**.
+
+### Why a program may now be given anything at all
+
+Until tick 39 it could not be, and four ticks of examples had not minded:
+every one of them types its records into its own source. Tick 38 wrote the
+first program that minded — a report over three thousand requests — and had
+to *manufacture* its log from a hash of the row number, sixty lines of
+generator holding the tick's only real bug.
+
+That generator is not the workaround this feature had to beat, because it is
+not the cheapest one. Three thousand records fit in a Vine source file three
+ways, and all three run:
+
+```text
+how the data gets into the program          source     to run
+a generator, computed from the row number   60 lines   0.33s
+three thousand map literals                 227 KB     0.24s
+one CSV string literal, split in Vine       102 KB     0.11s
+```
+
+The third is the correct workaround, it is one line, and it is the *fastest*
+of the three — text costs the parser less than syntax does, because a string
+literal is one token and three thousand map literals are ninety thousand. So
+the case for reading input was never the generator's 55% of runtime. That was
+the symptom of picking the wrong workaround.
+
+What none of the three can do is run tomorrow. With its data in its source a
+Vine program is not a program over a log; it is a document about one log, and
+the second log needs the file edited. That is what `read()` buys, and it is
+the only thing it buys: the first two columns above get *worse* by a hair,
+since parsing a CSV line in Vine is `split` and `int(s, default)` rather than
+the lexer's job. The point is the file the program did not ship with.
 
 ## Conversions
 
@@ -2677,17 +2798,17 @@ rest exits 0, which reports success for the part that never happened.
 
 ### The rules a report may offer
 
-Nineteen rules, and every help is one of them. Eighteen live in
+Twenty rules, and every help is one of them. Nineteen live in
 `vine/rules.py` for the reason the float ceiling gives above: a rule written
 at the raise site that needed it is found only by someone already standing at
 that raise site, and the next message to need it is somewhere else. Each is
 listed against the section that states it at length, because a help is a
 reminder of this document and never a replacement for it.
 
-The nineteenth is the command line's, and it is elsewhere because a problem
+The twentieth is the command line's, and it is elsewhere because a problem
 with the command line has no position and so no report to hang a help on —
 `vine/cli.py` spells the ` = help: ` prefix out by hand rather than rendering
-it. It is a rule offered for the same reason as the other eighteen, so it is on
+it. It is a rule offered for the same reason as the other nineteen, so it is on
 the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
@@ -2699,6 +2820,7 @@ the same list.
 - `a line ending in an operator continues onto the next; only '|>' continues from the left` — **Lexical structure**
 - `only a function body may return; a block's value is its last statement` — **Early return**
 - `a call may nest 500 deep; map, filter and reduce walk a list of any length without nesting` — **Bindings**
+- `a program reads the standard input it was given; redirect a file into it with 'vine prog.vine < file'` — **Reading**
 - `a negative index counts from the end, but a count does not` — **Taking and dropping**
 - `to give a key a new value, use set(m, k, v)` — **Map order**
 - `a key may be any value that holds no function` — **Composite keys**

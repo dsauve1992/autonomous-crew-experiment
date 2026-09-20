@@ -6,6 +6,7 @@ import re
 from .errors import RuntimeError_
 from .rules import (
     CONVERT_DEFAULT_RULE,
+    INPUT_RULE,
     COUNT_RULE,
     FINITE_RULE,
     FIXED_DIGITS_RULE,
@@ -90,6 +91,47 @@ def _print(interp, pos, args):
 @builtin("repr", 1, 1)
 def _repr(interp, pos, args):
     return to_repr(args[0])
+
+
+# -- input ----------------------------------------------------------------
+
+
+@builtin("read", 0, 0)
+def _read(interp, pos, args):
+    """All of standard input, as one string.
+
+    It takes no argument because there is no second thing it could be given:
+    Vine never names a file, so the only input a program has is the one the
+    shell handed it. See **Reading** in docs/spec.md.
+
+    Called twice it answers the same string, because the text is kept on the
+    interpreter. That is not a convenience -- nothing else in Vine answers
+    differently on a second call, and a `read()` that gave the text once and
+    `""` afterwards would fail the way tick 38's generator failed: a plausible
+    value in the right place, in a report whose arithmetic is all correct.
+    """
+    if callable(interp.inp):
+        try:
+            interp.inp = interp.inp()
+        except UnicodeDecodeError as exc:
+            # The same sentence vine/cli.py gives for a source file that is
+            # not UTF-8, for the same reason and about the same byte. Vine
+            # text is UTF-8 in both directions; a reader who has met one of
+            # these messages has met the other.
+            interp.fail(
+                f"standard input is not UTF-8 text "
+                f"(byte 0x{exc.object[exc.start]:02x} at offset {exc.start})",
+                pos,
+            )
+    # `None` after that is a program that was given no input at all: run at a
+    # terminal with nothing redirected in, or at the REPL, where standard
+    # input is where the program itself is arriving from. It is kept, so a
+    # second `read()` refuses the same way rather than asking again.
+    if interp.inp is None:
+        raise RuntimeError_(
+            "there is no input to read", pos, interp.source
+        ).help(INPUT_RULE)
+    return interp.inp
 
 
 # -- general --------------------------------------------------------------

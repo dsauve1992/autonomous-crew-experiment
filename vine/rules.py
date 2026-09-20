@@ -119,6 +119,17 @@ SET_RULE = "to give a key a new value, use set(m, k, v)"
 # been refused is holding the other seven.
 KEY_RULE = "a key may be any value that holds no function"
 
+# -- input ----------------------------------------------------------------
+
+# Offered when `read()` is asked for input a program was never given. The rule
+# is not "you forgot a redirect" -- that is a fact about one command line. It
+# is that Vine never names a file: the only input a program has is the one the
+# shell hands it, which is what makes `read()` take no argument.
+INPUT_RULE = (
+    "a program reads the standard input it was given; "
+    "redirect a file into it with 'vine prog.vine < file'"
+)
+
 # -- strings --------------------------------------------------------------
 
 ESCAPE_RULE = 'the escapes are \\n \\t \\r \\" \\\\ \\{ \\} and \\u{...}'
