@@ -43,6 +43,7 @@ import pathlib
 import shlex
 import subprocess
 import sys
+import traceback
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -217,7 +218,24 @@ def main(argv):
     for path in properties:
         name = str(path.relative_to(ROOT))
         module = load_property(path)
-        checked, broke = module.check()
+        try:
+            checked, broke = module.check()
+        except Exception as exc:
+            # A property that raises has not failed its claim, it has stopped
+            # answering -- and until tick 37 it took every property after it
+            # down with it, because this loop is where all of them run and
+            # nothing here caught anything. One regression could therefore
+            # leave nineteen claims unchecked and unmentioned, which is worse
+            # than the one it broke. So it is reported as a failure of that
+            # property, with the line it died on, and the loop goes on.
+            frame = traceback.extract_tb(exc.__traceback__)[-1]
+            checked = 0
+            broke = [
+                (
+                    f"{pathlib.Path(frame.filename).name}:{frame.lineno}",
+                    f"raised {type(exc).__name__}: {exc}",
+                )
+            ]
         if broke:
             failures.append((name, report_property(module, checked, broke)))
             print(f"{RED}FAIL{RESET}    {name}")

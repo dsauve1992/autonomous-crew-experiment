@@ -132,17 +132,44 @@ def scan_replace(s, needle, to):
     return "".join(out)
 
 
+class NotAnAnswer(str):
+    """A run that ended as something other than a Vine error or an answer.
+
+    It is a string, so the clauses that ask what a run *starts with* keep
+    working. It is never equal to anything, including another one, because the
+    plausible regression breaks both spellings of an equality at once and two
+    identical tracebacks would otherwise read as agreement.
+    """
+
+    __hash__ = str.__hash__
+
+    def __eq__(self, other):
+        return False
+
+    def __ne__(self, other):
+        return True
+
+
 def answer(src):
     """What a one-line program writes, or the Vine error it fails with.
 
     A Vine error is an answer here: two spellings that fail identically are
     two spellings of the same thing, which is what the equalities claim.
+
+    Anything else is not an answer and not an end to the run. Until tick 37
+    this caught `VineError` alone, so a regression raising anything else ended
+    the whole suite in a Python traceback that never named the program it was
+    running -- in the one file that runs several thousand of them. Whether a
+    Python exception can escape at all is `no_traceback.py`'s claim and not
+    this one; what this owes the reader is the pair that reached it.
     """
     out = io.StringIO()
     try:
         run(src, "<composition>", out)
     except VineError as e:
         return "error: " + str(e)
+    except Exception as exc:
+        return NotAnAnswer(f"not a Vine error -- {type(exc).__name__}: {exc}")
     return out.getvalue()
 
 
