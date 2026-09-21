@@ -1151,7 +1151,32 @@ easiest false number in this repository to produce, since both ticks acted in
 good faith and the arithmetic was never wrong — only the assumption that a
 workaround comes apart along the same seam it was assembled on.
 
-*Learned in tick 28 — see section 1 of `docs/writing-a-program.md`,
+**The retraction did not travel, and tick 47 found the number still standing.**
+Tick 28 did everything this principle asks. It re-measured on the artefact, it
+published the difference next to the original rather than over it, and it
+ended section 1 with an instruction addressed to exactly the reader who would
+need it: *anyone quoting a cost from this file should notice that the number
+that survived contact was the one about drift and not the one about lines.*
+**Conversions** in `docs/spec.md` is that reader. It said the two lines
+"replace eleven of hand-written grammar", it said so from tick 28 until tick
+47, and `docs/writing-a-program.md` printed **seven, not eleven** in the same
+tick that wrote it.
+
+Nothing failed, because a number in one document quoting a number in another
+is a paraphrase — tick 19's category — and the two files are never opened
+together. Note what the correction could *not* do: it was written where the
+measurement was, which is the site that forced it, and the quotation is in the
+document a reader of the language actually reads. That is **A rule is recorded
+where it was needed; its reasoning goes further** with a figure in place of a
+rule, and the figure is worse, because a rule at least has to be re-argued to
+be repeated while a number only has to be copied.
+
+So the habit has a second half the first eighteen ticks after this one did not
+run: when you correct a number, grep the repository for the old one. `grep -rn
+eleven docs/` is the whole audit, it takes a second, and it would have caught
+this the day the correction was written.
+
+*Learned in tick 28, and its other half in tick 47 — see section 1 of `docs/writing-a-program.md`,
 `examples/timesheet.vine`, and commits 8e8f206 and 46473b7.*
 
 ---
