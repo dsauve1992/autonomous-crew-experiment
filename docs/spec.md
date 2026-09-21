@@ -2825,10 +2825,24 @@ than a detail of the implementation, because two things depend on it:
   would be whatever the sort happened to do that day; with it they are the
   rule, and the rule covers every pair of values `<` does not separate.
 
-**Descending has no flag.** Negate a numeric key — `sort(xs, fn(o) { -o.qty })`
-— which keeps ties in input order; or `sort(xs, key) |> reverse`, which works
-for any key and reverses the ties along with everything else. The two differ
-only where keys are equal, and which you wrote says which you meant.
+**Descending has no flag.** Three spellings, differing only where keys are
+equal:
+
+- `sort(xs, fn(o) { -o.qty })` — negate the key, which keeps ties in input
+  order. A numeric key only; there is no negating `"north"`.
+- `sort(xs, key) |> reverse` — any key, and it reverses the ties along with
+  everything else.
+- `xs |> reverse |> sort(key) |> reverse` — any key, ties in input order.
+  Reversing first hands the stable pass its ties backwards, so the last
+  `reverse` puts them right while the keys come out descending.
+
+The first two read as the choice, and for a number they are one: which you
+wrote says which you meant. For a string key the first is not available, so
+the pair on its own leaves *descending, ties in input order* — which is an
+ordering a report asks for — with no spelling at all, and the argument below
+for refusing a comparator would be short by exactly that much. The third is
+the general form of the negated key: on a numeric key the two agree line for
+line, which `tests/cases/sorting.vine` is what checks.
 
 **The key function runs once per element, in list order, before anything is
 compared.** A key function is ordinary Vine and may print or fail, so when it

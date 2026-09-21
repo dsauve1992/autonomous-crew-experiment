@@ -22,6 +22,15 @@ print(items(sort(orders, fn(o) { -o.qty })))
 # Descending any other way: reverse afterwards, which flips the ties too.
 print(items(sort(orders, fn(o) { o.qty }) |> reverse))
 
+# Descending with the ties still in input order, for a key that cannot be
+# negated. Reversing first hands the stable pass its ties backwards, so the
+# second reverse puts them right while the keys stay descending -- which is
+# exactly what negating a numeric key does, for any key at all. The first of
+# these three agrees line for line with the negated key above.
+print(items(orders |> reverse |> sort(fn(o) { o.qty }) |> reverse))
+print(items(sort(orders, fn(o) { o.region }) |> reverse))
+print(items(orders |> reverse |> sort(fn(o) { o.region }) |> reverse))
+
 # Two keys are two stable passes, least significant first.
 print(items(orders |> sort(fn(o) { o.qty }) |> sort(fn(o) { o.region })))
 
