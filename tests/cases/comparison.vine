@@ -12,6 +12,14 @@ print([1, 2] == [1, 2])
 print({a: 1} == {a: 1})
 print(type(1), type(2.5), type("s"), type(true), type(nil), type([]), type({}), type(print))
 
+# An int beside a float is the one mixed pairing, and comparison does not mix
+# it the way arithmetic does: `< <= > >=` compare the two exactly, so nothing
+# is converted and nothing can overflow. `huge + 2.5` is an error and
+# `huge < 2.5` is an answer. See **Operators**.
+let huge = reduce(range(100), fn(a, i) { a * 10000000 }, 1)
+print(huge < 2.5, 2.5 < huge, huge > 2.5)
+print(len(sort([2.5, huge])), first(sort([2.5, huge])))
+
 # `<` on strings is codepoint order, so every uppercase letter is below every
 # lowercase one -- and that is the order `sort` files a column of names in.
 print("Z" < "a")

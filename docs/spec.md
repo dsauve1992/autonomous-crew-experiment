@@ -409,6 +409,23 @@ is an error like any other, so `1 + "a"` is `cannot add int and string` and
 `[1] + "a"` is `cannot add list and string`. Maps do not join; there is no
 merge operator.
 
+**Comparison mixes an int with a float too, and not on arithmetic's terms.**
+`< <= > >=` compare the two *exactly*: nothing is converted, so nothing can
+overflow, and where arithmetic refuses the comparison still answers.
+
+```
+let huge = reduce(range(100), fn(a, i) { a * 10000000 }, 1)
+huge + 2.5                    # error: int is too large to convert to a float
+huge < 2.5                    # false
+sort([2.5, huge]) |> first    # 2.5
+```
+
+This is the reach **Sorting** means by *what `sort` orders by is `<`* — a list
+of ints and floats is orderable at every width, including widths no float has.
+The two rules are worth reading together: *becomes a float* is arithmetic's
+alone, and taking it to be the language's one rule for a mixed pair predicts an
+error that does not happen.
+
 **`%` takes the sign of the right operand.** `-3 % 2` is `1`, `3 % -2` is
 `-1`. The other convention — the sign of the *left* operand, so `-3 % 2` is
 `-1` — is at least as common in other languages, and what settles it for Vine
@@ -2134,8 +2151,20 @@ a window of three, with remove              33    73   153
 a window of three, rebuilt in Vine          72   152   312
 ```
 
-So the composition is the same curve at twice the copies and, at the window,
-two and a half times the comparisons. In seconds on one machine, over a window
+and the comparisons over the same window, which are the other half of the
+sentence below and were left off this table until tick 47:
+
+```text
+a window of three, with remove              20    40    80
+a window of three, rebuilt in Vine          47    97   197
+```
+
+Both rows are a line. `4n - 7` copies and `2n` comparisons with the builtin,
+`8n - 8` and `5n - 3` rebuilt; the property asserts the four formulas rather
+than the twelve numbers. So the composition is the same curve at twice the
+copies and, at the window, two and a half times the comparisons — both ratios
+in the limit, which is why the table does not show them: at `n = 10` the
+copies are 2.2 times and the comparisons 2.35. In seconds on one machine, over a window
 of six at 2000, 4000, 8000 and 16000 events: 0.028, 0.047, 0.094 and 0.196
 with `remove`, 0.087, 0.166, 0.326 and 0.665 rebuilt in Vine, and 0.039,
 0.102, 0.286 and 0.874 with tombstones — two lines and a square. **A constant

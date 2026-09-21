@@ -11,6 +11,8 @@ zero is truthy
 true
 true
 int float string bool nil list map function
+false true true
+2 2.5
 true
 ["South", "east", "north"]
 ["east", "north", "South"]
