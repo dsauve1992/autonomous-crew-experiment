@@ -205,6 +205,17 @@ contract, in one piece of work. If what you are doing does not change what Vine
   instead of naming U+007F. The fix is what the property should have done
   from the start — catch it, re-run the batch one value at a time, and report
   which one. You will only see this by reading the sabotage's output.
+
+  **And an implementation choice no program can observe still needs a clause,
+  and only a counting one will do.** `remove` answers the map itself when the
+  key is absent, rather than a copy of it. Nothing in Vine mutates, so every
+  question a program can ask answers the same either way; the sabotage that
+  copies anyway is green in 206 of 207 and fails only
+  `fold_copies_a_square.py`, at *copied 36, not 33*. If your feature's reason
+  for existing is a cost, the clause that holds it has to be one that counts,
+  because the behavioural suite cannot tell you have lost it. Re-run the
+  sabotage before you believe the clause: two of tick 46's four were re-run in
+  its second sitting and both came back to the digit.
 - **Then list what your change made false, and find who was holding it.**
   Not what it broke — what stayed green and should not have. `return` became a
   keyword in tick 26 and the Keywords line in **Lexical structure** was false
