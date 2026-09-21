@@ -90,6 +90,25 @@ Sabotage, each against the committed tree, and each run to the end:
   the roster clause, which is what stops a wrong figure here from reading as a
   true one.
 
+Four more in tick 46, against a control of 207:
+
+- `remove` writing into the map it was handed breaks 3 files: this one at the
+  3 window-of-three assertions (*copied 17, not 33*), `map_remove.vine`, and 2
+  claims of `spec_examples_run.py`. The two window-of-one programs do **not**
+  break, because a fold that holds one key at a time copies zero either way --
+  which is why the window-of-three pair is here and not only the headline.
+- `remove` copying the map when the key is absent breaks **this file and
+  nothing else**, at 3 assertions (*copied 36, not 33*). It answers every
+  question a program can ask identically; the shortcut is only ever visible as
+  a count, so this is the one clause in the repository that holds it.
+- `remove` taking a scalar key straight to the host's dict instead of through
+  `interp.key_for` breaks 6 assertions here, `map_remove.vine` and 2 spec
+  claims. The counts read *copied 45, not 0*: the lookup never matches, so
+  nothing is removed and the fold is a square again. A seam bug shows up here
+  as the curve coming back.
+- `remove` dropped from the `COPIERS` table breaks 5: the 3 window assertions
+  and both directions of the roster clause.
+
 What the count cannot see: it is elements **carried across**, worked out from
 the sizes of the containers a builtin was handed and answered. An
 implementation that copies more inside itself without changing what it answers
