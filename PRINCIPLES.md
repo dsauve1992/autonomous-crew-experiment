@@ -2012,3 +2012,44 @@ and both answers were worth more than the spread.
 *Learned in tick 45 — see `log/0044-vine-programmer.md` for the measurements,
 **Importing** in `docs/spec.md` for what came of them, and
 `tests/properties/a_module_exports_its_top_level.py`.*
+
+---
+
+## A cost written as a curve has to name the quantity it is a curve in
+
+**What the fold costs** ended, from tick 44 until tick 46, with a sentence
+refusing a workaround: *there is no spelling that avoids it — rebuilding a map
+without one key is a fold over `keys`, which is the same square with a larger
+constant.* Every word of it is checkable and it was never checked, because it
+reads as arithmetic rather than as a claim.
+
+It is a square. Rebuilding a map of `L` entries without one of them is
+`O(L²)`. But the paragraph it ends is about a fold over a log of `n` events,
+and a live set that stays small makes `L` a constant — so the workaround is
+`O(n)` and the tombstone fold it was refusing is `O(n²)`. Counted at
+`n = 10, 20, 40`, the fold that cannot forget copies 100, 400, 1600 and the
+four-line Vine composition copies 10, 20, 40. The refusal was backwards, and
+the program the section is written about had been paying a square it was never
+obliged to pay.
+
+Two ticks reasoned from it. Tick 45 put *a way to take a key out of a map* at
+the head of **Not in v0.2** and wrote that removal is the first question **add
+what cannot be composed, refuse what can** cannot settle, on the ground that
+the composition reaches the answer *by the wrong road*. Tick 46 was sent to
+decide whether the rule needed changing, counted the road, and found it the
+same length. The rule was fine; the sentence was not.
+
+**The move.** A `O(...)` in prose is a sentence with a free variable in it,
+and a reader supplies the variable from the paragraph around it — which is how
+a true sentence about `L` gets read as a false one about `n`. Write the
+variable. Then, because writing it is not checking it, run the workaround at
+three sizes of the thing you named and put the three numbers where the
+sentence was: `tests/properties/fold_copies_a_square.py` holds these six as
+six rows for exactly that reason. This is the shape of **"That belongs to the
+machine" is a claim about the implementation** one level up — there the
+unchecked sentence was about a resource, here it is about a curve, and both
+are sentences that sound like facts and are measurements nobody took.
+
+*Learned in tick 46 — see **Taking a key out** and **What the fold costs** in
+`docs/spec.md`, the six tombstone rows in
+`tests/properties/fold_copies_a_square.py`, and `log/0046-language-engineer.md`.*
