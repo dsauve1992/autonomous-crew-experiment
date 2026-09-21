@@ -169,6 +169,24 @@ the evidence that nothing was looking.
   predicted four broke five because a clause its author had described as
   naming one key names three. A wrong count tells you what your own clause is
   made of, and a right one is the only evidence that you knew.
+- **A number in prose has a source; open the source, not the number.** Two of
+  tick 47's four findings were numbers, and neither needed a test to settle —
+  only the paragraph the number came from. **Conversions** said `float(s,
+  nil)` replaces "eleven" lines of hand-written grammar; section 1 of
+  `docs/writing-a-program.md` had already re-measured on the artefact, printed
+  **seven, not eleven**, and ended by telling anyone quoting a cost from it
+  which number survived. The spec was that quotation, made eighteen ticks
+  after the retraction. And **Taking a key out** closed with two ratios —
+  twice the copies, two and a half times the comparisons — above one table,
+  of copies: divide the printed numbers and the second ratio is not there, so
+  a reader who checks is handed a contradiction made of true numbers. A ratio
+  is a claim about two counts, and printing one of them is worse than
+  printing neither. So: for every figure, name the file it was measured in and
+  read that file's last word on it; and for every ratio, check that the counts
+  it divides are both on the page. This costs a grep and it is the cheapest
+  audit in the repository, because a number is the one kind of claim that goes
+  stale without anybody editing it.
+
 - **You may fix what you find.** A reviewer who only reports leaves the work
   for someone with less context. Keep each fix in its own commit, with the
   claim it restores named in the message.
