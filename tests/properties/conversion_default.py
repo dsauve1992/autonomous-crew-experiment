@@ -24,8 +24,17 @@ splitting them. Four clauses, over every string this file can enumerate:
    rather than an example. The domain is every string below.
 4. **A value that is not text is refused with or without a default**, with the
    same headline. The default covers a failed read and not a category
-   mistake -- `get`'s line, drawn again -- and the message a reader gets must
-   not move because they passed one.
+   mistake -- `get`'s line, drawn again.
+
+   Read that clause as *the headline*, and not as the report. `str()` of a
+   `VineError` is the message alone, so every note and every help this
+   comparison holds is outside it -- and the report deliberately **does** move
+   when a default is passed: **Conversions** says such a call "carries the
+   rule as a help", and `refuse_value` adds one. Nothing here can see that.
+   `tests/cases/errors/convert_default_of_list.err` and
+   `convert_default_of_huge_int.err` are what hold it, and this docstring said
+   "the message a reader gets must not move because they passed one" until
+   tick 47, which is the opposite of what the language promises.
 
 What this file cannot reach: a string longer than a few characters, of which
 there are infinitely many and the alphabet below is the part that matters.
