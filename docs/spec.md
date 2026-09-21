@@ -1467,7 +1467,7 @@ runtime error: cannot convert "١٢٣" to an int
 2 | print(int(row))
   |          ^
   = note: written out in escapes, that string is "\u{661}\u{662}\u{663}"
-  = help: the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them
+  = help: the digits are 0 to 9, optionally signed, with spaces, tabs, carriage returns or newlines around them
 ```
 
 Those are digits, and they are not the digits `int` reads. Without the note
@@ -3571,7 +3571,7 @@ on the same list.
 
 - `the largest float is about 1.8e308` — **repr and str**
 - `every float is finite; the largest float is about 1.8e308` — **repr and str**
-- `the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them` — **Conversions**
+- `the digits are 0 to 9, optionally signed, with spaces, tabs, carriage returns or newlines around them` — **Conversions**
 - `a default answers for text that is not a number, and for nothing else` — **Conversions**
 - `the smallest float is 5e-324, which has 1074 decimal places; nothing has more` — **Formatting**
 - `there is no exponent operator; x to the power y is pow(x, y)` — **Operators, loosest binding first**

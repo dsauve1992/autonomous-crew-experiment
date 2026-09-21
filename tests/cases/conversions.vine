@@ -15,7 +15,10 @@ print(type(int(2.9)), type(float(3)))
 # shape. The sign is allowed because data has signs in it; `.5` and `1.` are
 # allowed though neither is a literal a program may write, because in a string
 # there is no member operator for the `.` to be. See **Conversions**.
-print(int("+5"), int("-5"), int("\t17\n"))
+# The space a number may sit in is four characters, and the help names all
+# four. A carriage return is one of them because data arrives with CRLF line
+# endings in it; it is the one the rule left unnamed until tick 47.
+print(int("+5"), int("-5"), int("\t17\n"), int("\r17\r"), float(" \r2.5\n "))
 print(float(".5"), float("1."), float("+1e3"), float("-2.5"))
 
 # A default answers where the text is not a number, and nowhere else. It is

@@ -4,4 +4,4 @@ runtime error: cannot convert "2.5 " to a float
 6 | float("2.5 ")
   |      ^
   = note: written out in escapes, that string is "2.5\u{a0}"
-  = help: the digits are 0 to 9, optionally signed, with spaces, tabs or newlines around them
+  = help: the digits are 0 to 9, optionally signed, with spaces, tabs, carriage returns or newlines around them

@@ -30,7 +30,7 @@ FINITE_RULE = f"every float is finite; {FLOAT_CEILING}"
 
 NUMBER_RULE = (
     "the digits are 0 to 9, optionally signed, "
-    "with spaces, tabs or newlines around them"
+    "with spaces, tabs, carriage returns or newlines around them"
 )
 
 # The most digits `fixed` will write after the point. 1074 is not a round
