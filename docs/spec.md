@@ -1576,7 +1576,13 @@ let hours = float(f[3], nil)
 if hours == nil { return complaint(n, "hours is not a number") }
 ```
 
-Those two lines replace eleven of hand-written grammar. The cost is real and
+Those two lines replace **seven** of hand-written grammar, not the eleven the
+workaround was. Four of the eleven are `digits` and `all_digits`, which answer
+a different question — whether a *date* field is digits — and a conversion
+does not take them with it; they are still hand-written grammar, and since
+tick 43 they live in `examples/dates.vine`. Section 1 of
+`docs/writing-a-program.md` measured both numbers and says which one survived
+contact. The cost is real and
 worth stating: a default discards the report, and the report was good. `int("١٢٣")`
 explains that those are digits and not the digits `int` reads, and
 `int("١٢٣", nil)` says nothing at all. A program that converts with a default
