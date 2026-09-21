@@ -2205,6 +2205,18 @@ fold's map, so it reads them in the order they were last opened rather than
 first — which is what that program wants and is worth knowing before a program
 wants the other.
 
+**The mistake this name makes available.** Everywhere else in the reader's
+experience, taking a key out of a map is a statement; here it is an expression
+whose answer is the whole of it. A line reading `remove(m, k)` on its own is
+not an error and not a change — it builds a map and drops it. `set(m, k, v)`
+has had that hole since tick 1 and nothing has ever fallen into it, because
+`set` reads as a question with an answer. `remove` reads as an instruction,
+so it is the name that will be written on a line of its own, and nothing
+catches it: there is no missing `let` for a caret to point at. `remove` was
+chosen over `delete` and `unset` partly for this — they read as instructions
+harder still — and it is the cost of an imperative name in a language where
+every answer is a value.
+
 **There is no `remove` for a list**, and here the rule refuses in its ordinary
 form. Taking an element out of a list by value is `filter`, which is one pass
 and carries each survivor once; by index it is `concat(take(xs, i), drop(xs,
