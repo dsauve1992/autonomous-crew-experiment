@@ -1415,6 +1415,13 @@ out here because for fourteen ticks it was whatever Python accepted.
 than a float can hold is an error rather than a rounded answer. Neither reads
 a list, a map, a function or `nil`.
 
+**`float` does not read a bool either**, and that is the one type the two
+disagree about: `int(true)` is `1` and `float(true)` is an error naming the
+kind. The widening is spelled `float(int(b))`, and the mistake of dropping the
+`int` is an error rather than a plausible number, so the narrower `float` costs
+a reader nothing — which is the measurement **Building lists** asks for before
+a refusal. See `tests/cases/errors/float_of_bool.vine`.
+
 From a string:
 
 - **The digits are `0` to `9` and nothing else.** Unicode has 760 decimal

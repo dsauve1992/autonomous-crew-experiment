@@ -1,0 +1,5 @@
+runtime error: cannot convert a bool to a float
+ --> float_of_bool.vine:7:12
+  |
+7 | print(float(done))
+  |            ^

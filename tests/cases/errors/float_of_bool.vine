@@ -1,0 +1,7 @@
+# `int` reads a bool and `float` does not: int(true) is 1, float(true) is this
+# error. That is the one type the two conversions disagree about, and the
+# widening is spelled float(int(b)) -- dropping the int is an error and not a
+# plausible number, so the refusal costs nothing. See **Conversions** in
+# docs/spec.md.
+let done = true
+print(float(done))
